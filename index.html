@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-style="premium" data-palette="orange">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0805" />
+  <title>Easy Scale Media</title>
+  <meta name="description" content="Easy Scale Media ambient display." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ===================== THE SCREEN ===================== -->
+  <main id="screen" class="screen">
+
+    <!-- Background scene (swapped per style). Drop a Nano Banana 4K image in
+         assets/ named bg-<style>.jpg and it becomes the base layer. -->
+    <div class="scene" aria-hidden="true">
+      <div class="scene__image" id="sceneImage"></div>
+      <div class="scene__gradient"></div>
+      <div class="scene__blobs">
+        <span class="blob blob--1"></span>
+        <span class="blob blob--2"></span>
+        <span class="blob blob--3"></span>
+        <span class="blob blob--4"></span>
+      </div>
+      <div class="scene__beams"></div>
+      <div class="scene__grid"></div>
+      <canvas class="scene__particles" id="particles"></canvas>
+      <div class="scene__grain"></div>
+      <div class="scene__vignette"></div>
+    </div>
+
+    <!-- The rocket: elegant, with a little personality -->
+    <div class="rocket-lane" id="rocketLane" aria-hidden="true">
+      <div class="rocket">
+        <div class="rocket__bob">
+          <div class="rocket__trail"></div>
+          <svg class="rocket__svg" viewBox="0 0 120 220" width="120" height="220" aria-hidden="true">
+            <defs>
+              <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#ffffff"/>
+                <stop offset="1" stop-color="#dfe6f0"/>
+              </linearGradient>
+              <linearGradient id="accentGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="var(--accent-2)"/>
+                <stop offset="1" stop-color="var(--accent)"/>
+              </linearGradient>
+            </defs>
+            <!-- fins -->
+            <path class="rk-accent" d="M30 150 C12 168 10 196 22 206 L40 176 Z"/>
+            <path class="rk-accent" d="M90 150 C108 168 110 196 98 206 L80 176 Z"/>
+            <!-- body -->
+            <path class="rk-body" d="M60 6 C86 34 96 78 96 120 C96 158 84 182 60 196 C36 182 24 158 24 120 C24 78 34 34 60 6 Z"/>
+            <!-- nose accent -->
+            <path class="rk-accent" d="M60 6 C72 19 80 38 84 60 C76 52 66 48 60 48 C54 48 44 52 36 60 C40 38 48 19 60 6 Z"/>
+            <!-- window -->
+            <circle class="rk-window-ring" cx="60" cy="92" r="20"/>
+            <circle class="rk-window" cx="60" cy="92" r="14"/>
+            <circle class="rk-window-glint" cx="54" cy="86" r="4"/>
+            <!-- base -->
+            <path class="rk-accent" d="M40 176 C48 188 72 188 80 176 C78 192 42 192 40 176 Z"/>
+          </svg>
+          <div class="rocket__flame"></div>
+          <div class="rocket__flame rocket__flame--inner"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Branding -->
+    <header class="brand" id="brand">
+      <div class="brand__lockup">
+        <span class="brand__badge" id="brandBadge">ESM</span>
+        <span class="brand__name" id="brandName">Easy Scale Media</span>
+      </div>
+      <div class="brand__tag" id="brandTag">Scaling brands to the moon.</div>
+    </header>
+
+    <!-- Optional clock -->
+    <div class="clock" id="clock" hidden>
+      <div class="clock__time" id="clockTime">--:--</div>
+      <div class="clock__date" id="clockDate"></div>
+    </div>
+
+    <!-- Idle / night overlay -->
+    <div class="night" id="night" aria-hidden="true">
+      <div class="night__clock" id="nightClock">--:--</div>
+    </div>
+
+    <!-- First-run hint (auto fades) -->
+    <div class="hint" id="hint">Triple-click the top-right corner (or press <kbd>C</kbd>) to open settings</div>
+  </main>
+
+  <!-- Hidden reveal hotspot, top-right corner -->
+  <button class="hotspot" id="hotspot" aria-label="Open settings"></button>
+
+  <!-- ===================== CONTROL PANEL ===================== -->
+  <div class="panel-scrim" id="panelScrim" hidden></div>
+  <aside class="panel" id="panel" hidden aria-label="Display settings">
+    <div class="panel__head">
+      <h1 class="panel__title">Display Settings</h1>
+      <button class="panel__close" id="panelClose" aria-label="Close">&times;</button>
+    </div>
+
+    <section class="panel__section">
+      <h2 class="panel__label">Style</h2>
+      <div class="opt-grid" id="styleGrid"></div>
+    </section>
+
+    <section class="panel__section">
+      <h2 class="panel__label">Color</h2>
+      <div class="swatch-row" id="paletteRow"></div>
+    </section>
+
+    <section class="panel__section">
+      <h2 class="panel__label">Show</h2>
+      <div class="toggle-row">
+        <label class="toggle"><input type="checkbox" id="tgLogo" checked><span>Logo</span></label>
+        <label class="toggle"><input type="checkbox" id="tgRocket" checked><span>Rocket</span></label>
+        <label class="toggle"><input type="checkbox" id="tgClock"><span>Clock</span></label>
+        <label class="toggle"><input type="checkbox" id="tgParticles" checked><span>Particles</span></label>
+      </div>
+    </section>
+
+    <section class="panel__section">
+      <h2 class="panel__label">Branding</h2>
+      <label class="field"><span>Company name</span>
+        <input type="text" id="inName" placeholder="Easy Scale Media" /></label>
+      <label class="field"><span>Tagline</span>
+        <input type="text" id="inTag" placeholder="Scaling brands to the moon." /></label>
+    </section>
+
+    <section class="panel__section">
+      <h2 class="panel__label">Motion speed</h2>
+      <input type="range" id="inSpeed" min="0.3" max="2.2" step="0.1" value="1" class="range" />
+      <div class="range-scale"><span>Calm</span><span>Lively</span></div>
+    </section>
+
+    <section class="panel__section">
+      <h2 class="panel__label">Schedule</h2>
+      <label class="toggle toggle--wide"><input type="checkbox" id="tgSchedule" checked><span>Auto on/off</span></label>
+      <div class="time-row">
+        <label class="field field--time"><span>On at</span><input type="time" id="inOn" value="07:00" /></label>
+        <label class="field field--time"><span>Off at</span><input type="time" id="inOff" value="23:00" /></label>
+      </div>
+      <label class="toggle toggle--wide"><input type="checkbox" id="tgNightClock" checked><span>Dim clock while idle</span></label>
+    </section>
+
+    <section class="panel__section panel__section--row">
+      <button class="btn btn--ghost" id="btnFull">Fullscreen</button>
+      <button class="btn btn--ghost" id="btnReset">Reset</button>
+    </section>
+
+    <p class="panel__note" id="panelStatus"></p>
+  </aside>
+
+  <script src="app.js"></script>
+</body>
+</html>
