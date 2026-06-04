@@ -1,0 +1,5 @@
+{
+  "version": "2026.06.04-1",
+  "builtAt": "2026-06-04T00:00:00Z",
+  "note": "Fallback/local value. On deploy the Pages workflow stamps the commit here; the screen reloads when 'version' changes."
+}

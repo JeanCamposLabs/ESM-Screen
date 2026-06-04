@@ -65,7 +65,13 @@ html[data-palette="purple"] {
   position: fixed; inset: 0;
   background: var(--bg-0);
   overflow: hidden;
+  user-select: none; -webkit-user-select: none;
+  animation: screen-in 1s ease both;        /* gentle fade-in on first load */
 }
+@keyframes screen-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Graceful fade-out when reloading to pick up a new release (see app.js). */
+body.is-updating .screen { animation: none; opacity: 0; transition: opacity .6s ease; }
 .scene { position: absolute; inset: 0; }
 .scene > * { position: absolute; inset: 0; }
 
@@ -410,7 +416,7 @@ html:not([data-nightclock="1"]) .night__clock { display: none; }
    ACCESSIBILITY: honour reduced-motion (e.g. a kiosk set this way)
    ================================================================= */
 @media (prefers-reduced-motion: reduce) {
-  .scene__image, .blob, .rocket, .rocket__bob, .rocket__flame,
+  .screen, .scene__image, .blob, .rocket, .rocket__bob, .rocket__flame,
   .scene__beams, .scene__grid, .brand, .clock, .night__clock {
     animation-duration: .001s !important; animation-iteration-count: 1 !important;
   }

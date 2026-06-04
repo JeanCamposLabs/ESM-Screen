@@ -6,6 +6,26 @@
   <meta name="theme-color" content="#0a0805" />
   <title>Easy Scale Media</title>
   <meta name="description" content="Easy Scale Media ambient display." />
+  <meta name="robots" content="noindex" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff7a18'/%3E%3Cpath d='M32 11c7 7 10 16 10 25 0 6-3 11-10 16-7-5-10-10-10-16 0-9 3-18 10-25z' fill='%23ffffff'/%3E%3Ccircle cx='32' cy='30' r='5' fill='%23ff7a18'/%3E%3C/svg%3E" />
+
+  <!-- Apply the saved theme before first paint → no flash of the default palette. -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem("esm-screen.v1") || "{}");
+        var el = document.documentElement;
+        if (s.style)   el.dataset.style = s.style;
+        if (s.palette) el.dataset.palette = s.palette;
+        if (s.nightClock != null) el.dataset.nightclock = s.nightClock ? "1" : "0";
+        if (s.speed)   el.style.setProperty("--speed", String(s.speed));
+      } catch (e) {}
+    })();
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />

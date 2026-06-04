@@ -18,7 +18,8 @@ any TV browser and runs all day without babysitting.
    rocket. No looping seams, smooth forever, tiny bandwidth.
 3. **Auto on/off:** shows the art during the day and fades to a dim idle clock at
    night (default **23:00**), back on in the morning (default **07:00**).
-4. **Hosted on Render** as a static site → open the URL on the TV in fullscreen.
+4. **Self-updating:** every screen watches `version.json` and reloads itself when
+   you ship a new release — so all your TVs stay current with no manual refresh.
 
 ---
 
@@ -131,10 +132,24 @@ Swap the color words in any prompt:
 
 ## Hosting / deployment
 
-Deployed as a **Render static site** that auto-publishes on every push.
-Just open the Render URL on the TV's browser and press **`F`** (or use the
-TV browser's fullscreen / kiosk mode). On Chrome-based smart TVs / mini-PCs you
-can also launch with `--kiosk <url>` for a no-chrome, always-on display.
+It's a static site, so it runs anywhere that serves files. This repo ships a
+**GitHub Pages** deploy: every push to `main` runs
+[`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml), which
+publishes the site (Settings → Pages → *Build and deployment* → *GitHub Actions*).
+Open the Pages URL on the TV and press **`F`** (or use the browser's fullscreen /
+kiosk mode). On Chrome-based smart TVs / mini-PCs you can launch with
+`--kiosk <url>` for a no-chrome, always-on display.
+
+### Self-updating (auto-refresh)
+Every screen polls [`version.json`](version.json) once a minute (and whenever the
+device wakes or reconnects). When the `version` changes, the page fades out and
+reloads itself — so a deploy reaches **every TV with no one touching the
+hardware**. The deploy workflow stamps the commit into `version.json` on each run,
+so it's fully automatic: **just push to `main`.**
+
+### Always-on
+The screen requests a **Wake Lock** so supported panels won't dim or sleep, and
+re-requests it after the device wakes.
 
 > **Burn-in note (OLED):** nothing on screen is perfectly static — the logo and
 > clock gently float, the background drifts, and the idle clock wanders at night.
