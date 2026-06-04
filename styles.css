@@ -1,0 +1,417 @@
+/* =================================================================
+   Easy Scale Media — Ambient Screen
+   Vanilla CSS. No build step. Tuned for very large 4K/8K displays.
+   Palettes and styles are switched via [data-palette] / [data-style]
+   on <html>, driven by the hidden control panel (see app.js).
+   ================================================================= */
+
+/* ---------- Reset / base ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+html { background: #000; }
+body {
+  font-family: "Sora", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--text);
+  overflow: hidden;
+  cursor: none;                 /* hide cursor on the TV */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body.show-cursor { cursor: default; }
+kbd {
+  font-family: "Space Grotesk", monospace; font-size: .85em;
+  padding: .08em .4em; border-radius: .35em;
+  background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.22);
+}
+
+/* ---------- Motion speed multiplier ----------
+   Durations are written as calc(<base> / var(--speed)).
+   --speed > 1 = faster, < 1 = calmer. */
+:root { --speed: 1; }
+
+/* =================================================================
+   PALETTES  (brand orange is the default)
+   ================================================================= */
+html[data-palette="orange"] {
+  --bg-0:#0a0805; --bg-1:#17100a; --bg-2:#2a1606;
+  --accent:#ff7a18; --accent-2:#ffb454; --accent-3:#ff4d00;
+  --glow:#ff9233; --text:#fff7ef; --text-dim:rgba(255,247,239,.62);
+}
+html[data-palette="navy"] {
+  --bg-0:#04070f; --bg-1:#0a1326; --bg-2:#102043;
+  --accent:#e9c46a; --accent-2:#f6dc97; --accent-3:#caa14a;
+  --glow:#ffd97a; --text:#f3f6ff; --text-dim:rgba(243,246,255,.62);
+}
+html[data-palette="electric"] {
+  --bg-0:#02040a; --bg-1:#04101f; --bg-2:#072844;
+  --accent:#23d4fd; --accent-2:#6ee7ff; --accent-3:#2a7bff;
+  --glow:#4fe3ff; --text:#eef7ff; --text-dim:rgba(238,247,255,.62);
+}
+html[data-palette="teal"] {
+  --bg-0:#02100e; --bg-1:#052019; --bg-2:#063e2d;
+  --accent:#2ee6a6; --accent-2:#7df0cf; --accent-3:#11b3c6;
+  --glow:#48f0be; --text:#eafff7; --text-dim:rgba(234,255,247,.62);
+}
+html[data-palette="purple"] {
+  --bg-0:#0a0512; --bg-1:#160a26; --bg-2:#2c0f49;
+  --accent:#b15cff; --accent-2:#e08bff; --accent-3:#ff5cc8;
+  --glow:#c77dff; --text:#f7eeff; --text-dim:rgba(247,238,255,.62);
+}
+
+/* =================================================================
+   THE SCREEN + SCENE LAYERS
+   ================================================================= */
+.screen {
+  position: fixed; inset: 0;
+  background: var(--bg-0);
+  overflow: hidden;
+}
+.scene { position: absolute; inset: 0; }
+.scene > * { position: absolute; inset: 0; }
+
+/* Base gradient wash (always visible; sits under the Nano Banana image) */
+.scene__gradient {
+  background:
+    radial-gradient(120% 90% at 75% 8%, color-mix(in srgb, var(--accent-3) 26%, transparent), transparent 55%),
+    radial-gradient(110% 80% at 12% 100%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%),
+    linear-gradient(160deg, var(--bg-1) 0%, var(--bg-0) 55%, var(--bg-2) 130%);
+}
+
+/* Nano Banana 4K image (set as inline background by app.js when the file
+   exists). Slow Ken-Burns drift keeps a still image feeling alive and is
+   gentle on OLED panels (no static pixels). */
+.scene__image {
+  background-size: cover; background-position: center;
+  opacity: 0; transition: opacity 1.2s ease;
+  animation: kenburns calc(48s / var(--speed)) ease-in-out infinite alternate;
+  will-change: transform;
+}
+.scene__image.is-ready { opacity: 1; }
+@keyframes kenburns {
+  0%   { transform: scale(1.06) translate(-1.2%, -0.8%); }
+  100% { transform: scale(1.16) translate(1.4%, 1%); }
+}
+
+/* Soft aurora blobs (premium / minimal) */
+.scene__blobs { mix-blend-mode: screen; filter: blur(2px); }
+.blob {
+  position: absolute; border-radius: 50%;
+  filter: blur(70px); opacity: .55; will-change: transform;
+}
+.blob--1 { width: 46vw; height: 46vw; left: -6vw; top: -10vw;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 75%, transparent), transparent 70%);
+  animation: drift1 calc(34s / var(--speed)) ease-in-out infinite alternate; }
+.blob--2 { width: 52vw; height: 52vw; right: -10vw; top: 12vh;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-3) 70%, transparent), transparent 70%);
+  animation: drift2 calc(42s / var(--speed)) ease-in-out infinite alternate; }
+.blob--3 { width: 40vw; height: 40vw; left: 22vw; bottom: -16vw;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-2) 70%, transparent), transparent 70%);
+  animation: drift3 calc(38s / var(--speed)) ease-in-out infinite alternate; }
+.blob--4 { width: 30vw; height: 30vw; right: 18vw; bottom: -6vw;
+  background: radial-gradient(circle, color-mix(in srgb, var(--glow) 60%, transparent), transparent 70%);
+  animation: drift1 calc(46s / var(--speed)) ease-in-out infinite alternate-reverse; }
+@keyframes drift1 { to { transform: translate(8vw, 6vh) scale(1.15); } }
+@keyframes drift2 { to { transform: translate(-7vw, 9vh) scale(1.1); } }
+@keyframes drift3 { to { transform: translate(5vw, -8vh) scale(1.2); } }
+
+/* Light beams (tech) */
+.scene__beams {
+  opacity: 0;
+  background:
+    linear-gradient(75deg, transparent 38%, color-mix(in srgb, var(--accent-2) 18%, transparent) 50%, transparent 62%),
+    linear-gradient(105deg, transparent 42%, color-mix(in srgb, var(--accent) 14%, transparent) 51%, transparent 60%);
+  background-size: 200% 200%;
+  mix-blend-mode: screen;
+  animation: beams calc(26s / var(--speed)) ease-in-out infinite alternate;
+}
+@keyframes beams { from { background-position: 0% 0%; } to { background-position: 100% 100%; } }
+
+/* Faint perspective grid (tech) */
+.scene__grid {
+  opacity: 0;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--accent) 28%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 28%, transparent) 1px, transparent 1px);
+  background-size: 4vw 4vw;
+  mask-image: radial-gradient(120% 80% at 50% 120%, #000 10%, transparent 70%);
+  -webkit-mask-image: radial-gradient(120% 80% at 50% 120%, #000 10%, transparent 70%);
+  animation: gridmove calc(24s / var(--speed)) linear infinite;
+}
+@keyframes gridmove { to { background-position: 0 4vw, 4vw 0; } }
+
+/* Ambient particle canvas (drawn in app.js) */
+.scene__particles { opacity: .9; pointer-events: none; }
+
+/* Film grain + vignette for depth on big panels */
+.scene__grain {
+  opacity: .05; mix-blend-mode: overlay; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.scene__vignette {
+  pointer-events: none;
+  background: radial-gradient(130% 110% at 50% 42%, transparent 55%, rgba(0,0,0,.55) 100%);
+}
+
+/* ---- per-style visibility of scene layers ---- */
+html[data-style="premium"] .scene__beams,
+html[data-style="premium"] .scene__grid { opacity: 0; }
+
+html[data-style="nature"] .scene__blobs { opacity: .9; filter: blur(4px); }
+html[data-style="nature"] .scene__gradient {
+  background:
+    radial-gradient(80% 55% at 70% 22%, color-mix(in srgb, var(--accent-2) 42%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 45%, var(--bg-0) 100%);
+}
+
+html[data-style="tech"] .scene__beams { opacity: 1; }
+html[data-style="tech"] .scene__grid { opacity: .5; }
+html[data-style="tech"] .scene__blobs { opacity: .35; }
+
+html[data-style="minimal"] .scene__blobs { opacity: .4; filter: blur(2px); }
+html[data-style="minimal"] .scene__grain { opacity: .025; }
+html[data-style="minimal"] .scene__gradient {
+  background:
+    radial-gradient(100% 80% at 30% 20%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
+    linear-gradient(150deg, var(--bg-1), var(--bg-0));
+}
+html[data-style="minimal"] .scene__vignette {
+  background: radial-gradient(130% 120% at 50% 45%, transparent 65%, rgba(0,0,0,.4) 100%);
+}
+
+/* =================================================================
+   THE ROCKET
+   ================================================================= */
+.rocket-lane {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+  pointer-events: none;
+}
+.rocket {
+  position: absolute; left: -14vmin; bottom: 14vh;
+  width: 12vmin; height: 22vmin;
+  animation: flight calc(30s / var(--speed)) cubic-bezier(.45,.05,.55,.95) infinite;
+  will-change: transform;
+}
+/* Diagonal cruise across the screen + a graceful banking tilt */
+@keyframes flight {
+  0%   { transform: translate(0, 8vh) rotate(18deg); opacity: 0; }
+  8%   { opacity: 1; }
+  50%  { transform: translate(52vw, -12vh) rotate(24deg); }
+  92%  { opacity: 1; }
+  100% { transform: translate(108vw, -34vh) rotate(30deg); opacity: 0; }
+}
+/* The "fun" — a gentle bob + tiny wobble layered on top of the cruise */
+.rocket__bob {
+  position: relative; width: 100%; height: 100%;
+  animation: bob calc(3.4s / var(--speed)) ease-in-out infinite;
+  transform-origin: 50% 60%;
+}
+@keyframes bob {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50%     { transform: translateY(-1.4vmin) rotate(3deg); }
+}
+.rocket__svg { width: 100%; height: 100%; display: block;
+  filter: drop-shadow(0 0 1.4vmin color-mix(in srgb, var(--glow) 55%, transparent)); }
+.rk-body { fill: url(#bodyGrad); }
+.rk-accent { fill: url(#accentGrad); }
+.rk-window-ring { fill: color-mix(in srgb, var(--accent) 80%, #000); }
+.rk-window { fill: #0b2a3a; }
+.rk-window-glint { fill: rgba(255,255,255,.85); }
+
+/* Flame */
+.rocket__flame {
+  position: absolute; left: 50%; bottom: -1.5vmin; translate: -50% 0;
+  width: 5vmin; height: 9vmin; border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+  background: radial-gradient(circle at 50% 25%, #fff 0%, var(--accent-2) 22%, var(--accent) 55%, var(--accent-3) 80%, transparent 100%);
+  filter: blur(.3vmin);
+  transform-origin: 50% 0;
+  animation: flame calc(.22s / var(--speed)) ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+}
+.rocket__flame--inner {
+  width: 2.4vmin; height: 6vmin; bottom: -.6vmin;
+  background: radial-gradient(circle at 50% 20%, #fff 0%, #fff 30%, var(--accent-2) 70%, transparent 100%);
+  filter: blur(.1vmin);
+  animation-duration: calc(.16s / var(--speed));
+}
+@keyframes flame {
+  from { transform: translateX(-50%) scaleY(.82) scaleX(1.05); opacity: .85; }
+  to   { transform: translateX(-50%) scaleY(1.12) scaleX(.92); opacity: 1; }
+}
+/* Soft glowing trail behind the rocket */
+.rocket__trail {
+  position: absolute; right: 50%; bottom: -1vmin; width: 26vmin; height: 2.4vmin;
+  translate: 50% 0; transform: translateX(40%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--glow) 45%, transparent));
+  filter: blur(1vmin); border-radius: 50%; opacity: .5;
+}
+
+/* =================================================================
+   BRANDING
+   ================================================================= */
+.brand {
+  position: absolute; left: 6vmin; top: 6vmin; z-index: 5;
+  animation: floaty calc(9s / var(--speed)) ease-in-out infinite;  /* burn-in safe */
+}
+@keyframes floaty { 0%,100%{ transform: translate(0,0);} 50%{ transform: translate(.6vmin,.8vmin);} }
+.brand__lockup { display: flex; align-items: center; gap: 1.6vmin; }
+.brand__badge {
+  display: grid; place-items: center;
+  width: 8.4vmin; height: 8.4vmin; border-radius: 1.8vmin;
+  font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 3.2vmin;
+  letter-spacing: .04em; color: #fff;
+  background: linear-gradient(150deg, var(--accent-2), var(--accent) 55%, var(--accent-3));
+  box-shadow: 0 0 5vmin color-mix(in srgb, var(--glow) 45%, transparent),
+              inset 0 0 1.6vmin rgba(255,255,255,.3);
+}
+.brand__name {
+  font-weight: 700; font-size: 4.4vmin; letter-spacing: -.01em; line-height: 1;
+  text-shadow: 0 .4vmin 3vmin rgba(0,0,0,.5);
+}
+.brand__logo-img { height: 9vmin; width: auto; display: block; }
+.brand__tag {
+  margin-top: 1.8vmin; font-size: 2.1vmin; font-weight: 300;
+  color: var(--text-dim); letter-spacing: .02em;
+}
+.brand__logo-img + .brand__tag { margin-top: 2.2vmin; }
+
+/* =================================================================
+   CLOCK
+   ================================================================= */
+.clock {
+  position: absolute; right: 6vmin; bottom: 6vmin; z-index: 5; text-align: right;
+  animation: floaty calc(11s / var(--speed)) ease-in-out infinite;
+}
+.clock__time {
+  font-family: "Space Grotesk", sans-serif; font-weight: 500;
+  font-size: 9vmin; line-height: .95; letter-spacing: -.02em;
+  text-shadow: 0 .4vmin 4vmin rgba(0,0,0,.5);
+}
+.clock__date { margin-top: 1vmin; font-size: 2.4vmin; color: var(--text-dim); font-weight: 300; }
+
+/* =================================================================
+   NIGHT / IDLE MODE
+   ================================================================= */
+.night {
+  position: absolute; inset: 0; z-index: 20;
+  background: #000; opacity: 0; pointer-events: none;
+  transition: opacity 2.5s ease;
+  display: grid; place-items: center;
+}
+.screen.is-night .night { opacity: .985; }
+/* Pause heavy motion while idle (kind to OLED + power) */
+.screen.is-night .scene__image,
+.screen.is-night .blob,
+.screen.is-night .rocket,
+.screen.is-night .scene__beams,
+.screen.is-night .scene__grid { animation-play-state: paused; }
+.night__clock {
+  font-family: "Space Grotesk", sans-serif; font-weight: 300;
+  font-size: 6vmin; color: rgba(255,255,255,.16);
+  opacity: 0; transition: opacity 2.5s ease 1.5s;
+  animation: nightdrift 40s ease-in-out infinite alternate;  /* drift = burn-in safe */
+}
+.screen.is-night .night__clock { opacity: 1; }
+html:not([data-nightclock="1"]) .night__clock { display: none; }
+@keyframes nightdrift {
+  0%   { transform: translate(-18vw, -22vh); }
+  100% { transform: translate(18vw, 22vh); }
+}
+
+/* =================================================================
+   HINT + HOTSPOT
+   ================================================================= */
+.hint {
+  position: absolute; left: 50%; bottom: 4vmin; translate: -50% 0; z-index: 30;
+  padding: 1.2vmin 2.2vmin; border-radius: 100px;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.14);
+  font-size: 1.7vmin; color: rgba(255,255,255,.8);
+  opacity: 0; transition: opacity .6s ease; pointer-events: none;
+}
+.hint.is-show { opacity: 1; }
+.hotspot {
+  position: fixed; top: 0; right: 0; width: 12vmin; height: 12vmin;
+  z-index: 40; background: transparent; border: 0; cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* =================================================================
+   CONTROL PANEL
+   ================================================================= */
+.panel-scrim { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.35); backdrop-filter: blur(3px); }
+.panel {
+  position: fixed; top: 0; right: 0; z-index: 100;
+  width: min(420px, 92vw); height: 100%;
+  background: rgba(16,16,20,.94); backdrop-filter: blur(22px);
+  border-left: 1px solid rgba(255,255,255,.12);
+  box-shadow: -30px 0 80px rgba(0,0,0,.6);
+  padding: 26px 26px 40px; overflow-y: auto; cursor: default;
+  color: #f2f2f5;
+  font-size: 15px;
+  transform: translateX(0);
+}
+.panel[hidden], .panel-scrim[hidden] { display: none; }
+.panel__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.panel__title { font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+.panel__close { background: none; border: 0; color: #f2f2f5; font-size: 30px; line-height: 1; cursor: pointer; opacity: .7; }
+.panel__close:hover { opacity: 1; }
+.panel__section { padding: 18px 0; border-top: 1px solid rgba(255,255,255,.08); }
+.panel__section:first-of-type { border-top: 0; }
+.panel__section--row { display: flex; gap: 12px; }
+.panel__label { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: rgba(255,255,255,.5); margin-bottom: 12px; font-weight: 600; }
+
+.opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.opt {
+  display: flex; flex-direction: column; gap: 6px; padding: 12px;
+  border-radius: 12px; border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04); cursor: pointer; text-align: left;
+  color: inherit; transition: border-color .15s, background .15s;
+}
+.opt:hover { background: rgba(255,255,255,.08); }
+.opt.is-active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.opt__name { font-weight: 600; font-size: 14px; }
+.opt__desc { font-size: 12px; color: rgba(255,255,255,.55); line-height: 1.3; }
+
+.swatch-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.swatch {
+  width: 46px; height: 46px; border-radius: 50%; cursor: pointer;
+  border: 2px solid rgba(255,255,255,.2); position: relative; padding: 0;
+  transition: transform .12s;
+}
+.swatch:hover { transform: scale(1.08); }
+.swatch.is-active { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.25); }
+
+.toggle-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.toggle { display: flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; font-size: 14px; }
+.toggle--wide { margin-bottom: 12px; }
+.toggle input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; font-size: 13px; color: rgba(255,255,255,.6); }
+.field input {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14);
+  border-radius: 9px; padding: 10px 12px; color: #fff; font-size: 14px; font-family: inherit;
+}
+.field input:focus { outline: none; border-color: var(--accent); }
+.time-row { display: flex; gap: 12px; }
+.field--time { flex: 1; }
+
+.range { width: 100%; accent-color: var(--accent); cursor: pointer; }
+.range-scale { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,.4); margin-top: 4px; }
+
+.btn {
+  flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600;
+  cursor: pointer; font-family: inherit; border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06); color: #fff; transition: background .15s;
+}
+.btn:hover { background: rgba(255,255,255,.12); }
+.panel__note { margin-top: 14px; font-size: 12px; color: rgba(255,255,255,.45); min-height: 16px; }
+
+/* =================================================================
+   ACCESSIBILITY: honour reduced-motion (e.g. a kiosk set this way)
+   ================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .scene__image, .blob, .rocket, .rocket__bob, .rocket__flame,
+  .scene__beams, .scene__grid, .brand, .clock, .night__clock {
+    animation-duration: .001s !important; animation-iteration-count: 1 !important;
+  }
+}
