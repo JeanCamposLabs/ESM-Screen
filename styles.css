@@ -192,63 +192,39 @@ html[data-style="minimal"] .scene__vignette {
   pointer-events: none;
 }
 .rocket {
-  position: absolute; left: -14vmin; bottom: 14vh;
-  width: 12vmin; height: 22vmin;
+  position: absolute; left: -16vmin; bottom: 16vh;
+  width: 12vmin; height: 12vmin;   /* the icon is square; nose points up-right */
+  color: #fff;
   animation: flight calc(30s / var(--speed)) cubic-bezier(.45,.05,.55,.95) infinite;
   will-change: transform;
 }
-/* Diagonal cruise across the screen + a graceful banking tilt */
+/* Diagonal cruise from lower-left to upper-right (matches the icon's heading) */
 @keyframes flight {
-  0%   { transform: translate(0, 8vh) rotate(18deg); opacity: 0; }
-  8%   { opacity: 1; }
-  50%  { transform: translate(52vw, -12vh) rotate(24deg); }
-  92%  { opacity: 1; }
-  100% { transform: translate(108vw, -34vh) rotate(30deg); opacity: 0; }
+  0%   { transform: translate(0, 10vh) rotate(-6deg); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translate(122vw, -42vh) rotate(4deg); opacity: 0; }
 }
-/* The "fun" — a gentle bob + tiny wobble layered on top of the cruise */
+/* A gentle bob + tiny banking wobble layered on top of the cruise */
 .rocket__bob {
   position: relative; width: 100%; height: 100%;
-  animation: bob calc(3.4s / var(--speed)) ease-in-out infinite;
+  animation: bob calc(3.6s / var(--speed)) ease-in-out infinite;
   transform-origin: 50% 60%;
 }
 @keyframes bob {
-  0%,100% { transform: translateY(0) rotate(-3deg); }
-  50%     { transform: translateY(-1.4vmin) rotate(3deg); }
+  0%,100% { transform: translateY(0) rotate(-2deg); }
+  50%     { transform: translateY(-1.1vmin) rotate(2deg); }
 }
-.rocket__svg { width: 100%; height: 100%; display: block;
-  filter: drop-shadow(0 0 1.4vmin color-mix(in srgb, var(--glow) 55%, transparent)); }
-.rk-body { fill: url(#bodyGrad); }
-.rk-accent { fill: url(#accentGrad); }
-.rk-window-ring { fill: color-mix(in srgb, var(--accent) 80%, #000); }
-.rk-window { fill: #0b2a3a; }
-.rk-window-glint { fill: rgba(255,255,255,.85); }
-
-/* Flame */
-.rocket__flame {
-  position: absolute; left: 50%; bottom: -1.5vmin; translate: -50% 0;
-  width: 5vmin; height: 9vmin; border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
-  background: radial-gradient(circle at 50% 25%, #fff 0%, var(--accent-2) 22%, var(--accent) 55%, var(--accent-3) 80%, transparent 100%);
-  filter: blur(.3vmin);
-  transform-origin: 50% 0;
-  animation: flame calc(.22s / var(--speed)) ease-in-out infinite alternate;
-  mix-blend-mode: screen;
+.rocket__svg {
+  width: 100%; height: 100%; display: block; overflow: visible;
+  filter: drop-shadow(0 0 1.6vmin color-mix(in srgb, var(--glow) 70%, transparent))
+          drop-shadow(0 0 .5vmin color-mix(in srgb, var(--accent) 60%, transparent));
 }
-.rocket__flame--inner {
-  width: 2.4vmin; height: 6vmin; bottom: -.6vmin;
-  background: radial-gradient(circle at 50% 20%, #fff 0%, #fff 30%, var(--accent-2) 70%, transparent 100%);
-  filter: blur(.1vmin);
-  animation-duration: calc(.16s / var(--speed));
-}
-@keyframes flame {
-  from { transform: translateX(-50%) scaleY(.82) scaleX(1.05); opacity: .85; }
-  to   { transform: translateX(-50%) scaleY(1.12) scaleX(.92); opacity: 1; }
-}
-/* Soft glowing trail behind the rocket */
+/* Soft engine glow from the lower-left exhaust */
 .rocket__trail {
-  position: absolute; right: 50%; bottom: -1vmin; width: 26vmin; height: 2.4vmin;
-  translate: 50% 0; transform: translateX(40%);
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--glow) 45%, transparent));
-  filter: blur(1vmin); border-radius: 50%; opacity: .5;
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(42% 42% at 33% 70%, color-mix(in srgb, var(--glow) 48%, transparent), transparent 70%);
+  filter: blur(1.2vmin); opacity: .55;
 }
 
 /* =================================================================
@@ -416,7 +392,7 @@ html:not([data-nightclock="1"]) .night__clock { display: none; }
    ACCESSIBILITY: honour reduced-motion (e.g. a kiosk set this way)
    ================================================================= */
 @media (prefers-reduced-motion: reduce) {
-  .screen, .scene__image, .blob, .rocket, .rocket__bob, .rocket__flame,
+  .screen, .scene__image, .blob, .rocket, .rocket__bob,
   .scene__beams, .scene__grid, .brand, .clock, .night__clock {
     animation-duration: .001s !important; animation-iteration-count: 1 !important;
   }
