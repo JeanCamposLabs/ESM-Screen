@@ -307,6 +307,54 @@
     setTimeout(() => h.classList.remove("is-show"), 9000);
   }
 
+  /* ---------- Keep the display awake (always-on TV) ---------- */
+  let wakeLock = null;
+  async function requestWakeLock() {
+    try {
+      if ("wakeLock" in navigator) {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener?.("release", () => { wakeLock = null; });
+      }
+    } catch { /* denied or unsupported — harmless on a TV browser */ }
+  }
+
+  /* ---------- Auto-refresh on a new release ----------
+     Poll version.json; when the deployed version differs from the one this page
+     booted with, fade out and reload to pick up the new build. No build step
+     needed — the deploy workflow stamps the commit into version.json, so any
+     push to main reaches every screen. Cache-busted + no-store = picked up fast. */
+  const VERSION_URL = "version.json";
+  const VERSION_POLL_MS = 60000;
+  let bootVersion = null, reloading = false;
+
+  async function fetchVersion() {
+    try {
+      const res = await fetch(`${VERSION_URL}?t=${Date.now()}`, { cache: "no-store" });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data && data.version != null ? String(data.version) : null;
+    } catch { return null; }
+  }
+  async function checkVersion() {
+    const v = await fetchVersion();
+    if (v == null) return;                  // missing file or network blip — ignore
+    if (bootVersion == null) { bootVersion = v; return; }   // establish baseline
+    if (v !== bootVersion) reloadForUpdate();
+  }
+  function reloadForUpdate() {
+    if (reloading) return;
+    reloading = true;
+    document.body.classList.add("is-updating");   // brief fade-out (see CSS)
+    setTimeout(() => location.reload(), 650);
+  }
+
+  /* ---------- Re-sync when the device wakes or reconnects ---------- */
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) return;
+    tick(); applySchedule(); checkVersion(); requestWakeLock();
+  });
+  addEventListener("online", checkVersion);
+
   /* ---------- Boot ---------- */
   buildPanel();
   apply();
@@ -316,6 +364,9 @@
   addEventListener("resize", debounce(sizeCanvas, 250));
   rafId = requestAnimationFrame(frame);
   maybeHint();
+  requestWakeLock();
+  checkVersion();
+  setInterval(checkVersion, VERSION_POLL_MS);
 
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 })();
