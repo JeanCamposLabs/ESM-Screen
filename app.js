@@ -72,7 +72,8 @@
     root.dataset.nightclock = state.nightClock ? "1" : "0";
     root.style.setProperty("--speed", String(state.speed));
 
-    $("brand").style.display = state.logo ? "" : "none";
+    $("brand").style.display = "none";                  // superseded by the floating disc
+    $("disc").style.display = state.logo ? "" : "none";
     $("rocketLane").style.display = state.rocket ? "" : "none";
     $("clock").hidden = !state.clock;
     $("particles").style.display = state.particles ? "" : "none";
