@@ -26,3 +26,8 @@ it reads on the dark scene.
   even smaller. Keep each file under ~6 MB if you can.
 - **Composition:** leave the **top-left** calm for the logo and keep the
   **middle band** uncluttered so the rocket reads as it flies across.
+
+### Credits
+- `bg-premium.jpg` — photo by *A Chosen Soul* on Unsplash
+  (https://unsplash.com/photos/mqXBszOu2Wc), free **Unsplash License**
+  (commercial use OK, no attribution required). 3840×2160.

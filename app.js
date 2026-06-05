@@ -368,31 +368,35 @@
   const prefersReduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const rand = (a, b) => Math.random() * (b - a) + a;
 
+  // The icon rests pointing up-right (+45° above "east"); aim that along travel.
+  const NOSE_OFFSET = 45;
   function flyRocket() {
     if (!rocketEl || !rocketEl.animate || prefersReduced) return;
     if (!state.rocket || screen.classList.contains("is-night")) {
       setTimeout(flyRocket, 4000);            // not now — check back shortly
       return;
     }
-    let from, to, r0, r1;
-    if (Math.random() < 0.62) {
+    let from, to;
+    if (Math.random() < 0.6) {
       // enter from the left at a random height, cruise up and off the right
-      const y = rand(12, 74);
-      from = [rand(-22, -14), y]; to = [122, y - rand(20, 52)];
-      r0 = rand(-8, 2); r1 = rand(2, 12);
+      const y = rand(14, 72);
+      from = [rand(-20, -14), y]; to = [122, y - rand(16, 48)];
     } else {
-      // rise from below in a random column, drift up-right and off the top
-      const x = rand(6, 58);
-      from = [x, rand(106, 120)]; to = [x + rand(18, 56), rand(-40, -24)];
-      r0 = rand(-20, -8); r1 = rand(-10, 0);
+      // rise from below in a random column, drift up and off the top
+      const x = rand(8, 58);
+      from = [x, rand(108, 122)]; to = [x + rand(20, 60), rand(-42, -26)];
     }
+    // Point the nose along the real on-screen direction of travel (tip-first).
+    const dxPx = (to[0] - from[0]) * innerWidth / 100;
+    const dyPx = (to[1] - from[1]) * innerHeight / 100;
+    const deg = Math.atan2(dyPx, dxPx) * 180 / Math.PI + NOSE_OFFSET;
     const dur = rand(22, 34) / (state.speed || 1) * 1000;
     rocketEl.animate(
       [
-        { transform: `translate(${from[0]}vw, ${from[1]}vh) rotate(${r0}deg)`, opacity: 0 },
+        { transform: `translate(${from[0]}vw, ${from[1]}vh) rotate(${deg}deg)`, opacity: 0 },
         { opacity: 1, offset: 0.12 },
         { opacity: 1, offset: 0.88 },
-        { transform: `translate(${to[0]}vw, ${to[1]}vh) rotate(${r1}deg)`, opacity: 0 },
+        { transform: `translate(${to[0]}vw, ${to[1]}vh) rotate(${deg}deg)`, opacity: 0 },
       ],
       { duration: dur, easing: "cubic-bezier(.45,.05,.55,.95)" }
     ).onfinish = () => setTimeout(flyRocket, rand(1500, 7000));
