@@ -169,17 +169,17 @@
     return getComputedStyle(root).getPropertyValue("--accent").trim() || "#ff7a18";
   }
   function sizeCanvas() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.floor(innerWidth * dpr);
-    canvas.height = Math.floor(innerHeight * dpr);
+    const scale = 0.6;                      // render motes below native res — big TV perf win
+    canvas.width = Math.floor(innerWidth * scale);
+    canvas.height = Math.floor(innerHeight * scale);
     canvas.style.width = innerWidth + "px";
     canvas.style.height = innerHeight + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
     seed();
   }
   function seed() {
     // denser + sized relative to the panel so motes read on big screens
-    const target = Math.min(120, Math.round((innerWidth * innerHeight) / 24000));
+    const target = Math.min(70, Math.round((innerWidth * innerHeight) / 36000));
     const base = Math.max(1.3, Math.min(innerWidth, innerHeight) / 430);
     particles = Array.from({ length: target }, () => ({
       x: Math.random() * innerWidth,
@@ -201,7 +201,6 @@
     ctx.clearRect(0, 0, innerWidth, innerHeight);
     const col = accentColor();
     const spd = state.speed;
-    ctx.shadowColor = col;                  // soft glow so motes pop on a big panel
     for (const p of particles) {
       p.x += p.sx * dt * spd; p.y += p.sy * dt * spd; p.tw += 0.03 * dt;
       if (p.y < -6) { p.y = innerHeight + 6; p.x = Math.random() * innerWidth; }
@@ -209,10 +208,8 @@
       const flicker = (Math.sin(p.tw) * 0.3 + 0.7);
       ctx.globalAlpha = p.a * flicker;
       ctx.fillStyle = col;
-      ctx.shadowBlur = p.r * 2.2;
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
     }
-    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
   }
 
