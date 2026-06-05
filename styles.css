@@ -335,6 +335,9 @@ html[data-style="minimal"] .scene__vignette {
 }
 .weather__city { margin-top: .8vmin; font-size: 2.2vmin; font-weight: 600; letter-spacing: .02em; }
 .weather__desc { font-size: 1.9vmin; color: var(--text-dim); font-weight: 300; }
+.weather__fc { display: flex; gap: 2vmin; margin-top: 1.2vmin; font-size: 1.7vmin; color: var(--text-dim); }
+.wx-day b { font-weight: 600; color: var(--text); margin-right: .4vmin; }
+.wx-day i { font-style: normal; opacity: .6; }
 
 /* =================================================================
    NIGHT / IDLE MODE

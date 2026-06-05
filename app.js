@@ -488,8 +488,8 @@
 
   /* ---------- Weather: Maastricht via Open-Meteo (free, no key) ---------- */
   const WX_URL = "https://api.open-meteo.com/v1/forecast?latitude=50.8514&longitude=5.6909" +
-    "&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min" +
-    "&timezone=auto&forecast_days=1";
+    "&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min" +
+    "&timezone=auto&forecast_days=3";
   function wxInfo(code) {
     const m = {
       0:["☀️","Clear"], 1:["🌤️","Mainly clear"], 2:["⛅","Partly cloudy"], 3:["☁️","Overcast"],
@@ -511,12 +511,17 @@
       const r = await fetch(WX_URL, { cache: "no-store" });
       if (!r.ok) return;
       const d = await r.json();
+      const day = d.daily;
       const [icon, desc] = wxInfo(d.current.weather_code);
       $("wxIcon").textContent = icon;
       $("wxTemp").textContent = Math.round(d.current.temperature_2m) + "°";
-      const hi = Math.round(d.daily.temperature_2m_max[0]);
-      const lo = Math.round(d.daily.temperature_2m_min[0]);
-      $("wxDesc").textContent = `${desc} · ${hi}° / ${lo}°`;
+      $("wxDesc").textContent = `${desc} · ${Math.round(day.temperature_2m_max[0])}° / ${Math.round(day.temperature_2m_min[0])}°`;
+      // small forecast: tomorrow + day after
+      $("wxForecast").innerHTML = [1, 2].map((i) => {
+        const [ic] = wxInfo(day.weather_code[i]);
+        const dn = new Date(day.time[i]).toLocaleDateString(undefined, { weekday: "short" });
+        return `<span class="wx-day"><b>${dn}</b> ${ic} ${Math.round(day.temperature_2m_max[i])}°<i>/${Math.round(day.temperature_2m_min[i])}°</i></span>`;
+      }).join("");
     } catch {}
   }
 
