@@ -83,7 +83,7 @@
     $("brandTag").style.display = state.tag ? "" : "none";
     document.title = state.name || "Ambient Screen";
 
-    loadSceneImage(state.style);
+    if (!slidesActive) loadSceneImage(state.style);   // gallery, when present, owns the bg
     syncPanel();
     applySchedule();
   }
@@ -175,14 +175,16 @@
     seed();
   }
   function seed() {
-    const target = Math.min(70, Math.round((innerWidth * innerHeight) / 34000));
+    // denser + sized relative to the panel so motes read on big screens
+    const target = Math.min(120, Math.round((innerWidth * innerHeight) / 24000));
+    const base = Math.max(1.3, Math.min(innerWidth, innerHeight) / 430);
     particles = Array.from({ length: target }, () => ({
       x: Math.random() * innerWidth,
       y: Math.random() * innerHeight,
-      r: Math.random() * 2.2 + 0.4,
+      r: base * (Math.random() * 1.8 + 0.8),
       sx: (Math.random() - 0.5) * 0.12,
       sy: -(Math.random() * 0.22 + 0.05),
-      a: Math.random() * 0.5 + 0.15,
+      a: Math.random() * 0.5 + 0.35,
       tw: Math.random() * Math.PI * 2,
     }));
   }
@@ -196,6 +198,7 @@
     ctx.clearRect(0, 0, innerWidth, innerHeight);
     const col = accentColor();
     const spd = state.speed;
+    ctx.shadowColor = col;                  // soft glow so motes pop on a big panel
     for (const p of particles) {
       p.x += p.sx * dt * spd; p.y += p.sy * dt * spd; p.tw += 0.03 * dt;
       if (p.y < -6) { p.y = innerHeight + 6; p.x = Math.random() * innerWidth; }
@@ -203,8 +206,10 @@
       const flicker = (Math.sin(p.tw) * 0.3 + 0.7);
       ctx.globalAlpha = p.a * flicker;
       ctx.fillStyle = col;
+      ctx.shadowBlur = p.r * 2.2;
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
     }
+    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
   }
 
@@ -403,6 +408,47 @@
     ).onfinish = () => setTimeout(flyRocket, rand(1500, 7000));
   }
 
+  /* ---------- Background gallery: cross-fading slideshow + slow pan ----------
+     Reads assets/backgrounds.json (a list of image URLs, auto-generated on
+     deploy from assets/slides/). Two layers cross-fade; each slide gets its
+     own slow Ken-Burns drift so the image keeps moving. */
+  const SLIDE_MS = 24000;
+  const slideLayers = [$("sceneImage"), $("sceneImageB")];
+  let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
+
+  function panLayer(el) {
+    const z0 = 1.05 + Math.random() * 0.05, z1 = z0 + 0.08 + Math.random() * 0.06;
+    const x = (Math.random() * 2 - 1) * 2.4, y = (Math.random() * 2 - 1) * 2.4;
+    el.animate(
+      [{ transform: `scale(${z0}) translate(${-x}%, ${-y}%)` },
+       { transform: `scale(${z1}) translate(${x}%, ${y}%)` }],
+      { duration: SLIDE_MS + 2000, easing: "linear", fill: "both" }
+    );
+  }
+  function showSlide(i) {
+    const el = slideLayers[slideFront ^ 1];            // the hidden layer
+    el.style.backgroundImage = `url("${slides[i]}")`;
+    panLayer(el);
+    el.classList.add("is-on");
+    slideLayers[slideFront].classList.remove("is-on");
+    slideFront ^= 1; slideIdx = i;
+  }
+  async function initSlides() {
+    let list = [];
+    try {
+      const r = await fetch(`assets/backgrounds.json?t=${Date.now()}`, { cache: "no-store" });
+      if (r.ok) { const d = await r.json(); list = Array.isArray(d) ? d : (d.images || []); }
+    } catch {}
+    list = (list || []).filter(Boolean);
+    if (!list.length) return;                          // no gallery -> per-style fallback
+    slides = list; slidesActive = true; slideFront = 0; slideIdx = 0;
+    const first = slideLayers[0];
+    first.style.backgroundImage = `url("${slides[0]}")`;
+    panLayer(first); first.classList.add("is-on");
+    slideLayers[1].classList.remove("is-on");
+    if (slides.length > 1) setInterval(() => showSlide((slideIdx + 1) % slides.length), SLIDE_MS);
+  }
+
   /* ---------- Boot ---------- */
   buildPanel();
   apply();
@@ -416,6 +462,7 @@
   checkVersion();
   setInterval(checkVersion, VERSION_POLL_MS);
   flyRocket();
+  initSlides();
 
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 })();

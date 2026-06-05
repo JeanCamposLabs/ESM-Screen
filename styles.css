@@ -88,11 +88,10 @@ body.is-updating .screen { animation: none; opacity: 0; transition: opacity .6s 
    gentle on OLED panels (no static pixels). */
 .scene__image {
   background-size: cover; background-position: center;
-  opacity: 0; transition: opacity 1.2s ease;
-  animation: kenburns calc(48s / var(--speed)) ease-in-out infinite alternate;
-  will-change: transform;
+  opacity: 0; transition: opacity 1.6s ease;
+  will-change: transform, opacity;   /* slow pan is driven per-slide in app.js */
 }
-.scene__image.is-ready { opacity: 1; }
+.scene__image.is-ready, .scene__image.is-on { opacity: 1; }
 @keyframes kenburns {
   0%   { transform: scale(1.06) translate(-1.2%, -0.8%); }
   100% { transform: scale(1.16) translate(1.4%, 1%); }
