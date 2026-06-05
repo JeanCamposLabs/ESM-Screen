@@ -423,12 +423,12 @@
   function panLayer(el) {
     el.getAnimations().forEach((a) => a.cancel());
     if (prefersReduced) { el.style.transform = "scale(1.08)"; return; }
-    // continuous, gentle Ken-Burns drift that loops forever (always moving)
-    const x = (Math.random() * 2 - 1) * 2.4, y = (Math.random() * 2 - 1) * 2.4;
+    // continuous, slow Ken-Burns drift that loops forever (clear sensation of movement)
+    const x = (Math.random() * 2 - 1) * 4, y = (Math.random() * 2 - 1) * 4;
     el.animate(
-      [{ transform: `scale(1.04) translate(${-x}%, ${-y}%)` },
-       { transform: `scale(1.12) translate(${x}%, ${y}%)` }],
-      { duration: 42000 / (state.speed || 1), easing: "ease-in-out",
+      [{ transform: `scale(1.10) translate(${-x}%, ${-y}%)` },
+       { transform: `scale(1.26) translate(${x}%, ${y}%)` }],
+      { duration: 38000 / (state.speed || 1), easing: "ease-in-out",
         iterations: Infinity, direction: "alternate" }
     );
   }
