@@ -28,7 +28,7 @@ jobs:
       - name: Assemble site (+ stamp version for auto-refresh)
         run: |
           mkdir -p _site/assets
-          cp index.html styles.css app.js _site/
+          cp index.html styles.css app.js config.json _site/
           cp -r assets/. _site/assets/ 2>/dev/null || true
           python3 - <<'PY'
           import os, json

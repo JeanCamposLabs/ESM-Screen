@@ -247,6 +247,10 @@
 
     $("btnFull").onclick  = toggleFullscreen;
     $("btnReset").onclick = () => { state = { ...DEFAULTS }; commit(); flash("Reset to defaults"); };
+    $("btnSync").onclick = () => {
+      try { navigator.clipboard.writeText(JSON.stringify(configForExport(), null, 2)); flash("Config copied — paste into config.json on GitHub"); }
+      catch { flash("Clipboard unavailable here"); }
+    };
     $("panelClose").onclick = closePanel;
     $("panelScrim").onclick = closePanel;
   }
@@ -365,7 +369,7 @@
   /* ---------- Re-sync when the device wakes or reconnects ---------- */
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) return;
-    tick(); applySchedule(); checkVersion(); requestWakeLock(); fetchWeather();
+    tick(); applySchedule(); checkVersion(); requestWakeLock(); fetchWeather(); syncConfig();
   });
   addEventListener("online", checkVersion);
 
@@ -522,6 +526,40 @@
     } catch {}
   }
 
+  /* ---------- Central sync: every screen follows config.json ----------
+     Change config.json once and all screens adopt it within a minute. Local
+     panel tweaks are left alone until the config actually changes. */
+  const CONFIG_URL = "config.json";
+  let cfgRev = null;
+  function applyBg(name) {
+    if (!slidesActive || !slides.length || !name) return;
+    const i = slides.findIndex((s) => s === name || s.includes(name));
+    if (i >= 0) { showSlide(i); syncBgGrid(); }
+  }
+  async function syncConfig() {
+    try {
+      const r = await fetch(`${CONFIG_URL}?t=${Date.now()}`, { cache: "no-store" });
+      if (!r.ok) return;
+      const cfg = await r.json();
+      const rev = JSON.stringify(cfg);
+      if (rev === cfgRev) return;            // unchanged -> leave local tweaks alone
+      cfgRev = rev;
+      Object.assign(state, cfg);             // the shared config wins
+      save();
+      apply();
+      applyBg(cfg.bg);
+    } catch {}
+  }
+  // Current settings as a config others can adopt (the admin "copy" button).
+  function configForExport() {
+    const bg = String(state.bg || "").split("/").pop().replace(/\.\w+$/, "");
+    return {
+      style: state.style, palette: state.palette, bg,
+      logo: state.logo, rocket: state.rocket, clock: state.clock,
+      particles: state.particles, weather: state.weather, speed: state.speed,
+    };
+  }
+
   /* ---------- Boot ---------- */
   buildPanel();
   apply();
@@ -538,6 +576,8 @@
   initSlides();
   fetchWeather();
   setInterval(fetchWeather, 30 * 60 * 1000);
+  syncConfig();
+  setInterval(syncConfig, 60000);
 
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 })();

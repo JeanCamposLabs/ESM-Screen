@@ -1,0 +1,11 @@
+{
+  "style": "premium",
+  "palette": "orange",
+  "bg": "06-glow",
+  "logo": true,
+  "rocket": true,
+  "clock": true,
+  "particles": true,
+  "weather": true,
+  "speed": 1
+}

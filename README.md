@@ -157,6 +157,36 @@ re-requests it after the device wakes.
 
 ---
 
+## Running on the office TVs (smooth playback + one control for all)
+
+A smart TV's **built-in browser** (e.g. the Philips Titan OS browser) is the usual
+cause of lag — the panel is fine, the TV's web engine isn't. For smooth 24/7
+playback, run the page through a small HDMI player:
+
+- **Easiest — Amazon Fire TV Stick 4K + Fully Kiosk Browser:** set the Start URL
+  to `https://jeancamposlabs.github.io/ESM-Screen/`, enable *Start on boot* and
+  *Keep screen on*, and hide the address/nav bars. Fully Kiosk also has a remote
+  dashboard to control every device (reload, repoint, screen on/off).
+- **Most robust — Raspberry Pi 4/5 + Chromium kiosk:** autostart
+  `chromium-browser --kiosk --noerrdialogs https://jeancamposlabs.github.io/ESM-Screen/`
+  (or a signage image like FullPageOS); manage the fleet over SSH.
+
+Pin a fixed look on one device via the URL, e.g. `…/?style=premium&bg=teal`.
+
+### Central control — all screens together
+Every screen polls **`config.json`** once a minute and adopts it, so you change
+the look in ONE place and all TVs follow within ~a minute:
+
+1. Open settings on any device (triple-click the top-right corner, or add `?admin`),
+   set it how you want, and click **“Copy config for all screens.”**
+2. Paste that JSON into **`config.json`** on GitHub and commit (or send it over).
+3. Every screen updates on its next check.
+
+Fields: `style`, `palette`, `bg` (slide name, e.g. `06-glow`), `logo`, `rocket`,
+`clock`, `particles`, `weather`, `speed`.
+
+---
+
 ## Local preview
 
 ```bash
