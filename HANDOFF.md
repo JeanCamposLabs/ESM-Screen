@@ -5,6 +5,17 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 
 ---
 
+## Recent fixes (latest session)
+- **Background photo not showing on the TV = FIXED.** The Philips browser (older Chromium)
+  supports `el.animate()` but not `el.getAnimations()`; `panLayer` called it unguarded and
+  threw *before* the image layer got `is-on`, so the photo never appeared (gradient fallback)
+  while the rocket still animated. Now guarded, and the image is revealed before the pan runs.
+- **Per-deploy cache-busting** of `app.js`/`styles.css` (`?v=<sha>` injected by the workflow)
+  so TV browsers can't serve a stale copy.
+- **Slideshow hardened:** `initSlides` retries the manifest 3× and falls back to an embedded
+  slide list — it never gets stuck on the bare gradient.
+- Defaults: **purple** bg (`10-purple`), clock + weather on, slow looping background pan.
+
 ## How it's built & deployed
 - Files: `index.html`, `styles.css`, `app.js`, `config.json`, `version.json`, `assets/`.
 - **Deploy:** `.github/workflows/deploy-pages.yml` runs on every push to `main` → assembles `_site`,
