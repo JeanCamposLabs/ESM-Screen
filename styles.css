@@ -259,23 +259,22 @@ html[data-style="minimal"] .scene__vignette {
 .disc {
   position: absolute; left: 50%; top: 47%; translate: -50% -50%;
   z-index: 6; width: 78vmin; height: 78vmin; pointer-events: none;
-  filter: drop-shadow(0 3.6vmin 4.4vmin rgba(0,0,0,.6));   /* lifted off the image */
-  animation: discFloat calc(9s / var(--speed)) ease-in-out infinite;
+  filter: drop-shadow(0 3vmin 3.6vmin rgba(0,0,0,.55));   /* mounted on the wall (static) */
 }
 .disc__tube {
   position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
   display: grid; place-items: center;
   color: var(--accent);
-  /* glowing orange acrylic, like the real sign */
+  /* warm, real orange acrylic */
   background:
-    linear-gradient(125deg, rgba(255,255,255,.14) 0%, transparent 30%),
-    radial-gradient(60% 44% at 50% 18%, rgba(255,255,255,.16), transparent 60%),
-    radial-gradient(circle at 50% 46%,
-      color-mix(in srgb, var(--accent) 88%, #fff) 0%,
-      var(--accent) 55%,
-      color-mix(in srgb, var(--accent) 80%, #000) 100%);
-  border: .5vmin solid color-mix(in srgb, var(--accent) 55%, #000);
-  animation: discPulse calc(4.2s / var(--speed)) ease-in-out infinite;
+    linear-gradient(122deg, rgba(255,255,255,.10) 0%, transparent 34%),
+    radial-gradient(56% 40% at 50% 20%, rgba(255,255,255,.12), transparent 60%),
+    radial-gradient(circle at 50% 50%,
+      color-mix(in srgb, var(--accent) 92%, #fff) 0%,
+      var(--accent) 52%,
+      color-mix(in srgb, var(--accent) 80%, #3a1200) 100%);
+  border: .5vmin solid color-mix(in srgb, var(--accent) 55%, #1a0a00);
+  animation: discPulse calc(5s / var(--speed)) ease-in-out infinite;
 }
 .disc__ring {            /* bright neon tube near the edge */
   position: absolute; inset: 2vmin; border-radius: 50%;
@@ -285,25 +284,27 @@ html[data-style="minimal"] .scene__vignette {
               0 0 6vmin color-mix(in srgb, var(--accent) 60%, transparent),
               inset 0 0 1.4vmin color-mix(in srgb, #fff 70%, var(--accent));
 }
-.disc__face { display: flex; align-items: center; gap: 2.4vmin; padding: 0 6vmin; }
+.disc__pins { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.disc__pins circle { fill: rgba(255,255,255,.7); stroke: rgba(0,0,0,.25); stroke-width: .25; }
+.disc__face { display: flex; align-items: center; gap: 2.2vmin; padding: 0 6vmin; }
 .disc__rocket {
-  width: 14vmin; height: 14vmin; color: #fff; flex: none;
-  filter: drop-shadow(0 0 1vmin #fff)
-          drop-shadow(0 0 2.4vmin color-mix(in srgb, var(--accent) 80%, transparent));
+  width: 13vmin; height: 13vmin; color: #fff; flex: none;
+  filter: drop-shadow(0 0 .8vmin #fff)
+          drop-shadow(0 0 2.2vmin color-mix(in srgb, var(--accent) 80%, transparent));
 }
-.disc__word { display: flex; flex-direction: column; line-height: 1.02; }
+.disc__rocket path { fill: none; stroke: currentColor; stroke-width: 30; stroke-linejoin: round; stroke-linecap: round; }
+.disc__word { display: flex; flex-direction: column; line-height: 1.05; }
 .disc__word b {
-  font-family: "Sora", sans-serif; font-weight: 800; font-size: 6.2vmin; letter-spacing: -.01em;
+  font-family: "Fredoka", "Sora", sans-serif; font-weight: 600; font-size: 6.4vmin; letter-spacing: .005em;
   color: #fff;
-  text-shadow: 0 0 .7vmin #fff, 0 0 2.4vmin #fff,
+  text-shadow: 0 0 .6vmin #fff, 0 0 2.2vmin #fff,
                0 0 5vmin color-mix(in srgb, var(--accent) 70%, transparent);
 }
-@keyframes discFloat { 0%,100% { transform: translateY(0) rotate(-.5deg); } 50% { transform: translateY(-2vmin) rotate(.5deg); } }
 @keyframes discPulse {
-  0%,100% { box-shadow: 0 0 3vmin color-mix(in srgb, var(--accent) 70%, transparent),
-                        0 0 9vmin color-mix(in srgb, var(--accent) 42%, transparent); }
-  50%     { box-shadow: 0 0 5vmin color-mix(in srgb, var(--accent) 88%, transparent),
-                        0 0 14vmin color-mix(in srgb, var(--accent) 55%, transparent); }
+  0%,100% { box-shadow: 0 0 3vmin color-mix(in srgb, var(--accent) 65%, transparent),
+                        0 0 9vmin color-mix(in srgb, var(--accent) 38%, transparent); }
+  50%     { box-shadow: 0 0 4.4vmin color-mix(in srgb, var(--accent) 80%, transparent),
+                        0 0 13vmin color-mix(in srgb, var(--accent) 50%, transparent); }
 }
 
 /* =================================================================
