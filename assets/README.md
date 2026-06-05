@@ -27,7 +27,14 @@ it reads on the dark scene.
 - **Composition:** leave the **top-left** calm for the logo and keep the
   **middle band** uncluttered so the rocket reads as it flies across.
 
+### Background gallery (slideshow)
+Images in **`assets/slides/`** are cycled as a slow, cross-fading slideshow with
+a gentle Ken-Burns drift. To add more, just drop a **16:9** image in that folder
+and push — the deploy workflow lists every image into `backgrounds.json`
+automatically (no code change). Remove a file to drop it from the rotation.
+
 ### Credits
-- `bg-premium.jpg` — photo by *A Chosen Soul* on Unsplash
-  (https://unsplash.com/photos/mqXBszOu2Wc), free **Unsplash License**
-  (commercial use OK, no attribution required). 3840×2160.
+All slides are free **Unsplash License** (commercial use OK, no attribution
+required) or uploaded by us:
+- `01-liquid.jpg` — *A Chosen Soul* · `04-gold.jpg` — *Logan Voss* ·
+  `02-waves.jpg` / `03-bronze.jpg` — Unsplash · `05-mountains.png` — uploaded.
