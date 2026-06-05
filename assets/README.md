@@ -34,6 +34,6 @@ and push — the deploy workflow lists every image into `backgrounds.json`
 automatically (no code change). Remove a file to drop it from the rotation.
 
 ### Credits
-All slides are free **Unsplash License** (commercial use OK, no attribution required):
-`01-liquid` (A Chosen Soul), `02-waves`, `03-bronze`, `04-gold` (Logan Voss),
-`05-streaks`, `06-glow` (asi mong), `07-layers` — all from Unsplash.
+All slides are free **Unsplash License** (commercial use OK, no attribution required), from Unsplash:
+`01-liquid`, `02-waves`, `03-bronze`, `04-gold`, `05-streaks`, `06-glow`, `07-layers` (orange/amber)
+· `08-blue`, `09-teal`, `10-purple` (other colours).
