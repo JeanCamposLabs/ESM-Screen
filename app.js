@@ -169,7 +169,7 @@
     return getComputedStyle(root).getPropertyValue("--accent").trim() || "#ff7a18";
   }
   function sizeCanvas() {
-    const scale = 0.6;                      // render motes below native res — big TV perf win
+    const scale = 0.5;                      // render motes below native res — big TV perf win
     canvas.width = Math.floor(innerWidth * scale);
     canvas.height = Math.floor(innerHeight * scale);
     canvas.style.width = innerWidth + "px";
@@ -179,7 +179,7 @@
   }
   function seed() {
     // denser + sized relative to the panel so motes read on big screens
-    const target = Math.min(70, Math.round((innerWidth * innerHeight) / 36000));
+    const target = Math.min(50, Math.round((innerWidth * innerHeight) / 42000));
     const base = Math.max(1.3, Math.min(innerWidth, innerHeight) / 430);
     particles = Array.from({ length: target }, () => ({
       x: Math.random() * innerWidth,
@@ -193,7 +193,7 @@
   }
   function frame(t) {
     rafId = requestAnimationFrame(frame);
-    if (t - lastT < 33) return;            // ~30fps cap
+    if (t - lastT < 42) return;            // ~24fps cap (gentler on TV CPUs)
     const dt = Math.min((t - lastT) / 16.67, 2); lastT = t;
     if (!state.particles || screen.classList.contains("is-night")) {
       ctx.clearRect(0, 0, innerWidth, innerHeight); return;
@@ -424,10 +424,10 @@
     el.getAnimations().forEach((a) => a.cancel());
     if (prefersReduced) { el.style.transform = "scale(1.08)"; return; }
     // continuous, gentle Ken-Burns drift that loops forever (always moving)
-    const x = (Math.random() * 2 - 1) * 3, y = (Math.random() * 2 - 1) * 3;
+    const x = (Math.random() * 2 - 1) * 2.4, y = (Math.random() * 2 - 1) * 2.4;
     el.animate(
-      [{ transform: `scale(1.06) translate(${-x}%, ${-y}%)` },
-       { transform: `scale(1.18) translate(${x}%, ${y}%)` }],
+      [{ transform: `scale(1.04) translate(${-x}%, ${-y}%)` },
+       { transform: `scale(1.12) translate(${x}%, ${y}%)` }],
       { duration: 42000 / (state.speed || 1), easing: "ease-in-out",
         iterations: Infinity, direction: "alternate" }
     );
