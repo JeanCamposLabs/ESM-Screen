@@ -184,6 +184,12 @@ html[data-style="minimal"] .scene__vignette {
   background: radial-gradient(130% 120% at 50% 45%, transparent 65%, rgba(0,0,0,.4) 100%);
 }
 
+/* When a real photo background loads, let it lead: ease off the generated
+   scenery so the image reads cleanly (grain + vignette stay for depth). */
+.scene__image.is-ready ~ .scene__blobs { opacity: .3; }
+.scene__image.is-ready ~ .scene__beams,
+.scene__image.is-ready ~ .scene__grid  { opacity: .2; }
+
 /* =================================================================
    THE ROCKET
    ================================================================= */
