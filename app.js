@@ -37,7 +37,7 @@
     onTime: "07:00",
     offTime: "23:00",
     nightClock: true,
-    bg: "",
+    bg: "10-purple",
     weather: true,
   };
   const KEY = "esm-screen.v1";
@@ -342,7 +342,7 @@
      needed — the deploy workflow stamps the commit into version.json, so any
      push to main reaches every screen. Cache-busted + no-store = picked up fast. */
   const VERSION_URL = "version.json";
-  const VERSION_POLL_MS = 60000;
+  const VERSION_POLL_MS = 30000;
   let bootVersion = null, reloading = false;
 
   async function fetchVersion() {
@@ -577,7 +577,7 @@
   fetchWeather();
   setInterval(fetchWeather, 30 * 60 * 1000);
   syncConfig();
-  setInterval(syncConfig, 60000);
+  setInterval(syncConfig, 30000);
 
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 })();
