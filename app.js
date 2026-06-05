@@ -421,24 +421,27 @@
   let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
 
   function panLayer(el) {
-    el.getAnimations().forEach((a) => a.cancel());
-    if (prefersReduced) { el.style.transform = "scale(1.08)"; return; }
-    // continuous, slow Ken-Burns drift that loops forever (clear sensation of movement)
+    // Older TV browsers (older Chromium) support el.animate() but NOT el.getAnimations()
+    // — guard everything so a missing API can never stop the image from showing.
+    try { if (el.getAnimations) el.getAnimations().forEach((a) => a.cancel()); } catch {}
+    if (prefersReduced || typeof el.animate !== "function") { el.style.transform = "scale(1.12)"; return; }
     const x = (Math.random() * 2 - 1) * 4, y = (Math.random() * 2 - 1) * 4;
-    el.animate(
-      [{ transform: `scale(1.10) translate(${-x}%, ${-y}%)` },
-       { transform: `scale(1.26) translate(${x}%, ${y}%)` }],
-      { duration: 38000 / (state.speed || 1), easing: "ease-in-out",
-        iterations: Infinity, direction: "alternate" }
-    );
+    try {
+      el.animate(
+        [{ transform: `scale(1.10) translate(${-x}%, ${-y}%)` },
+         { transform: `scale(1.26) translate(${x}%, ${y}%)` }],
+        { duration: 38000 / (state.speed || 1), easing: "ease-in-out",
+          iterations: Infinity, direction: "alternate" }
+      );
+    } catch { el.style.transform = "scale(1.12)"; }
   }
   function showSlide(i) {
     const el = slideLayers[slideFront ^ 1];            // the hidden layer
     el.style.backgroundImage = `url("${slides[i]}")`;
-    panLayer(el);
-    el.classList.add("is-on");
+    el.classList.add("is-on");                          // reveal first — never blocked by the pan
     slideLayers[slideFront].classList.remove("is-on");
     slideFront ^= 1; slideIdx = i;
+    panLayer(el);
   }
   function setBg(i, persist) {
     if (!slides.length) return;
@@ -482,8 +485,9 @@
     slideIdx = ((start % slides.length) + slides.length) % slides.length;
     const first = slideLayers[0];
     first.style.backgroundImage = `url("${slides[slideIdx]}")`;
-    panLayer(first); first.classList.add("is-on");
+    first.classList.add("is-on");                       // reveal first — never blocked by the pan
     slideLayers[1].classList.remove("is-on");
+    panLayer(first);
     buildBgGrid();
   }
 
