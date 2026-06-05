@@ -185,9 +185,12 @@ html[data-style="minimal"] .scene__vignette {
 
 /* When a real photo background loads, let it lead: ease off the generated
    scenery so the image reads cleanly (grain + vignette stay for depth). */
-.scene__image.is-ready ~ .scene__blobs { opacity: .3; }
-.scene__image.is-ready ~ .scene__beams,
-.scene__image.is-ready ~ .scene__grid  { opacity: .2; }
+/* A photo is the background now — hide the heavy generated/blurred layers over
+   it (big perf win on TV GPUs, and cleaner). */
+.scene__image.is-on ~ .scene__blobs,  .scene__image.is-ready ~ .scene__blobs,
+.scene__image.is-on ~ .scene__beams,  .scene__image.is-ready ~ .scene__beams,
+.scene__image.is-on ~ .scene__grid,   .scene__image.is-ready ~ .scene__grid,
+.scene__image.is-on ~ .scene__grain,  .scene__image.is-ready ~ .scene__grain { display: none; }
 
 /* =================================================================
    THE ROCKET
@@ -274,7 +277,8 @@ html[data-style="minimal"] .scene__vignette {
       var(--accent) 52%,
       color-mix(in srgb, var(--accent) 80%, #3a1200) 100%);
   border: .5vmin solid color-mix(in srgb, var(--accent) 55%, #1a0a00);
-  animation: discPulse calc(5s / var(--speed)) ease-in-out infinite;
+  box-shadow: 0 0 3.4vmin color-mix(in srgb, var(--accent) 72%, transparent),
+              0 0 11vmin color-mix(in srgb, var(--accent) 45%, transparent);  /* static glow (perf) */
 }
 .disc__ring {            /* bright neon tube near the edge */
   position: absolute; inset: 2vmin; border-radius: 50%;
