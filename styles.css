@@ -255,6 +255,58 @@ html[data-style="minimal"] .scene__vignette {
 .brand__logo-img + .brand__tag { margin-top: 2.2vmin; }
 
 /* =================================================================
+   FLOATING BRAND DISC  (neon, colour-cycling, lifted off the scene)
+   ================================================================= */
+.disc {
+  position: absolute; left: 50%; top: 42%; translate: -50% -50%;
+  z-index: 6; width: 42vmin; height: 42vmin; pointer-events: none;
+  filter: drop-shadow(0 2.6vmin 3vmin rgba(0,0,0,.55));   /* lifted off the image */
+  animation: discFloat calc(8s / var(--speed)) ease-in-out infinite,
+             discHue 24s linear infinite;
+}
+.disc__tube {
+  position: absolute; inset: 0; border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--accent);
+  background: radial-gradient(circle at 50% 40%,
+    color-mix(in srgb, var(--accent) 16%, rgba(8,6,4,.42)), rgba(6,5,4,.6) 72%);
+  border: .45vmin solid color-mix(in srgb, var(--accent) 88%, #fff);
+  animation: discPulse calc(3.8s / var(--speed)) ease-in-out infinite;
+}
+.disc__ring {
+  position: absolute; inset: 1.6vmin; border-radius: 50%;
+  border: .2vmin solid color-mix(in srgb, var(--accent) 70%, transparent);
+  box-shadow: 0 0 1vmin color-mix(in srgb, var(--accent) 60%, transparent),
+              inset 0 0 1vmin color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.disc__face { display: flex; align-items: center; gap: 1.4vmin; padding: 0 3vmin; }
+.disc__rocket {
+  width: 8vmin; height: 8vmin; color: #fff; flex: none;
+  filter: drop-shadow(0 0 .9vmin color-mix(in srgb, var(--accent) 80%, transparent));
+}
+.disc__word { display: flex; flex-direction: column; line-height: 1.0; }
+.disc__word b {
+  font-family: "Sora", sans-serif; font-weight: 800; font-size: 3.6vmin; letter-spacing: -.01em;
+  color: #fff;
+  text-shadow: 0 0 .5vmin #fff,
+               0 0 1.6vmin var(--accent),
+               0 0 3.2vmin color-mix(in srgb, var(--accent) 70%, transparent);
+}
+@keyframes discFloat { 0%,100% { transform: translateY(0) rotate(-.6deg); } 50% { transform: translateY(-1.7vmin) rotate(.6deg); } }
+@keyframes discHue {
+  from { filter: drop-shadow(0 2.6vmin 3vmin rgba(0,0,0,.55)) hue-rotate(0deg); }
+  to   { filter: drop-shadow(0 2.6vmin 3vmin rgba(0,0,0,.55)) hue-rotate(360deg); }
+}
+@keyframes discPulse {
+  0%,100% { box-shadow: 0 0 1.2vmin color-mix(in srgb, var(--accent) 65%, transparent),
+                        0 0 3.4vmin color-mix(in srgb, var(--accent) 38%, transparent),
+                        inset 0 0 1.8vmin color-mix(in srgb, var(--accent) 30%, transparent); }
+  50%     { box-shadow: 0 0 2vmin color-mix(in srgb, var(--accent) 85%, transparent),
+                        0 0 6vmin color-mix(in srgb, var(--accent) 52%, transparent),
+                        inset 0 0 2.6vmin color-mix(in srgb, var(--accent) 40%, transparent); }
+}
+
+/* =================================================================
    CLOCK
    ================================================================= */
 .clock {
@@ -282,6 +334,8 @@ html[data-style="minimal"] .scene__vignette {
 .screen.is-night .scene__image,
 .screen.is-night .blob,
 .screen.is-night .rocket,
+.screen.is-night .disc,
+.screen.is-night .disc__tube,
 .screen.is-night .scene__beams,
 .screen.is-night .scene__grid { animation-play-state: paused; }
 .night__clock {
@@ -390,7 +444,7 @@ html:not([data-nightclock="1"]) .night__clock { display: none; }
    ACCESSIBILITY: honour reduced-motion (e.g. a kiosk set this way)
    ================================================================= */
 @media (prefers-reduced-motion: reduce) {
-  .screen, .scene__image, .blob, .rocket, .rocket__bob,
+  .screen, .scene__image, .blob, .rocket, .rocket__bob, .disc, .disc__tube,
   .scene__beams, .scene__grid, .brand, .clock, .night__clock {
     animation-duration: .001s !important; animation-iteration-count: 1 !important;
   }
