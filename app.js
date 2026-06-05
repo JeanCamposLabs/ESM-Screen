@@ -37,6 +37,7 @@
     onTime: "07:00",
     offTime: "23:00",
     nightClock: true,
+    bg: "",
   };
   const KEY = "esm-screen.v1";
 
@@ -238,8 +239,6 @@
     $("tgRocket").onchange  = (e) => { state.rocket = e.target.checked; commit(); };
     $("tgClock").onchange   = (e) => { state.clock = e.target.checked; commit(); };
     $("tgParticles").onchange = (e) => { state.particles = e.target.checked; commit(); };
-    $("inName").oninput     = (e) => { state.name = e.target.value; commit(); };
-    $("inTag").oninput      = (e) => { state.tag = e.target.value; commit(); };
     $("inSpeed").oninput    = (e) => { state.speed = parseFloat(e.target.value); commit(); };
     $("tgSchedule").onchange= (e) => { state.schedule = e.target.checked; commit(); };
     $("inOn").onchange      = (e) => { state.onTime = e.target.value; commit(); };
@@ -261,13 +260,12 @@
     $("tgRocket").checked = state.rocket;
     $("tgClock").checked = state.clock;
     $("tgParticles").checked = state.particles;
-    $("inName").value = state.name;
-    $("inTag").value = state.tag;
     $("inSpeed").value = state.speed;
     $("tgSchedule").checked = state.schedule;
     $("inOn").value = state.onTime;
     $("inOff").value = state.offTime;
     $("tgNightClock").checked = state.nightClock;
+    syncBgGrid();
   }
 
   function commit() { save(); apply(); }
@@ -301,7 +299,7 @@
     if (k === "c" || k === "s") togglePanel();
     else if (k === "escape") closePanel();
     else if (k === "f") toggleFullscreen();
-    else if (k === "n" && slidesActive) showSlide((slideIdx + 1) % slides.length);  // manual next bg
+    else if (k === "n" && slidesActive) setBg(slideIdx + 1, true);   // manual next background
   });
   if (location.hash === "#admin" || new URLSearchParams(location.search).has("admin")) {
     // open after first paint
@@ -434,6 +432,29 @@
     slideLayers[slideFront].classList.remove("is-on");
     slideFront ^= 1; slideIdx = i;
   }
+  function setBg(i, persist) {
+    if (!slides.length) return;
+    showSlide(((i % slides.length) + slides.length) % slides.length);
+    if (persist) { state.bg = slides[slideIdx]; save(); }
+    syncBgGrid();
+  }
+  function buildBgGrid() {
+    const g = $("bgGrid"); if (!g) return;
+    g.innerHTML = "";
+    slides.forEach((src, i) => {
+      const b = document.createElement("button");
+      b.className = "bg-opt"; b.dataset.i = i;
+      b.style.backgroundImage = `url("${src}")`;
+      b.title = src.split("/").pop();
+      b.onclick = () => setBg(i, true);
+      g.appendChild(b);
+    });
+    syncBgGrid();
+  }
+  function syncBgGrid() {
+    document.querySelectorAll("#bgGrid .bg-opt").forEach((b) =>
+      b.classList.toggle("is-active", Number(b.dataset.i) === slideIdx));
+  }
   async function initSlides() {
     let list = [];
     try {
@@ -443,16 +464,19 @@
     list = (list || []).filter(Boolean);
     if (!list.length) return;                          // no gallery -> per-style fallback
     slides = list; slidesActive = true; slideFront = 0;
-    // Pick one and hold it — the background does NOT change on its own.
-    // Pin a specific one with ?bg=<index|name>; otherwise random per load.
-    const bg = new URLSearchParams(location.search).get("bg");
-    if (bg != null && /^\d+$/.test(bg)) slideIdx = (parseInt(bg, 10) % slides.length + slides.length) % slides.length;
-    else if (bg != null) { const m = slides.findIndex((s) => s.includes(bg)); slideIdx = m >= 0 ? m : 0; }
-    else slideIdx = Math.floor(Math.random() * slides.length);
+    // Starting background; it never changes on its own. Priority:
+    //   ?bg=<index|name>  >  saved choice  >  first.
+    const bgQ = new URLSearchParams(location.search).get("bg");
+    let start = 0;
+    if (bgQ != null && /^\d+$/.test(bgQ)) start = parseInt(bgQ, 10);
+    else if (bgQ != null) { const m = slides.findIndex((s) => s.includes(bgQ)); if (m >= 0) start = m; }
+    else if (state.bg) { const m = slides.findIndex((s) => s === state.bg || s.includes(state.bg)); if (m >= 0) start = m; }
+    slideIdx = ((start % slides.length) + slides.length) % slides.length;
     const first = slideLayers[0];
     first.style.backgroundImage = `url("${slides[slideIdx]}")`;
     panLayer(first); first.classList.add("is-on");
     slideLayers[1].classList.remove("is-on");
+    buildBgGrid();
   }
 
   /* ---------- Boot ---------- */

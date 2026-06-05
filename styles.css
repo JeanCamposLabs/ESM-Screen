@@ -259,52 +259,51 @@ html[data-style="minimal"] .scene__vignette {
 .disc {
   position: absolute; left: 50%; top: 47%; translate: -50% -50%;
   z-index: 6; width: 78vmin; height: 78vmin; pointer-events: none;
-  filter: drop-shadow(0 3.6vmin 4.4vmin rgba(0,0,0,.62));   /* lifted off the image */
-  animation: discFloat calc(9s / var(--speed)) ease-in-out infinite,
-             discHue 1800s linear infinite;                 /* full colour drift ≈ 30 min */
+  filter: drop-shadow(0 3.6vmin 4.4vmin rgba(0,0,0,.6));   /* lifted off the image */
+  animation: discFloat calc(9s / var(--speed)) ease-in-out infinite;
 }
 .disc__tube {
   position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
   display: grid; place-items: center;
   color: var(--accent);
-  /* solid, opaque face so it reads as a real lit object (not see-through) */
+  /* glowing orange acrylic, like the real sign */
   background:
-    radial-gradient(60% 40% at 50% 15%, rgba(255,255,255,.13), transparent 60%),
-    radial-gradient(circle at 50% 40%, #241d2b 0%, #110c17 52%, #060509 100%);
-  border: .6vmin solid color-mix(in srgb, var(--accent) 90%, #fff);
-  animation: discPulse calc(3.8s / var(--speed)) ease-in-out infinite;
+    linear-gradient(125deg, rgba(255,255,255,.14) 0%, transparent 30%),
+    radial-gradient(60% 44% at 50% 18%, rgba(255,255,255,.16), transparent 60%),
+    radial-gradient(circle at 50% 46%,
+      color-mix(in srgb, var(--accent) 88%, #fff) 0%,
+      var(--accent) 55%,
+      color-mix(in srgb, var(--accent) 80%, #000) 100%);
+  border: .5vmin solid color-mix(in srgb, var(--accent) 55%, #000);
+  animation: discPulse calc(4.2s / var(--speed)) ease-in-out infinite;
 }
-.disc__ring {
-  position: absolute; inset: 3vmin; border-radius: 50%;
-  border: .28vmin solid color-mix(in srgb, var(--accent) 70%, transparent);
-  box-shadow: 0 0 1.6vmin color-mix(in srgb, var(--accent) 60%, transparent),
-              inset 0 0 1.6vmin color-mix(in srgb, var(--accent) 50%, transparent);
+.disc__ring {            /* bright neon tube near the edge */
+  position: absolute; inset: 2vmin; border-radius: 50%;
+  border: .5vmin solid #fff;
+  box-shadow: 0 0 1.4vmin #fff,
+              0 0 3vmin var(--accent),
+              0 0 6vmin color-mix(in srgb, var(--accent) 60%, transparent),
+              inset 0 0 1.4vmin color-mix(in srgb, #fff 70%, var(--accent));
 }
 .disc__face { display: flex; align-items: center; gap: 2.4vmin; padding: 0 6vmin; }
 .disc__rocket {
   width: 14vmin; height: 14vmin; color: #fff; flex: none;
-  filter: drop-shadow(0 0 1.4vmin color-mix(in srgb, var(--accent) 80%, transparent));
+  filter: drop-shadow(0 0 1vmin #fff)
+          drop-shadow(0 0 2.4vmin color-mix(in srgb, var(--accent) 80%, transparent));
 }
-.disc__word { display: flex; flex-direction: column; line-height: 1.0; }
+.disc__word { display: flex; flex-direction: column; line-height: 1.02; }
 .disc__word b {
   font-family: "Sora", sans-serif; font-weight: 800; font-size: 6.2vmin; letter-spacing: -.01em;
   color: #fff;
-  text-shadow: 0 0 .8vmin #fff,
-               0 0 2.6vmin var(--accent),
+  text-shadow: 0 0 .7vmin #fff, 0 0 2.4vmin #fff,
                0 0 5vmin color-mix(in srgb, var(--accent) 70%, transparent);
 }
 @keyframes discFloat { 0%,100% { transform: translateY(0) rotate(-.5deg); } 50% { transform: translateY(-2vmin) rotate(.5deg); } }
-@keyframes discHue {
-  from { filter: drop-shadow(0 3.6vmin 4.4vmin rgba(0,0,0,.62)) hue-rotate(0deg); }
-  to   { filter: drop-shadow(0 3.6vmin 4.4vmin rgba(0,0,0,.62)) hue-rotate(360deg); }
-}
 @keyframes discPulse {
-  0%,100% { box-shadow: 0 0 2vmin color-mix(in srgb, var(--accent) 68%, transparent),
-                        0 0 6vmin color-mix(in srgb, var(--accent) 40%, transparent),
-                        inset 0 0 3vmin color-mix(in srgb, var(--accent) 30%, transparent); }
-  50%     { box-shadow: 0 0 3.4vmin color-mix(in srgb, var(--accent) 88%, transparent),
-                        0 0 10vmin color-mix(in srgb, var(--accent) 55%, transparent),
-                        inset 0 0 4.5vmin color-mix(in srgb, var(--accent) 40%, transparent); }
+  0%,100% { box-shadow: 0 0 3vmin color-mix(in srgb, var(--accent) 70%, transparent),
+                        0 0 9vmin color-mix(in srgb, var(--accent) 42%, transparent); }
+  50%     { box-shadow: 0 0 5vmin color-mix(in srgb, var(--accent) 88%, transparent),
+                        0 0 14vmin color-mix(in srgb, var(--accent) 55%, transparent); }
 }
 
 /* =================================================================
@@ -415,6 +414,16 @@ html:not([data-nightclock="1"]) .night__clock { display: none; }
 }
 .swatch:hover { transform: scale(1.08); }
 .swatch.is-active { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.25); }
+
+.bg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.bg-opt {
+  aspect-ratio: 16 / 9; border-radius: 8px; padding: 0; cursor: pointer;
+  border: 2px solid rgba(255,255,255,.16);
+  background-size: cover; background-position: center;
+  transition: border-color .12s, box-shadow .12s;
+}
+.bg-opt:hover { border-color: rgba(255,255,255,.45); }
+.bg-opt.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); }
 
 .toggle-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .toggle { display: flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; font-size: 14px; }
