@@ -301,6 +301,7 @@
     if (k === "c" || k === "s") togglePanel();
     else if (k === "escape") closePanel();
     else if (k === "f") toggleFullscreen();
+    else if (k === "n" && slidesActive) showSlide((slideIdx + 1) % slides.length);  // manual next bg
   });
   if (location.hash === "#admin" || new URLSearchParams(location.search).has("admin")) {
     // open after first paint
@@ -441,12 +442,17 @@
     } catch {}
     list = (list || []).filter(Boolean);
     if (!list.length) return;                          // no gallery -> per-style fallback
-    slides = list; slidesActive = true; slideFront = 0; slideIdx = 0;
+    slides = list; slidesActive = true; slideFront = 0;
+    // Pick one and hold it — the background does NOT change on its own.
+    // Pin a specific one with ?bg=<index|name>; otherwise random per load.
+    const bg = new URLSearchParams(location.search).get("bg");
+    if (bg != null && /^\d+$/.test(bg)) slideIdx = (parseInt(bg, 10) % slides.length + slides.length) % slides.length;
+    else if (bg != null) { const m = slides.findIndex((s) => s.includes(bg)); slideIdx = m >= 0 ? m : 0; }
+    else slideIdx = Math.floor(Math.random() * slides.length);
     const first = slideLayers[0];
-    first.style.backgroundImage = `url("${slides[0]}")`;
+    first.style.backgroundImage = `url("${slides[slideIdx]}")`;
     panLayer(first); first.classList.add("is-on");
     slideLayers[1].classList.remove("is-on");
-    if (slides.length > 1) setInterval(() => showSlide((slideIdx + 1) % slides.length), SLIDE_MS);
   }
 
   /* ---------- Boot ---------- */

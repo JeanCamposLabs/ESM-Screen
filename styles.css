@@ -257,52 +257,54 @@ html[data-style="minimal"] .scene__vignette {
    FLOATING BRAND DISC  (neon, colour-cycling, lifted off the scene)
    ================================================================= */
 .disc {
-  position: absolute; left: 50%; top: 42%; translate: -50% -50%;
-  z-index: 6; width: 42vmin; height: 42vmin; pointer-events: none;
-  filter: drop-shadow(0 2.6vmin 3vmin rgba(0,0,0,.55));   /* lifted off the image */
-  animation: discFloat calc(8s / var(--speed)) ease-in-out infinite,
-             discHue 24s linear infinite;
+  position: absolute; left: 50%; top: 47%; translate: -50% -50%;
+  z-index: 6; width: 78vmin; height: 78vmin; pointer-events: none;
+  filter: drop-shadow(0 3.6vmin 4.4vmin rgba(0,0,0,.62));   /* lifted off the image */
+  animation: discFloat calc(9s / var(--speed)) ease-in-out infinite,
+             discHue 1800s linear infinite;                 /* full colour drift ≈ 30 min */
 }
 .disc__tube {
-  position: absolute; inset: 0; border-radius: 50%;
+  position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
   display: grid; place-items: center;
   color: var(--accent);
-  background: radial-gradient(circle at 50% 40%,
-    color-mix(in srgb, var(--accent) 16%, rgba(8,6,4,.42)), rgba(6,5,4,.6) 72%);
-  border: .45vmin solid color-mix(in srgb, var(--accent) 88%, #fff);
+  /* solid, opaque face so it reads as a real lit object (not see-through) */
+  background:
+    radial-gradient(60% 40% at 50% 15%, rgba(255,255,255,.13), transparent 60%),
+    radial-gradient(circle at 50% 40%, #241d2b 0%, #110c17 52%, #060509 100%);
+  border: .6vmin solid color-mix(in srgb, var(--accent) 90%, #fff);
   animation: discPulse calc(3.8s / var(--speed)) ease-in-out infinite;
 }
 .disc__ring {
-  position: absolute; inset: 1.6vmin; border-radius: 50%;
-  border: .2vmin solid color-mix(in srgb, var(--accent) 70%, transparent);
-  box-shadow: 0 0 1vmin color-mix(in srgb, var(--accent) 60%, transparent),
-              inset 0 0 1vmin color-mix(in srgb, var(--accent) 50%, transparent);
+  position: absolute; inset: 3vmin; border-radius: 50%;
+  border: .28vmin solid color-mix(in srgb, var(--accent) 70%, transparent);
+  box-shadow: 0 0 1.6vmin color-mix(in srgb, var(--accent) 60%, transparent),
+              inset 0 0 1.6vmin color-mix(in srgb, var(--accent) 50%, transparent);
 }
-.disc__face { display: flex; align-items: center; gap: 1.4vmin; padding: 0 3vmin; }
+.disc__face { display: flex; align-items: center; gap: 2.4vmin; padding: 0 6vmin; }
 .disc__rocket {
-  width: 8vmin; height: 8vmin; color: #fff; flex: none;
-  filter: drop-shadow(0 0 .9vmin color-mix(in srgb, var(--accent) 80%, transparent));
+  width: 14vmin; height: 14vmin; color: #fff; flex: none;
+  filter: drop-shadow(0 0 1.4vmin color-mix(in srgb, var(--accent) 80%, transparent));
 }
 .disc__word { display: flex; flex-direction: column; line-height: 1.0; }
 .disc__word b {
-  font-family: "Sora", sans-serif; font-weight: 800; font-size: 3.6vmin; letter-spacing: -.01em;
+  font-family: "Sora", sans-serif; font-weight: 800; font-size: 6.2vmin; letter-spacing: -.01em;
   color: #fff;
-  text-shadow: 0 0 .5vmin #fff,
-               0 0 1.6vmin var(--accent),
-               0 0 3.2vmin color-mix(in srgb, var(--accent) 70%, transparent);
+  text-shadow: 0 0 .8vmin #fff,
+               0 0 2.6vmin var(--accent),
+               0 0 5vmin color-mix(in srgb, var(--accent) 70%, transparent);
 }
-@keyframes discFloat { 0%,100% { transform: translateY(0) rotate(-.6deg); } 50% { transform: translateY(-1.7vmin) rotate(.6deg); } }
+@keyframes discFloat { 0%,100% { transform: translateY(0) rotate(-.5deg); } 50% { transform: translateY(-2vmin) rotate(.5deg); } }
 @keyframes discHue {
-  from { filter: drop-shadow(0 2.6vmin 3vmin rgba(0,0,0,.55)) hue-rotate(0deg); }
-  to   { filter: drop-shadow(0 2.6vmin 3vmin rgba(0,0,0,.55)) hue-rotate(360deg); }
+  from { filter: drop-shadow(0 3.6vmin 4.4vmin rgba(0,0,0,.62)) hue-rotate(0deg); }
+  to   { filter: drop-shadow(0 3.6vmin 4.4vmin rgba(0,0,0,.62)) hue-rotate(360deg); }
 }
 @keyframes discPulse {
-  0%,100% { box-shadow: 0 0 1.2vmin color-mix(in srgb, var(--accent) 65%, transparent),
-                        0 0 3.4vmin color-mix(in srgb, var(--accent) 38%, transparent),
-                        inset 0 0 1.8vmin color-mix(in srgb, var(--accent) 30%, transparent); }
-  50%     { box-shadow: 0 0 2vmin color-mix(in srgb, var(--accent) 85%, transparent),
-                        0 0 6vmin color-mix(in srgb, var(--accent) 52%, transparent),
-                        inset 0 0 2.6vmin color-mix(in srgb, var(--accent) 40%, transparent); }
+  0%,100% { box-shadow: 0 0 2vmin color-mix(in srgb, var(--accent) 68%, transparent),
+                        0 0 6vmin color-mix(in srgb, var(--accent) 40%, transparent),
+                        inset 0 0 3vmin color-mix(in srgb, var(--accent) 30%, transparent); }
+  50%     { box-shadow: 0 0 3.4vmin color-mix(in srgb, var(--accent) 88%, transparent),
+                        0 0 10vmin color-mix(in srgb, var(--accent) 55%, transparent),
+                        inset 0 0 4.5vmin color-mix(in srgb, var(--accent) 40%, transparent); }
 }
 
 /* =================================================================
