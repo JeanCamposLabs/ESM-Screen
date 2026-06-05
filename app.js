@@ -400,7 +400,7 @@
     const dxPx = (to[0] - from[0]) * innerWidth / 100;
     const dyPx = (to[1] - from[1]) * innerHeight / 100;
     const deg = Math.atan2(dyPx, dxPx) * 180 / Math.PI + NOSE_OFFSET;
-    const dur = rand(22, 34) / (state.speed || 1) * 1000;
+    const dur = rand(48, 72) / (state.speed || 1) * 1000;   // slow, calm cruise
     rocketEl.animate(
       [
         { transform: `translate(${from[0]}vw, ${from[1]}vh) rotate(${deg}deg)`, opacity: 0 },
