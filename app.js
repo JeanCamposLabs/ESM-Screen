@@ -416,8 +416,14 @@
      Reads assets/backgrounds.json (a list of image URLs, auto-generated on
      deploy from assets/slides/). Two layers cross-fade; each slide gets its
      own slow Ken-Burns drift so the image keeps moving. */
-  const SLIDE_MS = 24000;
   const slideLayers = [$("sceneImage"), $("sceneImageB")];
+  // last-resort list so the gallery still works if backgrounds.json can't be fetched
+  const FALLBACK_SLIDES = [
+    "assets/slides/01-liquid.jpg", "assets/slides/02-waves.jpg", "assets/slides/03-bronze.jpg",
+    "assets/slides/04-gold.jpg", "assets/slides/05-streaks.jpg", "assets/slides/06-glow.jpg",
+    "assets/slides/07-layers.jpg", "assets/slides/08-blue.jpg", "assets/slides/09-teal.jpg",
+    "assets/slides/10-purple.jpg", "assets/slides/11-red.jpg", "assets/slides/12-soft.jpg",
+  ];
   let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
 
   function panLayer(el) {
@@ -468,12 +474,15 @@
   }
   async function initSlides() {
     let list = [];
-    try {
-      const r = await fetch(`assets/backgrounds.json?t=${Date.now()}`, { cache: "no-store" });
-      if (r.ok) { const d = await r.json(); list = Array.isArray(d) ? d : (d.images || []); }
-    } catch {}
+    for (let attempt = 0; attempt < 3 && !list.length; attempt++) {
+      try {
+        const r = await fetch(`assets/backgrounds.json?t=${Date.now()}`, { cache: "no-store" });
+        if (r.ok) { const d = await r.json(); list = Array.isArray(d) ? d : (d.images || []); }
+      } catch {}
+      if (!list.length && attempt < 2) await new Promise((res) => setTimeout(res, 1500));
+    }
     list = (list || []).filter(Boolean);
-    if (!list.length) return;                          // no gallery -> per-style fallback
+    if (!list.length) list = FALLBACK_SLIDES;          // never get stuck on the bare gradient
     slides = list; slidesActive = true; slideFront = 0;
     // Starting background; it never changes on its own. Priority:
     //   ?bg=<index|name>  >  saved choice  >  first.
