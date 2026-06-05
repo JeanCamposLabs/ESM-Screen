@@ -38,6 +38,7 @@
     offTime: "23:00",
     nightClock: true,
     bg: "",
+    weather: true,
   };
   const KEY = "esm-screen.v1";
 
@@ -78,6 +79,7 @@
     $("rocketLane").style.display = state.rocket ? "" : "none";
     $("clock").hidden = !state.clock;
     $("particles").style.display = state.particles ? "" : "none";
+    $("weather").hidden = !state.weather;
 
     $("brandName").textContent = state.name;
     $("brandTag").textContent = state.tag;
@@ -239,6 +241,7 @@
     $("tgRocket").onchange  = (e) => { state.rocket = e.target.checked; commit(); };
     $("tgClock").onchange   = (e) => { state.clock = e.target.checked; commit(); };
     $("tgParticles").onchange = (e) => { state.particles = e.target.checked; commit(); };
+    $("tgWeather").onchange = (e) => { state.weather = e.target.checked; if (state.weather) fetchWeather(); commit(); };
     $("inSpeed").oninput    = (e) => { state.speed = parseFloat(e.target.value); commit(); };
     $("tgSchedule").onchange= (e) => { state.schedule = e.target.checked; commit(); };
     $("inOn").onchange      = (e) => { state.onTime = e.target.value; commit(); };
@@ -260,6 +263,7 @@
     $("tgRocket").checked = state.rocket;
     $("tgClock").checked = state.clock;
     $("tgParticles").checked = state.particles;
+    $("tgWeather").checked = state.weather;
     $("inSpeed").value = state.speed;
     $("tgSchedule").checked = state.schedule;
     $("inOn").value = state.onTime;
@@ -364,7 +368,7 @@
   /* ---------- Re-sync when the device wakes or reconnects ---------- */
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) return;
-    tick(); applySchedule(); checkVersion(); requestWakeLock();
+    tick(); applySchedule(); checkVersion(); requestWakeLock(); fetchWeather();
   });
   addEventListener("online", checkVersion);
 
@@ -416,12 +420,15 @@
   let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
 
   function panLayer(el) {
-    const z0 = 1.05 + Math.random() * 0.05, z1 = z0 + 0.08 + Math.random() * 0.06;
-    const x = (Math.random() * 2 - 1) * 2.4, y = (Math.random() * 2 - 1) * 2.4;
+    el.getAnimations().forEach((a) => a.cancel());
+    if (prefersReduced) { el.style.transform = "scale(1.08)"; return; }
+    // continuous, gentle Ken-Burns drift that loops forever (always moving)
+    const x = (Math.random() * 2 - 1) * 3, y = (Math.random() * 2 - 1) * 3;
     el.animate(
-      [{ transform: `scale(${z0}) translate(${-x}%, ${-y}%)` },
-       { transform: `scale(${z1}) translate(${x}%, ${y}%)` }],
-      { duration: SLIDE_MS + 2000, easing: "linear", fill: "both" }
+      [{ transform: `scale(1.06) translate(${-x}%, ${-y}%)` },
+       { transform: `scale(1.18) translate(${x}%, ${y}%)` }],
+      { duration: 42000 / (state.speed || 1), easing: "ease-in-out",
+        iterations: Infinity, direction: "alternate" }
     );
   }
   function showSlide(i) {
@@ -479,6 +486,40 @@
     buildBgGrid();
   }
 
+  /* ---------- Weather: Maastricht via Open-Meteo (free, no key) ---------- */
+  const WX_URL = "https://api.open-meteo.com/v1/forecast?latitude=50.8514&longitude=5.6909" +
+    "&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min" +
+    "&timezone=auto&forecast_days=1";
+  function wxInfo(code) {
+    const m = {
+      0:["☀️","Clear"], 1:["🌤️","Mainly clear"], 2:["⛅","Partly cloudy"], 3:["☁️","Overcast"],
+      45:["🌫️","Fog"], 48:["🌫️","Rime fog"],
+      51:["🌦️","Light drizzle"], 53:["🌦️","Drizzle"], 55:["🌦️","Dense drizzle"],
+      56:["🌧️","Freezing drizzle"], 57:["🌧️","Freezing drizzle"],
+      61:["🌧️","Light rain"], 63:["🌧️","Rain"], 65:["🌧️","Heavy rain"],
+      66:["🌧️","Freezing rain"], 67:["🌧️","Freezing rain"],
+      71:["🌨️","Light snow"], 73:["🌨️","Snow"], 75:["❄️","Heavy snow"], 77:["❄️","Snow grains"],
+      80:["🌦️","Showers"], 81:["🌦️","Showers"], 82:["⛈️","Violent showers"],
+      85:["🌨️","Snow showers"], 86:["🌨️","Snow showers"],
+      95:["⛈️","Thunderstorm"], 96:["⛈️","Thunderstorm"], 99:["⛈️","Thunderstorm"],
+    };
+    return m[code] || ["🌡️", "—"];
+  }
+  async function fetchWeather() {
+    if (!state.weather) return;
+    try {
+      const r = await fetch(WX_URL, { cache: "no-store" });
+      if (!r.ok) return;
+      const d = await r.json();
+      const [icon, desc] = wxInfo(d.current.weather_code);
+      $("wxIcon").textContent = icon;
+      $("wxTemp").textContent = Math.round(d.current.temperature_2m) + "°";
+      const hi = Math.round(d.daily.temperature_2m_max[0]);
+      const lo = Math.round(d.daily.temperature_2m_min[0]);
+      $("wxDesc").textContent = `${desc} · ${hi}° / ${lo}°`;
+    } catch {}
+  }
+
   /* ---------- Boot ---------- */
   buildPanel();
   apply();
@@ -493,6 +534,8 @@
   setInterval(checkVersion, VERSION_POLL_MS);
   flyRocket();
   initSlides();
+  fetchWeather();
+  setInterval(fetchWeather, 30 * 60 * 1000);
 
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 })();
