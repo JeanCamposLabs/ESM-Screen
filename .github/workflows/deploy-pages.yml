@@ -29,6 +29,8 @@ jobs:
         run: |
           mkdir -p _site/assets
           cp index.html styles.css app.js config.json _site/
+          # cache-bust JS/CSS per deploy so TV browsers can't serve a stale copy
+          sed -i "s#app\.js\"#app.js?v=${GITHUB_SHA::7}\"#; s#styles\.css\"#styles.css?v=${GITHUB_SHA::7}\"#" _site/index.html
           cp -r assets/. _site/assets/ 2>/dev/null || true
           python3 - <<'PY'
           import os, json
