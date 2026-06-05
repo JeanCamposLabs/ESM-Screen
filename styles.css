@@ -198,18 +198,10 @@ html[data-style="minimal"] .scene__vignette {
   pointer-events: none;
 }
 .rocket {
-  position: absolute; left: -16vmin; bottom: 16vh;
+  position: absolute; left: 0; top: 0;
   width: 12vmin; height: 12vmin;   /* the icon is square; nose points up-right */
-  color: #fff;
-  animation: flight calc(30s / var(--speed)) cubic-bezier(.45,.05,.55,.95) infinite;
+  color: #fff; opacity: 0;          /* shown only while a flight is running (see app.js) */
   will-change: transform;
-}
-/* Diagonal cruise from lower-left to upper-right (matches the icon's heading) */
-@keyframes flight {
-  0%   { transform: translate(0, 10vh) rotate(-6deg); opacity: 0; }
-  10%  { opacity: 1; }
-  90%  { opacity: 1; }
-  100% { transform: translate(122vw, -42vh) rotate(4deg); opacity: 0; }
 }
 /* A gentle bob + tiny banking wobble layered on top of the cruise */
 .rocket__bob {
