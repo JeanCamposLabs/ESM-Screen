@@ -92,10 +92,6 @@ body.is-updating .screen { animation: none; opacity: 0; transition: opacity .6s 
   will-change: transform, opacity;   /* slow pan is driven per-slide in app.js */
 }
 .scene__image.is-ready, .scene__image.is-on { opacity: 1; }
-@keyframes kenburns {
-  0%   { transform: scale(1.06) translate(-1.2%, -0.8%); }
-  100% { transform: scale(1.16) translate(1.4%, 1%); }
-}
 
 /* Soft aurora blobs (premium / minimal) */
 .scene__blobs { mix-blend-mode: screen; filter: blur(2px); }

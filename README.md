@@ -32,8 +32,8 @@ any TV browser and runs all day without babysitting.
 | **Fullscreen** | Press **`F`**, or the Fullscreen button in settings |
 
 In the panel you can change **style**, **color palette**, toggle the
-**logo / rocket / clock / particles**, edit the **company name + tagline**,
-set **motion speed**, and configure the **on/off schedule**. Everything saves to
+**logo / rocket / clock / particles / weather**, set **motion speed**,
+and configure the **on/off schedule**. Everything saves to
 the TV automatically (localStorage), so it survives reloads and power cycles.
 
 ---
@@ -141,7 +141,7 @@ kiosk mode). On Chrome-based smart TVs / mini-PCs you can launch with
 `--kiosk <url>` for a no-chrome, always-on display.
 
 ### Self-updating (auto-refresh)
-Every screen polls [`version.json`](version.json) once a minute (and whenever the
+Every screen polls [`version.json`](version.json) every 30 seconds (and whenever the
 device wakes or reconnects). When the `version` changes, the page fades out and
 reloads itself — so a deploy reaches **every TV with no one touching the
 hardware**. The deploy workflow stamps the commit into `version.json` on each run,

@@ -74,7 +74,6 @@
     root.dataset.nightclock = state.nightClock ? "1" : "0";
     root.style.setProperty("--speed", String(state.speed));
 
-    $("brand").style.display = "none";                  // superseded by the floating disc
     $("disc").style.display = state.logo ? "" : "none";
     $("rocketLane").style.display = state.rocket ? "" : "none";
     $("clock").hidden = !state.clock;
@@ -162,7 +161,7 @@
   /* ---------- Ambient particle canvas ----------
      Lightweight floating motes that pick up the palette accent. Capped for
      a smooth all-day run on big panels. */
-  let particles = [], rafId = null, lastT = 0;
+  let particles = [], lastT = 0;
   const canvas = $("particles");
   const ctx = canvas.getContext("2d");
   function accentColor() {
@@ -192,13 +191,11 @@
     }));
   }
   function frame(t) {
-    rafId = requestAnimationFrame(frame);
+    requestAnimationFrame(frame);
     if (t - lastT < 42) return;            // ~24fps cap (gentler on TV CPUs)
     const dt = Math.min((t - lastT) / 16.67, 2); lastT = t;
-    if (!state.particles || screen.classList.contains("is-night")) {
-      ctx.clearRect(0, 0, innerWidth, innerHeight); return;
-    }
     ctx.clearRect(0, 0, innerWidth, innerHeight);
+    if (!state.particles || screen.classList.contains("is-night")) return;
     const col = accentColor();
     const spd = state.speed;
     for (const p of particles) {
@@ -580,7 +577,7 @@
   setInterval(applySchedule, 20000);
   sizeCanvas();
   addEventListener("resize", debounce(sizeCanvas, 250));
-  rafId = requestAnimationFrame(frame);
+  requestAnimationFrame(frame);
   maybeHint();
   requestWakeLock();
   checkVersion();
