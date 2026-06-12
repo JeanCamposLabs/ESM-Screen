@@ -628,11 +628,29 @@
     }
     const api = `https://api.github.com/repos/${REPO}/contents/config.json`;
     const headers = { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" };
-    flash("Pushing to all screens…", 15000);
+    // Tell the operator exactly what is wrong — 401/404/403 each have a
+    // different cause and a different fix on the token page.
+    async function explain(res, phase) {
+      let gh = ""; try { gh = (await res.json()).message || ""; } catch {}
+      box.hidden = false;
+      if (res.status === 401) {
+        try { localStorage.removeItem(TOKEN_KEY); } catch {}
+        input.focus();
+        return "GitHub says the token itself is invalid (401) — re-copy the full token (starts with github_pat_) and paste it again";
+      }
+      if (res.status === 404)
+        return "The token works but cannot see this repo (404). On the token's page: Repository access → Only select repositories → add ESM-Screen, then Save and try again";
+      if (res.status === 403)
+        return `The token cannot ${phase} (403). On the token's page: Permissions → Repository permissions → Contents → Read and write, then Save and try again` + (gh ? ` — GitHub said: “${gh}”` : "");
+      return `GitHub error ${res.status} while trying to ${phase}` + (gh ? ` — “${gh}”` : "") + " — try again";
+    }
+    // Remember the token now; scope fixes on GitHub keep the same token string,
+    // so a later retry just works. Only a real 401 forgets it.
+    try { localStorage.setItem(TOKEN_KEY, token); } catch {}
+    flash("Contacting GitHub…", 20000);
     try {
       const cur = await fetch(`${api}?ref=main&t=${Date.now()}`, { headers, cache: "no-store" });
-      if (cur.status === 401 || cur.status === 403 || cur.status === 404) throw "auth";
-      if (!cur.ok) throw "net";
+      if (!cur.ok) { flash(await explain(cur, "read config.json"), 15000); return; }
       const sha = (await cur.json()).sha;
       const res = await fetch(api, {
         method: "PUT", headers,
@@ -642,19 +660,11 @@
           content: b64utf8(JSON.stringify(configForExport(), null, 2) + "\n"),
         }),
       });
-      if (res.status === 401 || res.status === 403) throw "auth";
-      if (!res.ok) throw "net";
-      try { localStorage.setItem(TOKEN_KEY, token); } catch {}
+      if (!res.ok) { flash(await explain(res, "write config.json"), 15000); return; }
       input.value = ""; box.hidden = true;
       flash("Pushed ✓ — every screen updates itself within ~2 minutes", 8000);
     } catch (err) {
-      if (err === "auth") {
-        try { localStorage.removeItem(TOKEN_KEY); } catch {}
-        box.hidden = false; input.focus();
-        flash("GitHub rejected the token — paste a fresh one (Contents: read & write on this repo)", 8000);
-      } else {
-        flash("Couldn't reach GitHub — check the connection and try again", 6000);
-      }
+      flash("Couldn't reach GitHub — check the connection and try again", 6000);
     }
   }
 
