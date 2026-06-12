@@ -194,9 +194,11 @@
       </div>
       <p class="panel__hint">One click pushes the current style, background and toggles to every
         screen (they follow within ~2 minutes). First time only, it asks for a GitHub
-        <b>fine-grained token</b>: github.com → Settings → Developer settings →
-        Fine-grained tokens → repository access: only <b>ESM-Screen</b> →
-        permission <b>Contents: Read &amp; write</b>.</p>
+        <b>fine-grained token</b> (github.com → Settings → Developer settings →
+        Fine-grained tokens). When creating it, two settings are easy to miss:
+        <b>Repository access</b> → Only select repositories → <b>ESM-Screen</b>,
+        and <b>Permissions → Repository permissions → Contents → Read and write</b>.
+        An existing token can be edited and re-used — no need to make a new one.</p>
       <button class="btn btn--ghost btn--wide btn--gap" id="btnSync">Copy config (manual fallback)</button>
     </section>
 
