@@ -114,6 +114,9 @@
     })(0);
   }
   function setSceneImage(el, url) {
+    // Once the slide gallery is up it owns the image layers — the async probe
+    // above may resolve late and must never wipe the slide that's on screen.
+    if (slidesActive) return;
     if (url) { el.style.backgroundImage = `url("${url}")`; el.classList.add("is-ready"); }
     else { el.style.backgroundImage = ""; el.classList.remove("is-ready"); }
   }
