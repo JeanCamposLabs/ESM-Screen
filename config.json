@@ -7,5 +7,6 @@
   "clock": true,
   "particles": true,
   "weather": true,
+  "worldcup": true,
   "speed": 1
 }

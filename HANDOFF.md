@@ -29,11 +29,14 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 - **`config.json`** (repo root) is the house config every screen obeys: `style`, `palette`,
   `bg` (slide token, e.g. `"10-purple"`), `logo`, `rocket`, `clock`, `particles`, `weather`, `speed`.
 - Screens poll it every 30 s and adopt it (config wins; local panel tweaks persist until config changes).
-- **To change all TVs:** edit `config.json` and commit, **or** open the admin panel → **“Copy config for
-  all screens”** → paste into `config.json`. Current: purple bg, premium, orange, clock + weather on.
-- ⚠️ User wants this **instant & without touching GitHub**. That needs a tiny backend (Firebase RTDB or a
-  Cloudflare Worker + a PIN‑gated admin write). **Deferred** by the user ("don't patch the mock" while the
-  app idea is being evaluated).
+- **One‑click (new):** admin panel → **“Apply this look to all screens”** commits `config.json` to `main`
+  via the GitHub REST API (`pushConfigToAllScreens()` in `app.js`); the deploy republishes and every TV
+  follows in ~2 min. Needs a one‑time **fine‑grained PAT** (repo: ESM‑Screen only, Contents read/write),
+  stored only in that browser's localStorage (`esm-screen.ghtoken`) — never synced to TVs.
+- Manual fallbacks still work: edit `config.json` + commit, or panel → **“Copy config”** → paste.
+- A truly instant push (no ~2 min Pages deploy) would still need a tiny backend (Render/Worker + PIN’d
+  write). Render MCP was available but had **no workspace selected**, so not built; the GitHub‑API
+  route was chosen instead (free, durable, no new infra).
 
 ## Admin / settings panel
 - Open: add **`?admin`** to the URL, or **triple‑click the top‑right corner**, or press **`C`**.
