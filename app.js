@@ -39,6 +39,7 @@
     nightClock: true,
     bg: "10-purple",
     weather: true,
+    worldcup: true,
   };
   const KEY = "esm-screen.v1";
 
@@ -80,6 +81,7 @@
     $("clock").hidden = !state.clock;
     $("particles").style.display = state.particles ? "" : "none";
     $("weather").hidden = !state.weather;
+    $("worldcup").hidden = !(state.worldcup && wcHasGames);
 
     $("brandName").textContent = state.name;
     $("brandTag").textContent = state.tag;
@@ -239,6 +241,7 @@
     $("tgClock").onchange   = (e) => { state.clock = e.target.checked; commit(); };
     $("tgParticles").onchange = (e) => { state.particles = e.target.checked; commit(); };
     $("tgWeather").onchange = (e) => { state.weather = e.target.checked; if (state.weather) fetchWeather(); commit(); };
+    $("tgWorldcup").onchange = (e) => { state.worldcup = e.target.checked; commit(); if (state.worldcup) fetchWorldCup(); };
     $("inSpeed").oninput    = (e) => { state.speed = parseFloat(e.target.value); commit(); };
     $("tgSchedule").onchange= (e) => { state.schedule = e.target.checked; commit(); };
     $("inOn").onchange      = (e) => { state.onTime = e.target.value; commit(); };
@@ -247,6 +250,7 @@
 
     $("btnFull").onclick  = toggleFullscreen;
     $("btnReset").onclick = () => { state = { ...DEFAULTS }; commit(); flash("Reset to defaults"); };
+    $("btnApplyAll").onclick = pushConfigToAllScreens;
     $("btnSync").onclick = () => {
       try { navigator.clipboard.writeText(JSON.stringify(configForExport(), null, 2)); flash("Config copied — paste into config.json on GitHub"); }
       catch { flash("Clipboard unavailable here"); }
@@ -265,6 +269,7 @@
     $("tgClock").checked = state.clock;
     $("tgParticles").checked = state.particles;
     $("tgWeather").checked = state.weather;
+    $("tgWorldcup").checked = state.worldcup;
     $("inSpeed").value = state.speed;
     $("tgSchedule").checked = state.schedule;
     $("inOn").value = state.onTime;
@@ -274,7 +279,7 @@
   }
 
   function commit() { save(); apply(); }
-  function flash(msg) { const s = $("panelStatus"); s.textContent = msg; setTimeout(() => { if (s.textContent === msg) s.textContent = ""; }, 2000); }
+  function flash(msg, ms = 2000) { const s = $("panelStatus"); s.textContent = msg; setTimeout(() => { if (s.textContent === msg) s.textContent = ""; }, ms); }
 
   let panelOpen = false;
   function openPanel() {
@@ -369,7 +374,7 @@
   /* ---------- Re-sync when the device wakes or reconnects ---------- */
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) return;
-    tick(); applySchedule(); checkVersion(); requestWakeLock(); fetchWeather(); syncConfig();
+    tick(); applySchedule(); checkVersion(); requestWakeLock(); fetchWeather(); fetchWorldCup(); syncConfig();
   });
   addEventListener("online", checkVersion);
 
@@ -539,6 +544,120 @@
     } catch {}
   }
 
+  /* ---------- World Cup scores: ESPN public scoreboard (free, CORS-ok) ----------
+     Shows yesterday's results, live scores, and the next kick-offs in a slim
+     strip at the bottom-centre. Polls every 5 min, every 60 s while a match
+     is live. Hidden automatically when there are no matches in the window
+     (so it disappears by itself after the tournament). */
+  const WC_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
+  let wcTimer = null, wcHasGames = false;
+  function wcEsc(s) { const d = document.createElement("i"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+  async function fetchWorldCup() {
+    clearTimeout(wcTimer);
+    let liveNow = false;
+    if (state.worldcup) {
+      try {
+        const fmt = (d) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+        const from = new Date(), to = new Date();
+        from.setDate(from.getDate() - 1); to.setDate(to.getDate() + 1);
+        const r = await fetch(`${WC_URL}?dates=${fmt(from)}-${fmt(to)}&t=${Date.now()}`, { cache: "no-store" });
+        if (!r.ok) throw 0;
+        const d = await r.json();
+        const games = (d.events || []).map((e) => {
+          const comp = (e.competitions || [])[0] || {};
+          const team = (side) => ((comp.competitors || []).find((c) => c.homeAway === side) || {});
+          const h = team("home"), a = team("away");
+          const st = (e.status && e.status.type && e.status.type.state) || "pre";
+          return {
+            when: new Date(e.date), st,
+            clock: st === "in" ? (e.status.displayClock || "live")
+                 : st === "post" ? ((e.status.type && e.status.type.shortDetail) || "FT") : "",
+            h: (h.team && (h.team.abbreviation || h.team.shortDisplayName)) || "?", hs: h.score,
+            a: (a.team && (a.team.abbreviation || a.team.shortDisplayName)) || "?", as: a.score,
+          };
+        }).sort((x, y) => x.when - y.when);
+        // Pick up to 5: every live match first, then the most recent results,
+        // then the next kick-offs — shown in kick-off order.
+        const live = games.filter((g) => g.st === "in");
+        const done = games.filter((g) => g.st === "post");
+        const next = games.filter((g) => g.st === "pre");
+        const pick = live.slice(0, 5);
+        let room = 5 - pick.length;
+        const keepForNext = next.length && room > 0 ? 1 : 0;   // always show the next kick-off
+        const takeDone = Math.min(done.length, room - keepForNext);
+        if (takeDone > 0) pick.push(...done.slice(-takeDone));
+        room = 5 - pick.length;
+        if (room > 0) pick.push(...next.slice(0, room));
+        pick.sort((x, y) => x.when - y.when);
+        liveNow = live.length > 0;
+        wcHasGames = pick.length > 0;
+        if (wcHasGames) {
+          const today = new Date().toDateString();
+          $("wcGames").innerHTML = pick.map((g) => {
+            if (g.st === "pre") {
+              const day = g.when.toDateString() === today ? ""
+                : `${g.when.toLocaleDateString(undefined, { weekday: "short" })} `;
+              const t = `${pad(g.when.getHours())}:${pad(g.when.getMinutes())}`;
+              return `<span class="wc-game"><b>${wcEsc(g.h)}</b>–<b>${wcEsc(g.a)}</b> <i>${day}${t}</i></span>`;
+            }
+            return `<span class="wc-game${g.st === "in" ? " is-live" : ""}">` +
+              `<b>${wcEsc(g.h)}</b> ${wcEsc(g.hs)}–${wcEsc(g.as)} <b>${wcEsc(g.a)}</b> <i>${wcEsc(g.clock)}</i></span>`;
+          }).join("");
+        }
+        $("worldcup").hidden = !(state.worldcup && wcHasGames);
+      } catch { /* network blip — keep what's on screen, retry on the next tick */ }
+    }
+    wcTimer = setTimeout(fetchWorldCup, liveNow ? 60 * 1000 : 5 * 60 * 1000);
+  }
+
+  /* ---------- One-click central control ----------
+     "Apply to all screens" commits the current look to config.json on GitHub
+     (via the REST API) — the deploy workflow republishes it and every screen
+     adopts it within ~2 minutes. Needs a one-time fine-grained token that is
+     stored only in THIS browser's localStorage (never synced to the TVs). */
+  const REPO = "JeanCamposLabs/ESM-Screen";
+  const TOKEN_KEY = "esm-screen.ghtoken";
+  const b64utf8 = (s) => btoa(unescape(encodeURIComponent(s)));
+  async function pushConfigToAllScreens() {
+    const box = $("ghTokenBox"), input = $("inGhToken");
+    const token = (input.value || "").trim() || localStorage.getItem(TOKEN_KEY) || "";
+    if (!token) {
+      box.hidden = false; input.focus();
+      flash("Paste a GitHub token first — see the note below", 6000);
+      return;
+    }
+    const api = `https://api.github.com/repos/${REPO}/contents/config.json`;
+    const headers = { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" };
+    flash("Pushing to all screens…", 15000);
+    try {
+      const cur = await fetch(`${api}?ref=main&t=${Date.now()}`, { headers, cache: "no-store" });
+      if (cur.status === 401 || cur.status === 403 || cur.status === 404) throw "auth";
+      if (!cur.ok) throw "net";
+      const sha = (await cur.json()).sha;
+      const res = await fetch(api, {
+        method: "PUT", headers,
+        body: JSON.stringify({
+          message: "Update screen config from admin panel",
+          branch: "main", sha,
+          content: b64utf8(JSON.stringify(configForExport(), null, 2) + "\n"),
+        }),
+      });
+      if (res.status === 401 || res.status === 403) throw "auth";
+      if (!res.ok) throw "net";
+      try { localStorage.setItem(TOKEN_KEY, token); } catch {}
+      input.value = ""; box.hidden = true;
+      flash("Pushed ✓ — every screen updates itself within ~2 minutes", 8000);
+    } catch (err) {
+      if (err === "auth") {
+        try { localStorage.removeItem(TOKEN_KEY); } catch {}
+        box.hidden = false; input.focus();
+        flash("GitHub rejected the token — paste a fresh one (Contents: read & write on this repo)", 8000);
+      } else {
+        flash("Couldn't reach GitHub — check the connection and try again", 6000);
+      }
+    }
+  }
+
   /* ---------- Central sync: every screen follows config.json ----------
      Change config.json once and all screens adopt it within a minute. Local
      panel tweaks are left alone until the config actually changes. */
@@ -569,7 +688,8 @@
     return {
       style: state.style, palette: state.palette, bg,
       logo: state.logo, rocket: state.rocket, clock: state.clock,
-      particles: state.particles, weather: state.weather, speed: state.speed,
+      particles: state.particles, weather: state.weather, worldcup: state.worldcup,
+      speed: state.speed,
     };
   }
 
@@ -589,6 +709,7 @@
   initSlides();
   fetchWeather();
   setInterval(fetchWeather, 30 * 60 * 1000);
+  fetchWorldCup();                            // self-rescheduling (5 min / 60 s live)
   syncConfig();
   setInterval(syncConfig, 30000);
 

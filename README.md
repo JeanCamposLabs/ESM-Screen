@@ -32,9 +32,32 @@ any TV browser and runs all day without babysitting.
 | **Fullscreen** | Press **`F`**, or the Fullscreen button in settings |
 
 In the panel you can change **style**, **color palette**, toggle the
-**logo / rocket / clock / particles**, edit the **company name + tagline**,
-set **motion speed**, and configure the **on/off schedule**. Everything saves to
-the TV automatically (localStorage), so it survives reloads and power cycles.
+**logo / rocket / clock / particles / weather / World Cup scores**, edit the
+**company name + tagline**, set **motion speed**, and configure the **on/off
+schedule**. Everything saves to the TV automatically (localStorage), so it
+survives reloads and power cycles.
+
+### World Cup scores
+
+A slim strip at the bottom-centre shows **yesterday's results, live scores and
+the next kick-offs** for the FIFA World Cup (free ESPN scoreboard, no key).
+It refreshes every 5 minutes — every 60 seconds while a match is live — and
+hides itself automatically when there are no matches (e.g. after the
+tournament). Toggle it under **Show → World Cup**.
+
+### Controlling all screens from your computer
+
+Open the screen URL on your computer, open the settings panel, set the look you
+want, then press **“Apply this look to all screens”**. That commits
+`config.json` to GitHub for you; the deploy workflow republishes it and **every
+TV adopts it within ~2 minutes** (they poll `config.json` and `version.json`
+every 30 s).
+
+The first time, the button asks for a GitHub **fine-grained token** (github.com
+→ Settings → Developer settings → Fine-grained tokens → repository access:
+only **ESM-Screen** → permission **Contents: Read & write**). It's stored only
+in that browser on your computer — never on the TVs. Manual fallback: **“Copy
+config”** and paste it into `config.json` on GitHub yourself.
 
 ---
 

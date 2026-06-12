@@ -344,6 +344,24 @@ html[data-style="minimal"] .scene__vignette {
 .wx-day i { font-style: normal; opacity: .6; }
 
 /* =================================================================
+   WORLD CUP  (bottom-centre strip between weather and clock)
+   ================================================================= */
+.worldcup {
+  position: absolute; left: 50%; bottom: 5.6vmin; translate: -50% 0; z-index: 5;
+  display: flex; align-items: center; gap: 2.6vmin;
+  max-width: 84vw; overflow: hidden; white-space: nowrap;
+  padding: 1.3vmin 2.8vmin; border-radius: 100px;
+  background: rgba(0, 0, 0, .34);
+  border: 1px solid rgba(255, 255, 255, .10);
+  animation: floaty calc(13s / var(--speed)) ease-in-out infinite;  /* burn-in safe */
+}
+.wc-title { font-size: 2vmin; font-weight: 700; letter-spacing: .02em; }
+.wc-games { display: flex; gap: 2.6vmin; font-size: 2vmin; font-weight: 300; }
+.wc-game b { font-family: "Space Grotesk", sans-serif; font-weight: 700; }
+.wc-game i { font-style: normal; font-size: 1.6vmin; color: var(--text-dim); margin-left: .5vmin; }
+.wc-game.is-live i { color: var(--accent); font-weight: 600; }
+
+/* =================================================================
    NIGHT / IDLE MODE
    ================================================================= */
 .night {
@@ -472,6 +490,8 @@ html:not([data-nightclock="1"]) .night__clock { display: none; }
 }
 .btn:hover { background: rgba(255,255,255,.12); }
 .btn--wide { width: 100%; flex: none; }
+.btn--gap { margin-top: 10px; }
+.field--token { margin-top: 12px; margin-bottom: 0; }
 .panel__hint { margin-top: 8px; font-size: 12px; color: rgba(255,255,255,.45); line-height: 1.4; }
 .panel__note { margin-top: 14px; font-size: 12px; color: rgba(255,255,255,.45); min-height: 16px; }
 

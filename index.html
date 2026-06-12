@@ -111,6 +111,12 @@
       <div class="weather__fc" id="wxForecast"></div>
     </div>
 
+    <!-- World Cup results (ESPN scoreboard) — bottom-centre strip -->
+    <div class="worldcup" id="worldcup" hidden>
+      <span class="wc-title">⚽ World Cup</span>
+      <span class="wc-games" id="wcGames"></span>
+    </div>
+
     <!-- Idle / night overlay -->
     <div class="night" id="night" aria-hidden="true">
       <div class="night__clock" id="nightClock">--:--</div>
@@ -149,6 +155,7 @@
         <label class="toggle"><input type="checkbox" id="tgClock"><span>Clock</span></label>
         <label class="toggle"><input type="checkbox" id="tgParticles" checked><span>Particles</span></label>
         <label class="toggle"><input type="checkbox" id="tgWeather" checked><span>Weather</span></label>
+        <label class="toggle"><input type="checkbox" id="tgWorldcup" checked><span>World Cup</span></label>
       </div>
     </section>
 
@@ -179,8 +186,18 @@
     </section>
 
     <section class="panel__section">
-      <button class="btn btn--wide" id="btnSync">Copy config for all screens</button>
-      <p class="panel__hint">Paste it into <b>config.json</b> on GitHub — every screen follows within a minute.</p>
+      <h2 class="panel__label">All screens</h2>
+      <button class="btn btn--wide" id="btnApplyAll">Apply this look to all screens</button>
+      <div class="field field--token" id="ghTokenBox" hidden>
+        <span>GitHub token (saved only on this device)</span>
+        <input type="password" id="inGhToken" placeholder="github_pat_…" autocomplete="off" />
+      </div>
+      <p class="panel__hint">One click pushes the current style, background and toggles to every
+        screen (they follow within ~2 minutes). First time only, it asks for a GitHub
+        <b>fine-grained token</b>: github.com → Settings → Developer settings →
+        Fine-grained tokens → repository access: only <b>ESM-Screen</b> →
+        permission <b>Contents: Read &amp; write</b>.</p>
+      <button class="btn btn--ghost btn--wide btn--gap" id="btnSync">Copy config (manual fallback)</button>
     </section>
 
     <p class="panel__note" id="panelStatus"></p>
