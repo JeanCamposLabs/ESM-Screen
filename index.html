@@ -117,6 +117,14 @@
       <span class="wc-games" id="wcGames"></span>
     </div>
 
+    <!-- Ambient music (SomaFM internet radio, audio only) -->
+    <audio id="bgAudio" preload="none"></audio>
+    <div class="musicbar" id="musicbar" hidden>
+      <button class="musicbar__btn" id="musicToggle" aria-label="Play / pause music" title="Play / pause">►</button>
+      <span class="musicbar__state" id="musicState">♪</span>
+      <button class="musicbar__btn" id="musicNext" aria-label="Next station" title="Next station">⏭</button>
+    </div>
+
     <!-- Idle / night overlay -->
     <div class="night" id="night" aria-hidden="true">
       <div class="night__clock" id="nightClock">--:--</div>
@@ -157,6 +165,22 @@
         <label class="toggle"><input type="checkbox" id="tgWeather" checked><span>Weather</span></label>
         <label class="toggle"><input type="checkbox" id="tgWorldcup" checked><span>World Cup</span></label>
       </div>
+    </section>
+
+    <section class="panel__section">
+      <h2 class="panel__label">Music</h2>
+      <div class="toggle-row">
+        <label class="toggle"><input type="checkbox" id="tgMusic"><span>Play music</span></label>
+        <label class="toggle"><input type="checkbox" id="tgMusicBar" checked><span>On-screen control</span></label>
+      </div>
+      <div class="opt-grid" id="stationGrid"></div>
+      <button class="btn btn--ghost btn--wide btn--gap" id="btnNextStation">Next station ⏭</button>
+      <label class="field"><span>Volume</span>
+        <input type="range" id="inMusicVol" min="0" max="1" step="0.05" value="0.35" class="range" />
+      </label>
+      <p class="panel__hint">Endless, commercial-free stations from <b>SomaFM</b> (listener-supported —
+        consider a small donation if the office enjoys it). Audio starts after the first tap/click on
+        the screen, so give the TV one tap when you switch it on. Press <kbd>M</kbd> for the next station.</p>
     </section>
 
     <section class="panel__section">

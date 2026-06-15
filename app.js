@@ -40,8 +40,36 @@
     bg: "10-purple",
     weather: true,
     worldcup: true,
+    music: false,            // ambient internet radio (audio only)
+    musicStation: "groovesalad",
+    musicVolume: 0.35,
+    musicBar: true,          // show the small on-screen music control
   };
   const KEY = "esm-screen.v1";
+
+  // SomaFM internet-radio stations — commercial-free, listener-supported
+  // (https://somafm.com). Audio-only ambient music for the office; "Next"
+  // cycles through them. Add/remove freely — it's just this list.
+  const STATIONS = [
+    { id: "groovesalad",   name: "Groove Salad",           genre: "Chill · downtempo" },
+    { id: "fluid",         name: "Fluid",                  genre: "Lo-fi hip-hop · chillhop" },
+    { id: "gsclassic",     name: "Groove Salad Classic",   genre: "Classic chill · ambient" },
+    { id: "secretagent",   name: "Secret Agent",           genre: "Lounge · downtempo jazz" },
+    { id: "lush",          name: "Lush",                   genre: "Mellow vocal chill" },
+    { id: "beatblender",   name: "Beat Blender",           genre: "Deep house · downtempo" },
+    { id: "sonicuniverse", name: "Sonic Universe",         genre: "Modern jazz" },
+    { id: "illstreet",     name: "Illinois Street Lounge", genre: "Vintage lounge · exotica" },
+    { id: "dronezone",     name: "Drone Zone",             genre: "Ambient · minimal beats" },
+    { id: "deepspaceone",  name: "Deep Space One",         genre: "Deep ambient · space" },
+  ];
+  // Candidate stream URLs for a station, in fallback order across SomaFM's
+  // mirror servers. The <audio> element tries each until one plays, so a single
+  // server being down doesn't kill the music. All HTTPS (works on Pages).
+  function stationUrls(slug) {
+    return ["ice1", "ice2", "ice4", "ice6"]
+      .map((m) => `https://${m}.somafm.com/${slug}-128-mp3`)
+      .concat(`https://ice.somafm.com/${slug}`);
+  }
 
   let state = load();
 
@@ -153,15 +181,20 @@
 
   /* ---------- Schedule (auto on/off) ---------- */
   function toMin(hhmm) { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   function applySchedule() {
-    if (!state.schedule) { screen.classList.remove("is-night"); return; }
-    const now = new Date();
-    const cur = now.getHours() * 60 + now.getMinutes();
-    const on = toMin(state.onTime), off = toMin(state.offTime);
-    // Daytime window may wrap past midnight (e.g. on 07:00, off 23:00 = simple;
-    // on 18:00, off 02:00 = wraps).
-    const isDay = on <= off ? (cur >= on && cur < off) : (cur >= on || cur < off);
-    screen.classList.toggle("is-night", !isDay);
+    if (!state.schedule) {
+      screen.classList.remove("is-night");
+    } else {
+      const now = new Date();
+      const cur = now.getHours() * 60 + now.getMinutes();
+      const on = toMin(state.onTime), off = toMin(state.offTime);
+      // Daytime window may wrap past midnight (e.g. on 07:00, off 23:00 = simple;
+      // on 18:00, off 02:00 = wraps).
+      const isDay = on <= off ? (cur >= on && cur < off) : (cur >= on || cur < off);
+      screen.classList.toggle("is-night", !isDay);
+    }
+    syncMusic();   // go quiet at night, resume in the day
   }
 
   /* ---------- Ambient particle canvas ----------
@@ -251,6 +284,21 @@
     $("inOff").onchange     = (e) => { state.offTime = e.target.value; commit(); };
     $("tgNightClock").onchange = (e) => { state.nightClock = e.target.checked; commit(); };
 
+    // Music
+    const stg = $("stationGrid");
+    stg.innerHTML = "";
+    STATIONS.forEach((s) => {
+      const b = document.createElement("button");
+      b.className = "opt"; b.dataset.id = s.id;
+      b.innerHTML = `<span class="opt__name">${s.name}</span><span class="opt__desc">${s.genre}</span>`;
+      b.onclick = () => setStation(s.id, false);
+      stg.appendChild(b);
+    });
+    $("tgMusic").onchange    = (e) => { state.music = e.target.checked; if (state.music) manualPaused = false; commit(); };
+    $("tgMusicBar").onchange = (e) => { state.musicBar = e.target.checked; commit(); };
+    $("inMusicVol").oninput  = (e) => { state.musicVolume = parseFloat(e.target.value); audio.volume = clamp(state.musicVolume, 0, 1); save(); renderMusicbar(); };
+    $("btnNextStation").onclick = nextStation;
+
     $("btnFull").onclick  = toggleFullscreen;
     $("btnReset").onclick = () => { state = { ...DEFAULTS }; commit(); flash("Reset to defaults"); };
     $("btnApplyAll").onclick = pushConfigToAllScreens;
@@ -278,7 +326,16 @@
     $("inOn").value = state.onTime;
     $("inOff").value = state.offTime;
     $("tgNightClock").checked = state.nightClock;
+    $("tgMusic").checked = state.music;
+    $("tgMusicBar").checked = state.musicBar;
+    $("inMusicVol").value = state.musicVolume;
+    syncMusicPanel();
     syncBgGrid();
+  }
+
+  function syncMusicPanel() {
+    document.querySelectorAll("#stationGrid .opt").forEach((b) =>
+      b.classList.toggle("is-active", b.dataset.id === state.musicStation));
   }
 
   function commit() { save(); apply(); }
@@ -313,6 +370,7 @@
     else if (k === "escape") closePanel();
     else if (k === "f") toggleFullscreen();
     else if (k === "n" && slidesActive) setBg(slideIdx + 1, true);   // manual next background
+    else if (k === "m" && state.music) nextStation();                // next music station
   });
   if (location.hash === "#admin" || new URLSearchParams(location.search).has("admin")) {
     // open after first paint
@@ -703,11 +761,131 @@
       logo: state.logo, rocket: state.rocket, clock: state.clock,
       particles: state.particles, weather: state.weather, worldcup: state.worldcup,
       speed: state.speed,
+      music: state.music, musicStation: state.musicStation, musicVolume: state.musicVolume,
     };
+  }
+
+  /* ---------- Ambient music (SomaFM internet radio, audio-only) ----------
+     Browsers block audio autoplay until the first user interaction, so when
+     music is on we show a "tap to start" pill and unlock on the first gesture
+     (a tap, click or key — e.g. when someone switches the TV on each morning).
+     Streams are commercial-free and listener-supported (somafm.com). */
+  const audio = $("bgAudio");
+  let urlIdx = 0;            // which mirror URL we're trying for the current station
+  let userGestured = false; // has the user interacted yet (autoplay unlock)?
+  let manualPaused = false; // user tapped pause -> stay paused until they resume
+
+  const currentStation = () =>
+    STATIONS.find((s) => s.id === state.musicStation) || STATIONS[0];
+  // Do we intend audio to be playing right now? (feature on, not manually
+  // paused, and not the dim night screen.)
+  const intendPlay = () =>
+    state.music && !manualPaused && !screen.classList.contains("is-night");
+
+  function loadStation(resetMirror = true) {
+    if (resetMirror) urlIdx = 0;
+    const urls = stationUrls(currentStation().id);
+    audio.src = urls[Math.min(urlIdx, urls.length - 1)];
+    audio.load();
+  }
+  function startPlayback() {
+    if (!audio.src) loadStation();
+    audio.volume = clamp(state.musicVolume, 0, 1);
+    const p = audio.play();
+    if (p && p.catch) p.catch((err) => {
+      const name = err && err.name;
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        renderMusicbar();   // autoplay blocked -> show "tap to start", wait for a gesture
+      } else if (name === "AbortError") {
+        /* a newer load() interrupted this play() — benign, ignore */
+      } else {
+        tryNextMirror();    // network hiccup -> try another server
+      }
+    });
+  }
+  function tryNextMirror() {
+    const urls = stationUrls(currentStation().id);
+    if (urlIdx < urls.length - 1) { urlIdx++; loadStation(false); if (userGestured && intendPlay()) startPlayback(); }
+    else { flash("Couldn't reach the music stream — try another station"); }
+  }
+  function pauseMusic() { manualPaused = true; audio.pause(); renderMusicbar(); }
+  function playMusic() {
+    manualPaused = false;
+    if (userGestured) startPlayback();   // otherwise the "tap to start" pill is shown
+    renderMusicbar();
+  }
+  function setStation(id, announce) {
+    state.musicStation = id; save();
+    manualPaused = false; urlIdx = 0; loadStation();
+    if (userGestured && intendPlay()) startPlayback();
+    syncMusicPanel(); renderMusicbar();
+    if (announce) peekMusicbar();
+  }
+  function nextStation() {
+    const i = STATIONS.findIndex((s) => s.id === state.musicStation);
+    setStation(STATIONS[(i + 1 + STATIONS.length) % STATIONS.length].id, true);
+  }
+
+  // Reconcile playback with the current intent (called on state changes and on
+  // the schedule tick, so music stops at night and recovers if a stream drops).
+  function syncMusic() {
+    if (!audio) return;
+    if (intendPlay()) {
+      if (userGestured && audio.paused) startPlayback();   // else: locked -> pill shown
+    } else if (!audio.paused) {
+      audio.pause();
+    }
+    audio.volume = clamp(state.musicVolume, 0, 1);
+    renderMusicbar();
+  }
+
+  function renderMusicbar() {
+    const bar = $("musicbar");
+    if (!bar) return;
+    const show = state.music && state.musicBar && !screen.classList.contains("is-night");
+    bar.hidden = !show && !bar.classList.contains("is-peek");
+    if (bar.hidden) return;
+    const locked = state.music && !userGestured;
+    bar.classList.toggle("is-locked", locked);
+    if (locked) {
+      $("musicState").textContent = "🔊 Tap to start music";
+    } else {
+      const playing = !audio.paused;
+      $("musicState").textContent = (playing ? "♪ " : "❚❚ ") + currentStation().name;
+      $("musicToggle").textContent = playing ? "❚❚" : "►";
+    }
+  }
+  let peekTimer = null;
+  function peekMusicbar() {
+    if (state.musicBar) return;        // already shown
+    const bar = $("musicbar");
+    bar.hidden = false; bar.classList.add("is-peek"); renderMusicbar();
+    clearTimeout(peekTimer);
+    peekTimer = setTimeout(() => { bar.classList.remove("is-peek"); renderMusicbar(); }, 2800);
+  }
+
+  function setupMusic() {
+    if (!audio) return;
+    audio.volume = clamp(state.musicVolume, 0, 1);
+    audio.addEventListener("playing", renderMusicbar);
+    audio.addEventListener("pause", renderMusicbar);
+    audio.addEventListener("error", () => { if (intendPlay()) tryNextMirror(); });
+    // The first interaction anywhere on the page satisfies the autoplay policy.
+    const unlock = () => {
+      if (userGestured) return;
+      userGestured = true;
+      if (intendPlay()) startPlayback();
+      renderMusicbar();
+    };
+    ["pointerdown", "keydown", "touchstart"].forEach((ev) =>
+      document.addEventListener(ev, unlock, { passive: true }));
+    $("musicToggle").onclick = () => { audio.paused ? playMusic() : pauseMusic(); renderMusicbar(); };
+    $("musicNext").onclick = nextStation;
   }
 
   /* ---------- Boot ---------- */
   buildPanel();
+  setupMusic();
   apply();
   tick(); setInterval(tick, 1000);
   setInterval(applySchedule, 20000);

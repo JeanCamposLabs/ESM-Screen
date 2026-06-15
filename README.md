@@ -32,10 +32,24 @@ any TV browser and runs all day without babysitting.
 | **Fullscreen** | Press **`F`**, or the Fullscreen button in settings |
 
 In the panel you can change **style**, **color palette**, toggle the
-**logo / rocket / clock / particles / weather / World Cup scores**, edit the
-**company name + tagline**, set **motion speed**, and configure the **on/off
-schedule**. Everything saves to the TV automatically (localStorage), so it
-survives reloads and power cycles.
+**logo / rocket / clock / particles / weather / World Cup scores**, turn on
+**ambient music** (pick a station + volume), edit the **company name + tagline**,
+set **motion speed**, and configure the **on/off schedule**. Everything saves to
+the TV automatically (localStorage), so it survives reloads and power cycles.
+
+### Ambient music
+
+A small player streams **commercial-free lofi/chill internet radio** from
+[SomaFM](https://somafm.com) (audio only — no video). Toggle it under
+**Music → Play music**, choose a station (Groove Salad, Fluid lo-fi hip-hop,
+Secret Agent lounge, Drone Zone ambient, …), and set the volume. A subtle
+control sits top-right; **press `M` (or tap ⏭) to jump to the next station**.
+
+> **One tap to start:** browsers block audio until someone interacts with the
+> page, so the player shows **“Tap to start music”** until the screen is tapped/
+> clicked or a key is pressed — just give the TV one tap when you switch it on
+> each morning. Music auto-mutes on the night/idle screen. SomaFM is
+> listener-supported; if the office enjoys it, consider a small donation.
 
 ### World Cup scores
 
@@ -206,7 +220,8 @@ the look in ONE place and all TVs follow within ~a minute:
 3. Every screen updates on its next check.
 
 Fields: `style`, `palette`, `bg` (slide name, e.g. `06-glow`), `logo`, `rocket`,
-`clock`, `particles`, `weather`, `speed`.
+`clock`, `particles`, `weather`, `speed`, `music` (on/off), `musicStation`
+(e.g. `groovesalad`, `fluid`), `musicVolume` (0–1).
 
 ---
 

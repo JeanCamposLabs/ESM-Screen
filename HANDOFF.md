@@ -27,7 +27,8 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 
 ## Central control (sync all TVs)
 - **`config.json`** (repo root) is the house config every screen obeys: `style`, `palette`,
-  `bg` (slide token, e.g. `"10-purple"`), `logo`, `rocket`, `clock`, `particles`, `weather`, `speed`.
+  `bg` (slide token, e.g. `"10-purple"`), `logo`, `rocket`, `clock`, `particles`, `weather`, `speed`,
+  `music` (on/off), `musicStation` (SomaFM slug, e.g. `"groovesalad"`/`"fluid"`), `musicVolume` (0–1).
 - Screens poll it every 30 s and adopt it (config wins; local panel tweaks persist until config changes).
 - **One‑click (new):** admin panel → **“Apply this look to all screens”** commits `config.json` to `main`
   via the GitHub REST API (`pushConfigToAllScreens()` in `app.js`); the deploy republishes and every TV
@@ -54,6 +55,14 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 - **Rocket:** WAAPI flight (`flyRocket()`), random entry each pass, **tip‑first** (`NOSE_OFFSET=45`), slow.
 - **Weather:** Open‑Meteo (free, no key, CORS‑ok). Maastricht `50.8514, 5.6909`. Current + tomorrow +
   day‑after. Bottom‑left, toggle in Show, refresh 30 min + on wake.
+- **Ambient music:** audio‑only **SomaFM** internet radio (commercial‑free, listener‑supported, HTTPS).
+  `STATIONS` list + `setupMusic()` in `app.js`; small top‑right control (`.musicbar`) + **`M`** = next
+  station. Stream URLs built per station with **mirror fallback** (ice1/2/4/6 → ice.somafm.com) and a
+  stalled‑stream auto‑recover via the schedule tick. **Autoplay caveat:** browsers need a user gesture,
+  so it shows “Tap to start music” until the first tap/click/key (one tap per boot). Auto‑mutes on the
+  night screen; a manual pause stays paused (won’t auto‑resume). No files hosted, no ads, no API key.
+  Self‑hosting a few MP3s was the first idea but rejected: can’t quality‑check binaries blind, repo bloat,
+  finite loop — radio gives an endless, curated, consistently‑mastered library instead.
 
 ## Performance — the TV is the constraint
 - Hardware: **Philips 85PUS8500/12** (85" 4K QLED Ambilight) running **Titan OS** (closed platform),

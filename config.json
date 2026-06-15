@@ -8,5 +8,8 @@
   "particles": true,
   "weather": true,
   "worldcup": true,
-  "speed": 1.5
+  "speed": 1.5,
+  "music": true,
+  "musicStation": "groovesalad",
+  "musicVolume": 0.35
 }
