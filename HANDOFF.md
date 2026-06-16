@@ -6,6 +6,20 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 ---
 
 ## Recent fixes (latest session)
+- **Ambient music added (NEW) + deployed.** Audio‑only **SomaFM** internet radio (commercial‑free,
+  listener‑supported, HTTPS). 10 office stations; **`M`** or the top‑right ⏭ pill = next station;
+  toggle + station picker + volume in the panel under **Music**. Implementation detail in
+  *Pieces → Ambient music* below. **Autoplay:** browsers need one user gesture, so it shows
+  "Tap to start music" until the first tap/click/key (one tap per boot). User confirmed it works.
+- **Music rollout state:** **live and ON house‑wide.** Deployed to `main`, then enabled for all screens
+  via the admin panel's **"Apply this look to all screens"** button (commit *Update screen config from
+  admin panel*). The house `config.json` is now `"music": true`, `"musicStation": "gsclassic"`
+  (Groove Salad Classic), `"musicVolume": 0.5`. To change or disable it for all screens, use that panel
+  button again or edit `config.json` (`music` / `musicStation` / `musicVolume`) and push to `main`; all
+  TVs adopt in ~2 min. Each screen still shows the one‑tap "Tap to start" pill after a reload (nothing
+  auto‑plays until tapped). *(It was briefly shipped `music:false` for a no‑risk test, then turned on.)*
+- **Add/remove stations:** edit the `STATIONS` array in `app.js` (each = SomaFM channel `slug` + `name`
+  + `genre`); URLs are generated with mirror fallback, so just the slug is needed.
 - **Background photo not showing on the TV = FIXED.** The Philips browser (older Chromium)
   supports `el.animate()` but not `el.getAnimations()`; `panLayer` called it unguarded and
   threw *before* the image layer got `is-on`, so the photo never appeared (gradient fallback)

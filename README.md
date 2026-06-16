@@ -51,6 +51,14 @@ control sits top-right; **press `M` (or tap ⏭) to jump to the next station**.
 > each morning. Music auto-mutes on the night/idle screen. SomaFM is
 > listener-supported; if the office enjoys it, consider a small donation.
 
+**Changing it for all screens:** like every shared setting, music is driven by
+`config.json` — easiest via the panel's **“Apply this look to all screens”**
+button, or by editing `config.json` directly: `"music"` (on/off),
+`"musicStation"` (e.g. `groovesalad` calm chill, `fluid` lo-fi hip-hop,
+`gsclassic` classic chill), `"musicVolume"` (0–1). Every TV adopts a change
+within ~2 minutes. **Currently music is ON house-wide** (Groove Salad Classic,
+volume 0.5); each screen still needs its one tap to start after a reload.
+
 ### World Cup scores
 
 A slim strip at the bottom-centre shows **yesterday's results, live scores and
