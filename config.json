@@ -9,7 +9,7 @@
   "weather": true,
   "worldcup": true,
   "speed": 1.5,
-  "music": false,
-  "musicStation": "groovesalad",
-  "musicVolume": 0.35
+  "music": true,
+  "musicStation": "gsclassic",
+  "musicVolume": 0.5
 }
