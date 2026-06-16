@@ -6,6 +6,14 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 ---
 
 ## Recent fixes (latest session)
+- **Music badge → opens the menu.** The on‑screen music control is now a single `<button>` that opens
+  the settings panel on click (controls moved into the panel); the inline play/next mini‑buttons were
+  removed. `M` still skips to the next station. *(If a different layout is wanted — e.g. badge at the
+  bottom, or keep inline buttons — it's a small change in `index.html`/`renderMusicbar`.)*
+- **Daily auto‑rotating background (NEW).** `dailyBg` (default **on**) shows a new background each day,
+  same on every screen, chosen by date. Toggle under **Background → New background every day**; picking
+  one in the grid pins it and turns rotation off. Add more art to `assets/slides/` for more variety (I
+  can't generate the 4K images — use the Nano Banana prompts in the README). See *Pieces → Background*.
 - **Ambient music added (NEW) + deployed.** Audio‑only **SomaFM** internet radio (commercial‑free,
   listener‑supported, HTTPS). 10 office stations; **`M`** or the top‑right ⏭ pill = next station;
   toggle + station picker + volume in the panel under **Music**. Implementation detail in
@@ -41,8 +49,9 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 
 ## Central control (sync all TVs)
 - **`config.json`** (repo root) is the house config every screen obeys: `style`, `palette`,
-  `bg` (slide token, e.g. `"10-purple"`), `logo`, `rocket`, `clock`, `particles`, `weather`, `speed`,
-  `music` (on/off), `musicStation` (SomaFM slug, e.g. `"groovesalad"`/`"fluid"`), `musicVolume` (0–1).
+  `bg` (slide token, e.g. `"10-purple"`), `dailyBg` (auto‑rotate daily), `logo`, `rocket`, `clock`,
+  `particles`, `weather`, `speed`, `music` (on/off), `musicStation` (SomaFM slug, e.g.
+  `"groovesalad"`/`"fluid"`), `musicVolume` (0–1).
 - Screens poll it every 30 s and adopt it (config wins; local panel tweaks persist until config changes).
 - **One‑click (new):** admin panel → **“Apply this look to all screens”** commits `config.json` to `main`
   via the GitHub REST API (`pushConfigToAllScreens()` in `app.js`); the deploy republishes and every TV
@@ -62,16 +71,22 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 
 ## Pieces
 - **Background gallery:** `assets/slides/` (12 images, `01‑`…`12‑`, 1920px ~16:9). Add more by dropping a
-  16:9 image in that folder + push (auto‑added). One image shown at a time (no auto‑rotation, by request);
-  chosen via `?bg=` / `config.bg` / `DEFAULTS.bg`. Slow infinite Ken‑Burns drift = `panLayer()` in `app.js`.
+  16:9 image in that folder + push (auto‑added → daily rotation includes it). **Daily auto‑rotation
+  (NEW):** `dailyBg` (default on) picks the slide by local day number (`dayNumber()`/`dailyIndex()` in
+  `app.js`), so all screens show the same "background of the day" and advance at midnight (`maybeDailyBg`
+  every 15 min covers a TV left on across the rollover; otherwise the next morning's boot rotates it).
+  Priority: `?bg=` kiosk pin (`bgPinned`) > daily > saved `config.bg` > first. Picking one in the grid
+  (or `N`) **pins it and turns `dailyBg` off**. Slow infinite Ken‑Burns drift = `panLayer()`.
 - **Disc (brand):** floating neon "Easy Scale Media" built in **CSS/SVG** (ring + rocket glyph + **Fredoka**
   wordmark), orange‑acrylic look, **static** (no float), recolors with the palette. Vector so it stays crisp.
 - **Rocket:** WAAPI flight (`flyRocket()`), random entry each pass, **tip‑first** (`NOSE_OFFSET=45`), slow.
 - **Weather:** Open‑Meteo (free, no key, CORS‑ok). Maastricht `50.8514, 5.6909`. Current + tomorrow +
   day‑after. Bottom‑left, toggle in Show, refresh 30 min + on wake.
 - **Ambient music:** audio‑only **SomaFM** internet radio (commercial‑free, listener‑supported, HTTPS).
-  `STATIONS` list + `setupMusic()` in `app.js`; small top‑right control (`.musicbar`) + **`M`** = next
-  station. Stream URLs built per station with **mirror fallback** (ice1/2/4/6 → ice.somafm.com) and a
+  `STATIONS` list + `setupMusic()` in `app.js`. The top‑right badge (`.musicbar`, now a single `<button>`)
+  shows the current station and **opens the settings panel on click** — play/pause, station picker and
+  volume live in the panel; **`M`** = next station. Stream URLs built per station with **mirror
+  fallback** (ice1/2/4/6 → ice.somafm.com) and a
   stalled‑stream auto‑recover via the schedule tick. **Autoplay caveat:** browsers need a user gesture,
   so it shows “Tap to start music” until the first tap/click/key (one tap per boot). Auto‑mutes on the
   night screen; a manual pause stays paused (won’t auto‑resume). No files hosted, no ads, no API key.

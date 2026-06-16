@@ -119,11 +119,9 @@
 
     <!-- Ambient music (SomaFM internet radio, audio only) -->
     <audio id="bgAudio" preload="none"></audio>
-    <div class="musicbar" id="musicbar" hidden>
-      <button class="musicbar__btn" id="musicToggle" aria-label="Play / pause music" title="Play / pause">►</button>
+    <button class="musicbar" id="musicbar" hidden aria-label="Open settings">
       <span class="musicbar__state" id="musicState">♪</span>
-      <button class="musicbar__btn" id="musicNext" aria-label="Next station" title="Next station">⏭</button>
-    </div>
+    </button>
 
     <!-- Idle / night overlay -->
     <div class="night" id="night" aria-hidden="true">
@@ -185,7 +183,9 @@
 
     <section class="panel__section">
       <h2 class="panel__label">Background</h2>
+      <label class="toggle toggle--wide"><input type="checkbox" id="tgDailyBg" checked><span>New background every day (auto-rotate)</span></label>
       <div class="bg-grid" id="bgGrid"></div>
+      <p class="panel__hint">With auto-rotate on, every screen shows the same background and moves to the next one each day. Picking one below pins it and turns auto-rotate off.</p>
     </section>
 
     <section class="panel__section">

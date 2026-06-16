@@ -38,6 +38,7 @@
     offTime: "23:00",
     nightClock: true,
     bg: "10-purple",
+    dailyBg: true,           // auto-rotate the background once a day
     weather: true,
     worldcup: true,
     music: false,            // ambient internet radio (audio only)
@@ -278,6 +279,7 @@
     $("tgParticles").onchange = (e) => { state.particles = e.target.checked; commit(); };
     $("tgWeather").onchange = (e) => { state.weather = e.target.checked; if (state.weather) fetchWeather(); commit(); };
     $("tgWorldcup").onchange = (e) => { state.worldcup = e.target.checked; commit(); if (state.worldcup) fetchWorldCup(); };
+    $("tgDailyBg").onchange = (e) => { state.dailyBg = e.target.checked; save(); if (state.dailyBg) gotoDailyBg(); };
     $("inSpeed").oninput    = (e) => { state.speed = parseFloat(e.target.value); commit(); };
     $("tgSchedule").onchange= (e) => { state.schedule = e.target.checked; commit(); };
     $("inOn").onchange      = (e) => { state.onTime = e.target.value; commit(); };
@@ -329,6 +331,7 @@
     $("tgMusic").checked = state.music;
     $("tgMusicBar").checked = state.musicBar;
     $("inMusicVol").value = state.musicVolume;
+    $("tgDailyBg").checked = state.dailyBg;
     syncMusicPanel();
     syncBgGrid();
   }
@@ -491,6 +494,20 @@
     "assets/slides/10-purple.jpg", "assets/slides/11-red.jpg", "assets/slides/12-soft.jpg",
   ];
   let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
+  let lastDailyDay = null, bgPinned = false;
+  // Local-day number — same for every screen in a timezone on a given calendar
+  // day — used to pick a deterministic "background of the day".
+  const dayNumber = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+  const dailyIndex = () => (slides.length ? (((dayNumber() % slides.length) + slides.length) % slides.length) : 0);
+  function gotoDailyBg() {            // crossfade to today's background
+    if (!slidesActive || !slides.length || bgPinned) return;
+    lastDailyDay = dayNumber();
+    setBg(dailyIndex(), false);
+  }
+  function maybeDailyBg() {           // at a day rollover, advance to the new background
+    if (!state.dailyBg || bgPinned || !slidesActive) return;
+    if (dayNumber() !== lastDailyDay) gotoDailyBg();
+  }
 
   function panLayer(el) {
     // Older TV browsers (older Chromium) support el.animate() but NOT el.getAnimations()
@@ -518,7 +535,12 @@
   function setBg(i, persist) {
     if (!slides.length) return;
     showSlide(((i % slides.length) + slides.length) % slides.length);
-    if (persist) { state.bg = slides[slideIdx]; save(); }
+    if (persist) {                     // a manual pick pins this image and stops auto-rotation
+      state.bg = slides[slideIdx];
+      state.dailyBg = false;
+      save();
+      const t = $("tgDailyBg"); if (t) t.checked = false;
+    }
     syncBgGrid();
   }
   function buildBgGrid() {
@@ -550,12 +572,13 @@
     list = (list || []).filter(Boolean);
     if (!list.length) list = FALLBACK_SLIDES;          // never get stuck on the bare gradient
     slides = list; slidesActive = true; slideFront = 0;
-    // Starting background; it never changes on its own. Priority:
-    //   ?bg=<index|name>  >  saved choice  >  first.
+    // Starting background. Priority:
+    //   ?bg=<index|name> (pins it)  >  daily auto-rotation  >  saved choice  >  first.
     const bgQ = new URLSearchParams(location.search).get("bg");
     let start = 0;
-    if (bgQ != null && /^\d+$/.test(bgQ)) start = parseInt(bgQ, 10);
-    else if (bgQ != null) { const m = slides.findIndex((s) => s.includes(bgQ)); if (m >= 0) start = m; }
+    if (bgQ != null && /^\d+$/.test(bgQ)) { start = parseInt(bgQ, 10); bgPinned = true; }
+    else if (bgQ != null) { const m = slides.findIndex((s) => s.includes(bgQ)); if (m >= 0) { start = m; bgPinned = true; } }
+    else if (state.dailyBg) { start = dailyIndex(); lastDailyDay = dayNumber(); }
     else if (state.bg) { const m = slides.findIndex((s) => s === state.bg || s.includes(state.bg)); if (m >= 0) start = m; }
     slideIdx = ((start % slides.length) + slides.length) % slides.length;
     const first = slideLayers[0];
@@ -735,7 +758,10 @@
   const CONFIG_URL = "config.json";
   let cfgRev = null;
   function applyBg(name) {
-    if (!slidesActive || !slides.length || !name) return;
+    if (!slidesActive || !slides.length) return;
+    if (bgPinned) return;                          // a ?bg= kiosk pin wins over config
+    if (state.dailyBg) { gotoDailyBg(); return; }  // auto-rotation owns the background
+    if (!name) return;
     const i = slides.findIndex((s) => s === name || s.includes(name));
     if (i >= 0) { showSlide(i); syncBgGrid(); }
   }
@@ -760,7 +786,7 @@
       style: state.style, palette: state.palette, bg,
       logo: state.logo, rocket: state.rocket, clock: state.clock,
       particles: state.particles, weather: state.weather, worldcup: state.worldcup,
-      speed: state.speed,
+      speed: state.speed, dailyBg: state.dailyBg,
       music: state.music, musicStation: state.musicStation, musicVolume: state.musicVolume,
     };
   }
@@ -845,14 +871,10 @@
     const show = state.music && state.musicBar && !screen.classList.contains("is-night");
     bar.hidden = !show && !bar.classList.contains("is-peek");
     if (bar.hidden) return;
-    const locked = state.music && !userGestured;
-    bar.classList.toggle("is-locked", locked);
-    if (locked) {
+    if (state.music && !userGestured) {
       $("musicState").textContent = "🔊 Tap to start music";
     } else {
-      const playing = !audio.paused;
-      $("musicState").textContent = (playing ? "♪ " : "❚❚ ") + currentStation().name;
-      $("musicToggle").textContent = playing ? "❚❚" : "►";
+      $("musicState").textContent = (audio.paused ? "❚❚ " : "♪ ") + currentStation().name;
     }
   }
   let peekTimer = null;
@@ -879,8 +901,9 @@
     };
     ["pointerdown", "keydown", "touchstart"].forEach((ev) =>
       document.addEventListener(ev, unlock, { passive: true }));
-    $("musicToggle").onclick = () => { audio.paused ? playMusic() : pauseMusic(); renderMusicbar(); };
-    $("musicNext").onclick = nextStation;
+    // The on-screen badge opens the settings menu (where play/pause, station and
+    // volume live). The click itself is the gesture that unlocks autoplay.
+    $("musicbar").onclick = openPanel;
   }
 
   /* ---------- Boot ---------- */
@@ -898,6 +921,7 @@
   setInterval(checkVersion, VERSION_POLL_MS);
   flyRocket();
   initSlides();
+  setInterval(maybeDailyBg, 15 * 60 * 1000);   // advance the background at the daily rollover
   fetchWeather();
   setInterval(fetchWeather, 30 * 60 * 1000);
   fetchWorldCup();                            // self-rescheduling (5 min / 60 s live)

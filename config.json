@@ -9,6 +9,7 @@
   "weather": true,
   "worldcup": true,
   "speed": 1.5,
+  "dailyBg": true,
   "music": true,
   "musicStation": "gsclassic",
   "musicVolume": 0.5

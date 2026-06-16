@@ -43,7 +43,9 @@ A small player streams **commercial-free lofi/chill internet radio** from
 [SomaFM](https://somafm.com) (audio only — no video). Toggle it under
 **Music → Play music**, choose a station (Groove Salad, Fluid lo-fi hip-hop,
 Secret Agent lounge, Drone Zone ambient, …), and set the volume. A subtle
-control sits top-right; **press `M` (or tap ⏭) to jump to the next station**.
+**badge sits top-right showing the current station — click it to open the
+settings menu** (play/pause, station picker and volume all live there); press
+`M` for the next station.
 
 > **One tap to start:** browsers block audio until someone interacts with the
 > page, so the player shows **“Tap to start music”** until the screen is tapped/
@@ -58,6 +60,15 @@ button, or by editing `config.json` directly: `"music"` (on/off),
 `gsclassic` classic chill), `"musicVolume"` (0–1). Every TV adopts a change
 within ~2 minutes. **Currently music is ON house-wide** (Groove Salad Classic,
 volume 0.5); each screen still needs its one tap to start after a reload.
+
+### Background
+
+By default the background **auto-rotates — a new one each day** (every screen
+shows the same one, picked from the gallery by the date). Toggle it under
+**Background → New background every day**. Picking a specific image in the
+grid below pins it and turns auto-rotate off. Want more variety? Add more 4K
+art to `assets/slides/` (see [Adding your own art](#adding-your-own-art)) — the
+daily rotation automatically includes every image in the folder.
 
 ### World Cup scores
 
@@ -227,9 +238,9 @@ the look in ONE place and all TVs follow within ~a minute:
 2. Paste that JSON into **`config.json`** on GitHub and commit (or send it over).
 3. Every screen updates on its next check.
 
-Fields: `style`, `palette`, `bg` (slide name, e.g. `06-glow`), `logo`, `rocket`,
-`clock`, `particles`, `weather`, `speed`, `music` (on/off), `musicStation`
-(e.g. `groovesalad`, `fluid`), `musicVolume` (0–1).
+Fields: `style`, `palette`, `bg` (slide name, e.g. `06-glow`), `dailyBg`
+(auto-rotate daily), `logo`, `rocket`, `clock`, `particles`, `weather`, `speed`,
+`music` (on/off), `musicStation` (e.g. `groovesalad`, `fluid`), `musicVolume` (0–1).
 
 ---
 
