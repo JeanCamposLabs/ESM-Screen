@@ -43,9 +43,9 @@ A small player streams **commercial-free lofi/chill internet radio** from
 [SomaFM](https://somafm.com) (audio only — no video). Toggle it under
 **Music → Play music**, choose a station (Groove Salad, Fluid lo-fi hip-hop,
 Secret Agent lounge, Drone Zone ambient, …), and set the volume. A subtle
-**badge sits top-right showing the current station — click it to open the
-settings menu** (play/pause, station picker and volume all live there); press
-`M` for the next station.
+**badge sits in the lower-right (above the clock) showing the current station —
+click it to open the settings menu** (play/pause, station picker and volume all
+live there); press `M` for the next station.
 
 > **One tap to start:** browsers block audio until someone interacts with the
 > page, so the player shows **“Tap to start music”** until the screen is tapped/

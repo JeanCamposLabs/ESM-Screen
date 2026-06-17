@@ -368,7 +368,7 @@ html[data-style="minimal"] .scene__vignette {
    brightens on hover/interaction. Hidden on the night screen.
    ================================================================= */
 .musicbar {
-  position: absolute; top: 5vmin; right: 14vmin; z-index: 45;
+  position: absolute; right: 6vmin; bottom: 20vmin; z-index: 45;
   display: flex; align-items: center;
   padding: 1.1vmin 1.9vmin; border-radius: 100px;
   background: rgba(0, 0, 0, .42); backdrop-filter: blur(10px);

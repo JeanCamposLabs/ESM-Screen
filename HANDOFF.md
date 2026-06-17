@@ -15,7 +15,7 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
   one in the grid pins it and turns rotation off. Add more art to `assets/slides/` for more variety (I
   can't generate the 4K images — use the Nano Banana prompts in the README). See *Pieces → Background*.
 - **Ambient music added (NEW) + deployed.** Audio‑only **SomaFM** internet radio (commercial‑free,
-  listener‑supported, HTTPS). 10 office stations; **`M`** or the top‑right ⏭ pill = next station;
+  listener‑supported, HTTPS). 10 office stations; **`M`** = next station;
   toggle + station picker + volume in the panel under **Music**. Implementation detail in
   *Pieces → Ambient music* below. **Autoplay:** browsers need one user gesture, so it shows
   "Tap to start music" until the first tap/click/key (one tap per boot). User confirmed it works.
@@ -83,7 +83,7 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 - **Weather:** Open‑Meteo (free, no key, CORS‑ok). Maastricht `50.8514, 5.6909`. Current + tomorrow +
   day‑after. Bottom‑left, toggle in Show, refresh 30 min + on wake.
 - **Ambient music:** audio‑only **SomaFM** internet radio (commercial‑free, listener‑supported, HTTPS).
-  `STATIONS` list + `setupMusic()` in `app.js`. The top‑right badge (`.musicbar`, now a single `<button>`)
+  `STATIONS` list + `setupMusic()` in `app.js`. The lower‑right badge (`.musicbar`, above the clock; a single `<button>`)
   shows the current station and **opens the settings panel on click** — play/pause, station picker and
   volume live in the panel; **`M`** = next station. Stream URLs built per station with **mirror
   fallback** (ice1/2/4/6 → ice.somafm.com) and a
