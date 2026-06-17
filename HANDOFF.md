@@ -14,15 +14,17 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
   support those, `STATIONS` entries may now carry explicit `urls: [...]` (tried in order) instead of a
   SomaFM slug; `stationUrls(station)` returns those or builds the SomaFM mirror list from `id`.
   *(Public-radio classical may carry brief underwriting/pledge, unlike SomaFM's strict commercial-free.)*
-- **Still mode — only the logo moves (motion-sensitive viewer).** Everything is now static except the
-  disc/logo, which gets a gentle bob (`@keyframes discFloat` on `.disc`) plus a brief neon flicker
-  (`neonFlicker()` in `app.js` toggles `.disc.is-flicker` ~every 2 min → `@keyframes neonFlicker` on
-  `.disc__tube`). Background Ken-Burns pan disabled (`panLayer` now sets a fixed `scale(1.08)`); the
-  `floaty` drift removed from `.clock`/`.weather`/`.worldcup`; flying rocket + drifting particles turned
-  off (`rocket:false`/`particles:false` in `config.json` **and** `DEFAULTS`). Decorative blob/beam/grid
-  layers were already `display:none` over a photo, so they don't animate. *(QLED panel — burn-in risk is
-  low, so static is fine; the logo still moves a little as a hedge.)*
-- **Music badge moved** to the lower-right, just above the clock (`.musicbar` `right:4vmin; bottom:20vmin`).
+- **Motion dialled back to the viewer's taste.** They clarified: rocket + particles are fine; only the
+  *floating clock / weather / World Cup* bothered them. So: `floaty` drift removed from
+  `.clock`/`.weather`/`.worldcup`; flying **rocket + particles back on** (`rocket:true`/`particles:true`
+  in `DEFAULTS` & `config.json`); the **background is held static** (`panLayer` fixed `scale(1.08)`, no
+  Ken-Burns — it was part of the original nausea complaint and wasn't exonerated). The logo keeps its
+  gentle bob (`discFloat`) + a brief neon flicker ~every 2 min (`neonFlicker()` → `.disc.is-flicker`).
+- **6 generated backgrounds added (NEW).** Hand-built layered-gradient **SVG** art in the brand palettes
+  (`assets/slides/13-ember…18-rose.svg`), generated locally — this sandbox can't reach the internet or
+  run an image model, so these are tasteful gradients (no heavy filters → light on the TV GPU), not photos.
+  Deploy glob now includes `.svg` (`deploy-pages.yml`); they auto-join the daily rotation. Drop real
+  Nano Banana 4K art into `assets/slides/` anytime to add/replace (README has prompts).
 - **Music badge → opens the menu.** The on‑screen music control is now a single `<button>` that opens
   the settings panel on click (controls moved into the panel); the inline play/next mini‑buttons were
   removed. `M` still skips to the next station. *(If a different layout is wanted — e.g. badge at the
@@ -87,8 +89,9 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 - State persists in `localStorage` key `esm-screen.v1`; `DEFAULTS` is in `app.js`.
 
 ## Pieces
-- **Background gallery:** `assets/slides/` (12 images, `01‑`…`12‑`, 1920px ~16:9). Add more by dropping a
-  16:9 image in that folder + push (auto‑added → daily rotation includes it). **Daily auto‑rotation
+- **Background gallery:** `assets/slides/` — 12 Nano Banana JPGs (`01‑`…`12‑`) + 6 generated gradient
+  **SVGs** (`13‑ember`…`18‑rose`), ~16:9. Add more by dropping a `.jpg/.png/.webp/.svg` in that folder +
+  push (auto‑added → daily rotation includes it). **Daily auto‑rotation
   (NEW):** `dailyBg` (default on) picks the slide by local day number (`dayNumber()`/`dailyIndex()` in
   `app.js`), so all screens show the same "background of the day" and advance at midnight (`maybeDailyBg`
   every 15 min covers a TV left on across the rollover; otherwise the next morning's boot rotates it).

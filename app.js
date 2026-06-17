@@ -27,9 +27,9 @@
     style: "premium",
     palette: "orange",
     logo: true,
-    rocket: false,        // flying rocket off — only the logo moves (motion-sensitive)
+    rocket: true,
     clock: false,
-    particles: false,     // drifting particles off — keep the screen still
+    particles: true,
     name: "Easy Scale Media",
     tag: "Scaling brands to the moon.",
     speed: 1,
@@ -502,6 +502,8 @@
     "assets/slides/04-gold.jpg", "assets/slides/05-streaks.jpg", "assets/slides/06-glow.jpg",
     "assets/slides/07-layers.jpg", "assets/slides/08-blue.jpg", "assets/slides/09-teal.jpg",
     "assets/slides/10-purple.jpg", "assets/slides/11-red.jpg", "assets/slides/12-soft.jpg",
+    "assets/slides/13-ember.svg", "assets/slides/14-aurora.svg", "assets/slides/15-dusk.svg",
+    "assets/slides/16-abyss.svg", "assets/slides/17-gold.svg", "assets/slides/18-rose.svg",
   ];
   let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
   let lastDailyDay = null, bgPinned = false;
@@ -520,8 +522,8 @@
   }
 
   function panLayer(el) {
-    // Background is intentionally STATIC (no Ken-Burns drift) — only the logo is
-    // allowed to move. Cancel any prior animation and hold a fixed gentle zoom.
+    // Background is held STATIC (no Ken-Burns drift) — the large slow zoom was part
+    // of the motion the viewer found nauseating. The image still changes once a day.
     try { if (el.getAnimations) el.getAnimations().forEach((a) => a.cancel()); } catch {}
     el.style.transform = "scale(1.08)";
   }
