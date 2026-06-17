@@ -1,7 +1,7 @@
 {
   "style": "premium",
   "palette": "orange",
-  "bg": "09-teal",
+  "bg": "07-layers",
   "logo": true,
   "rocket": true,
   "clock": true,
@@ -9,8 +9,8 @@
   "weather": true,
   "worldcup": true,
   "speed": 1.5,
-  "dailyBg": true,
+  "dailyBg": false,
   "music": true,
-  "musicStation": "gsclassic",
+  "musicStation": "dronezone",
   "musicVolume": 0.5
 }
