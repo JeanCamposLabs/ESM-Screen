@@ -94,10 +94,16 @@
       </div>
     </div>
 
-    <!-- Optional clock -->
-    <div class="clock" id="clock" hidden>
-      <div class="clock__time" id="clockTime">--:--</div>
-      <div class="clock__date" id="clockDate"></div>
+    <!-- Clock + music badge share a bottom-right stack, so the badge always
+         centres over the clock no matter how long the station name is. -->
+    <div class="corner" id="corner">
+      <button class="musicbar" id="musicbar" hidden aria-label="Open settings">
+        <span class="musicbar__state" id="musicState">♪</span>
+      </button>
+      <div class="clock" id="clock" hidden>
+        <div class="clock__time" id="clockTime">--:--</div>
+        <div class="clock__date" id="clockDate"></div>
+      </div>
     </div>
 
     <!-- Weather (Maastricht, via Open-Meteo) -->
@@ -119,9 +125,6 @@
 
     <!-- Ambient music (SomaFM internet radio, audio only) -->
     <audio id="bgAudio" preload="none"></audio>
-    <button class="musicbar" id="musicbar" hidden aria-label="Open settings">
-      <span class="musicbar__state" id="musicState">♪</span>
-    </button>
 
     <!-- Idle / night overlay -->
     <div class="night" id="night" aria-hidden="true">

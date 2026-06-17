@@ -321,8 +321,12 @@ html[data-style="minimal"] .scene__vignette {
 /* =================================================================
    CLOCK
    ================================================================= */
+/* Bottom-right stack: clock defines the width; the music badge centres over it. */
+.corner {
+  position: absolute; right: 6vmin; bottom: 6vmin; z-index: 5; width: max-content;
+}
 .clock {
-  position: absolute; right: 6vmin; bottom: 6vmin; z-index: 5; text-align: right;
+  text-align: right;
 }
 .clock__time {
   font-family: "Space Grotesk", sans-serif; font-weight: 500;
@@ -374,7 +378,8 @@ html[data-style="minimal"] .scene__vignette {
    brightens on hover/interaction. Hidden on the night screen.
    ================================================================= */
 .musicbar {
-  position: absolute; right: 4vmin; bottom: 20vmin; z-index: 45;
+  position: absolute; left: 50%; bottom: calc(100% + 3vmin); transform: translateX(-50%);
+  z-index: 45; white-space: nowrap;
   display: flex; align-items: center;
   padding: 1.1vmin 1.9vmin; border-radius: 100px;
   background: rgba(0, 0, 0, .42); backdrop-filter: blur(10px);

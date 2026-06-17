@@ -42,7 +42,8 @@ the TV automatically (localStorage), so it survives reloads and power cycles.
 A small player streams **commercial-free lofi/chill internet radio** from
 [SomaFM](https://somafm.com) (audio only — no video). Toggle it under
 **Music → Play music**, choose a station (Groove Salad, Fluid lo-fi hip-hop,
-Secret Agent lounge, Drone Zone ambient, …), and set the volume. A subtle
+Secret Agent lounge, Drone Zone ambient, plus **classical** — YourClassical and
+WCPE), and set the volume. A subtle
 **badge sits in the lower-right (above the clock) showing the current station —
 click it to open the settings menu** (play/pause, station picker and volume all
 live there); press `M` for the next station.

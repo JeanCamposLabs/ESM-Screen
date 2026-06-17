@@ -58,15 +58,25 @@
     { id: "secretagent",   name: "Secret Agent",           genre: "Lounge · downtempo jazz" },
     { id: "lush",          name: "Lush",                   genre: "Mellow vocal chill" },
     { id: "beatblender",   name: "Beat Blender",           genre: "Deep house · downtempo" },
+    { id: "thetrip",       name: "The Trip",               genre: "Downtempo · trip-hop" },
+    { id: "spacestation",  name: "Space Station Soma",     genre: "Ambient · space" },
     { id: "sonicuniverse", name: "Sonic Universe",         genre: "Modern jazz" },
     { id: "illstreet",     name: "Illinois Street Lounge", genre: "Vintage lounge · exotica" },
     { id: "dronezone",     name: "Drone Zone",             genre: "Ambient · minimal beats" },
     { id: "deepspaceone",  name: "Deep Space One",         genre: "Deep ambient · space" },
+    // Classical — listener-supported public radio (not SomaFM), explicit stream URLs.
+    { id: "yourclassical", name: "YourClassical",          genre: "Classical",
+      urls: ["https://ycradio.stream.publicradio.org/ycradio.mp3",
+             "https://ycradio.stream.publicradio.org/ycradio.aac"] },
+    { id: "wcpe",          name: "The Classical Station",  genre: "Classical (WCPE)",
+      urls: ["https://playerservices.streamtheworld.com/api/livestream-redirect/WCPE_FMAAC.aac"] },
   ];
-  // Candidate stream URLs for a station, in fallback order across SomaFM's
-  // mirror servers. The <audio> element tries each until one plays, so a single
-  // server being down doesn't kill the music. All HTTPS (works on Pages).
-  function stationUrls(slug) {
+  // Candidate stream URLs for a station, tried in order with fallback. SomaFM
+  // stations build mirror URLs from the id (so a single server outage doesn't
+  // kill the music); others carry explicit `urls`. All HTTPS (works on Pages).
+  function stationUrls(st) {
+    if (st && st.urls) return st.urls.slice();
+    const slug = (st && st.id) || st;
     return ["ice1", "ice2", "ice4", "ice6"]
       .map((m) => `https://${m}.somafm.com/${slug}-128-mp3`)
       .concat(`https://ice.somafm.com/${slug}`);
@@ -801,7 +811,7 @@
 
   function loadStation(resetMirror = true) {
     if (resetMirror) urlIdx = 0;
-    const urls = stationUrls(currentStation().id);
+    const urls = stationUrls(currentStation());
     audio.src = urls[Math.min(urlIdx, urls.length - 1)];
     audio.load();
   }
@@ -821,7 +831,7 @@
     });
   }
   function tryNextMirror() {
-    const urls = stationUrls(currentStation().id);
+    const urls = stationUrls(currentStation());
     if (urlIdx < urls.length - 1) { urlIdx++; loadStation(false); if (userGestured && intendPlay()) startPlayback(); }
     else { flash("Couldn't reach the music stream — try another station"); }
   }

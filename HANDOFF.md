@@ -6,6 +6,14 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 ---
 
 ## Recent fixes (latest session)
+- **Music badge centred over the clock + more stations.** The clock and badge now share a bottom-right
+  `.corner` wrapper (`index.html`); the clock defines the width and the badge is centred over it
+  (`position:absolute; left:50%; translateX(-50%)`), so it no longer drifts as the station name changes.
+  Added stations: **The Trip**, **Space Station Soma**, and two **classical** stations that are *not*
+  SomaFM — **YourClassical** and **WCPE (The Classical Station)**, listener-supported public radio. To
+  support those, `STATIONS` entries may now carry explicit `urls: [...]` (tried in order) instead of a
+  SomaFM slug; `stationUrls(station)` returns those or builds the SomaFM mirror list from `id`.
+  *(Public-radio classical may carry brief underwriting/pledge, unlike SomaFM's strict commercial-free.)*
 - **Still mode — only the logo moves (motion-sensitive viewer).** Everything is now static except the
   disc/logo, which gets a gentle bob (`@keyframes discFloat` on `.disc`) plus a brief neon flicker
   (`neonFlicker()` in `app.js` toggles `.disc.is-flicker` ~every 2 min → `@keyframes neonFlicker` on
