@@ -466,9 +466,9 @@ html:not([data-nightclock="1"]) .night__clock { display: none; }
 .panel__section--row { display: flex; gap: 12px; }
 .panel__label { font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: rgba(255,255,255,.5); margin-bottom: 12px; font-weight: 600; }
 
-.opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .opt {
-  display: flex; flex-direction: column; gap: 6px; padding: 12px;
+  display: flex; flex-direction: column; gap: 6px; padding: 15px 16px;
   border-radius: 12px; border: 1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.04); cursor: pointer; text-align: left;
   color: inherit; transition: border-color .15s, background .15s;
