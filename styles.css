@@ -262,7 +262,8 @@ html[data-style="minimal"] .scene__vignette {
 .disc {
   position: absolute; left: 50%; top: 47%; translate: -50% -50%;
   z-index: 6; width: 78vmin; height: 78vmin; pointer-events: none;
-  filter: drop-shadow(0 3vmin 3.6vmin rgba(0,0,0,.55));   /* mounted on the wall (static) */
+  filter: drop-shadow(0 3vmin 3.6vmin rgba(0,0,0,.55));
+  animation: discFloat 14s ease-in-out infinite;   /* the only moving thing on screen — gentle */
 }
 .disc__tube {
   position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
@@ -308,13 +309,20 @@ html[data-style="minimal"] .scene__vignette {
   50%     { box-shadow: 0 0 4.4vmin color-mix(in srgb, var(--accent) 80%, transparent),
                         0 0 13vmin color-mix(in srgb, var(--accent) 50%, transparent); }
 }
+/* Gentle bob — the logo is the only element allowed to move. */
+@keyframes discFloat { 0%,100% { transform: translateY(-0.6vmin); } 50% { transform: translateY(0.7vmin); } }
+/* Brief neon-sign flicker, triggered (~every 2 min) by toggling .is-flicker. */
+@keyframes neonFlicker {
+  0%{opacity:1} 3%{opacity:.25} 6%{opacity:1} 9%{opacity:.5} 12%{opacity:1}
+  15%{opacity:.2} 18%{opacity:.9} 22%{opacity:.4} 26%{opacity:1} 100%{opacity:1}
+}
+.disc.is-flicker .disc__tube { animation: neonFlicker 1.8s linear; }
 
 /* =================================================================
    CLOCK
    ================================================================= */
 .clock {
   position: absolute; right: 6vmin; bottom: 6vmin; z-index: 5; text-align: right;
-  animation: floaty calc(11s / var(--speed)) ease-in-out infinite;
 }
 .clock__time {
   font-family: "Space Grotesk", sans-serif; font-weight: 500;
@@ -328,7 +336,6 @@ html[data-style="minimal"] .scene__vignette {
    ================================================================= */
 .weather {
   position: absolute; left: 6vmin; bottom: 6vmin; z-index: 5;
-  animation: floaty calc(11s / var(--speed)) ease-in-out infinite;  /* burn-in safe */
 }
 .weather__row { display: flex; align-items: center; gap: 1.6vmin; }
 .weather__icon { font-size: 5.2vmin; line-height: 1; filter: drop-shadow(0 .3vmin 1vmin rgba(0,0,0,.45)); }
@@ -353,7 +360,6 @@ html[data-style="minimal"] .scene__vignette {
   padding: 1.3vmin 2.8vmin; border-radius: 100px;
   background: rgba(0, 0, 0, .34);
   border: 1px solid rgba(255, 255, 255, .10);
-  animation: floaty calc(13s / var(--speed)) ease-in-out infinite;  /* burn-in safe */
 }
 .wc-title { font-size: 2vmin; font-weight: 700; letter-spacing: .02em; }
 .wc-games { display: flex; gap: 2.6vmin; font-size: 2vmin; font-weight: 300; }
@@ -368,7 +374,7 @@ html[data-style="minimal"] .scene__vignette {
    brightens on hover/interaction. Hidden on the night screen.
    ================================================================= */
 .musicbar {
-  position: absolute; right: 6vmin; bottom: 20vmin; z-index: 45;
+  position: absolute; right: 4vmin; bottom: 20vmin; z-index: 45;
   display: flex; align-items: center;
   padding: 1.1vmin 1.9vmin; border-radius: 100px;
   background: rgba(0, 0, 0, .42); backdrop-filter: blur(10px);

@@ -27,9 +27,9 @@
     style: "premium",
     palette: "orange",
     logo: true,
-    rocket: true,
+    rocket: false,        // flying rocket off — only the logo moves (motion-sensitive)
     clock: false,
-    particles: true,
+    particles: false,     // drifting particles off — keep the screen still
     name: "Easy Scale Media",
     tag: "Scaling brands to the moon.",
     speed: 1,
@@ -510,19 +510,10 @@
   }
 
   function panLayer(el) {
-    // Older TV browsers (older Chromium) support el.animate() but NOT el.getAnimations()
-    // — guard everything so a missing API can never stop the image from showing.
+    // Background is intentionally STATIC (no Ken-Burns drift) — only the logo is
+    // allowed to move. Cancel any prior animation and hold a fixed gentle zoom.
     try { if (el.getAnimations) el.getAnimations().forEach((a) => a.cancel()); } catch {}
-    if (prefersReduced || typeof el.animate !== "function") { el.style.transform = "scale(1.12)"; return; }
-    const x = (Math.random() * 2 - 1) * 4, y = (Math.random() * 2 - 1) * 4;
-    try {
-      el.animate(
-        [{ transform: `scale(1.10) translate(${-x}%, ${-y}%)` },
-         { transform: `scale(1.26) translate(${x}%, ${y}%)` }],
-        { duration: 38000 / (state.speed || 1), easing: "ease-in-out",
-          iterations: Infinity, direction: "alternate" }
-      );
-    } catch { el.style.transform = "scale(1.12)"; }
+    el.style.transform = "scale(1.08)";
   }
   function showSlide(i) {
     const el = slideLayers[slideFront ^ 1];            // the hidden layer
@@ -906,10 +897,20 @@
     $("musicbar").onclick = openPanel;
   }
 
+  /* ---------- Logo neon flicker (~every 2 min) ----------
+     Briefly flickers the disc like a neon sign coming to life. */
+  function neonFlicker() {
+    const d = $("disc");
+    if (!d || !state.logo || screen.classList.contains("is-night")) return;
+    d.classList.add("is-flicker");
+    setTimeout(() => d.classList.remove("is-flicker"), 1900);
+  }
+
   /* ---------- Boot ---------- */
   buildPanel();
   setupMusic();
   apply();
+  setInterval(neonFlicker, 120000);   // neon blink roughly every 2 minutes
   tick(); setInterval(tick, 1000);
   setInterval(applySchedule, 20000);
   sizeCanvas();

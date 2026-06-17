@@ -6,6 +6,15 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 ---
 
 ## Recent fixes (latest session)
+- **Still mode — only the logo moves (motion-sensitive viewer).** Everything is now static except the
+  disc/logo, which gets a gentle bob (`@keyframes discFloat` on `.disc`) plus a brief neon flicker
+  (`neonFlicker()` in `app.js` toggles `.disc.is-flicker` ~every 2 min → `@keyframes neonFlicker` on
+  `.disc__tube`). Background Ken-Burns pan disabled (`panLayer` now sets a fixed `scale(1.08)`); the
+  `floaty` drift removed from `.clock`/`.weather`/`.worldcup`; flying rocket + drifting particles turned
+  off (`rocket:false`/`particles:false` in `config.json` **and** `DEFAULTS`). Decorative blob/beam/grid
+  layers were already `display:none` over a photo, so they don't animate. *(QLED panel — burn-in risk is
+  low, so static is fine; the logo still moves a little as a hedge.)*
+- **Music badge moved** to the lower-right, just above the clock (`.musicbar` `right:4vmin; bottom:20vmin`).
 - **Music badge → opens the menu.** The on‑screen music control is now a single `<button>` that opens
   the settings panel on click (controls moved into the panel); the inline play/next mini‑buttons were
   removed. `M` still skips to the next station. *(If a different layout is wanted — e.g. badge at the
