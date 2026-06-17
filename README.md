@@ -106,6 +106,25 @@ See [`assets/README.md`](assets/README.md) for full specs. Missing files simply
 fall back to the built-in animated CSS background, so you can add them one at a
 time.
 
+### Where to get more rotating backgrounds
+
+The day-to-day rotation lives in **`assets/slides/`**. Drop any **16:9** image
+(`.jpg`, `.png`, `.webp`) in there, commit/push, and it's **auto-added to the
+rotation** within ~2 minutes — no code changes. Aim for ~1920px wide, calm and
+abstract, ideally a bit darker in the centre so the logo reads on top.
+
+Good **free** sources:
+- **Nano Banana Pro** — best match for the current look; use the prompts below at
+  **4K, 16:9**.
+- **Other AI image tools** — Midjourney, DALL·E, Adobe Firefly, Leonardo. Prompt
+  for something like *"4K 16:9 abstract ambient background, dark premium, soft
+  volumetric light, smooth gradients, no text."*
+- **Free stock photo sites** (royalty-free, no attribution needed) —
+  [Unsplash](https://unsplash.com), [Pexels](https://pexels.com),
+  [Pixabay](https://pixabay.com). Search e.g. *abstract gradient*, *dark abstract*,
+  *liquid light*, *bokeh*, *aurora*, *nebula*, *4k abstract wallpaper*; download the
+  largest size and crop to 16:9.
+
 ---
 
 ## Nano Banana Pro prompts

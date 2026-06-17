@@ -36,7 +36,7 @@ jobs:
           import os, json
           d = '_site/assets/slides'
           imgs = [f"assets/slides/{f}" for f in sorted(os.listdir(d))] if os.path.isdir(d) else []
-          imgs = [p for p in imgs if p.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.svg'))]
+          imgs = [p for p in imgs if p.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]
           json.dump(imgs, open('_site/assets/backgrounds.json', 'w'))
           print('backgrounds.json ->', imgs)
           PY

@@ -64,6 +64,12 @@
     { id: "illstreet",     name: "Illinois Street Lounge", genre: "Vintage lounge · exotica" },
     { id: "dronezone",     name: "Drone Zone",             genre: "Ambient · minimal beats" },
     { id: "deepspaceone",  name: "Deep Space One",         genre: "Deep ambient · space" },
+    { id: "seventies",     name: "Left Coast 70s",         genre: "Mellow 70s album rock" },
+    { id: "u80s",          name: "Underground 80s",        genre: "80s new wave · synthpop" },
+    { id: "indiepop",      name: "Indie Pop Rocks",        genre: "Indie pop" },
+    { id: "poptron",       name: "PopTron",                genre: "Electro-pop · indie dance" },
+    { id: "bootliquor",    name: "Boot Liquor",            genre: "Americana roots" },
+    { id: "suburbsofgoa",  name: "Suburbs of Goa",         genre: "Desi · world beats" },
     // Classical — listener-supported public radio (not SomaFM), explicit stream URLs.
     { id: "yourclassical", name: "YourClassical",          genre: "Classical",
       urls: ["https://ycradio.stream.publicradio.org/ycradio.mp3",
@@ -502,8 +508,6 @@
     "assets/slides/04-gold.jpg", "assets/slides/05-streaks.jpg", "assets/slides/06-glow.jpg",
     "assets/slides/07-layers.jpg", "assets/slides/08-blue.jpg", "assets/slides/09-teal.jpg",
     "assets/slides/10-purple.jpg", "assets/slides/11-red.jpg", "assets/slides/12-soft.jpg",
-    "assets/slides/13-ember.svg", "assets/slides/14-aurora.svg", "assets/slides/15-dusk.svg",
-    "assets/slides/16-abyss.svg", "assets/slides/17-gold.svg", "assets/slides/18-rose.svg",
   ];
   let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
   let lastDailyDay = null, bgPinned = false;
