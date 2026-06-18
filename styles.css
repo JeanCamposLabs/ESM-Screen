@@ -261,7 +261,7 @@ html[data-style="minimal"] .scene__vignette {
    ================================================================= */
 .disc {
   position: absolute; left: 50%; top: 47%; translate: -50% -50%;
-  z-index: 6; width: 78vmin; height: 78vmin; pointer-events: none;
+  z-index: 6; width: 78vmin; height: 78vmin; pointer-events: auto; cursor: pointer;
   filter: drop-shadow(0 3vmin 3.6vmin rgba(0,0,0,.55));
   animation: discFloat 14s ease-in-out infinite;   /* the only moving thing on screen — gentle */
 }
@@ -311,12 +311,20 @@ html[data-style="minimal"] .scene__vignette {
 }
 /* Gentle bob — the logo is the only element allowed to move. */
 @keyframes discFloat { 0%,100% { transform: translateY(-0.6vmin); } 50% { transform: translateY(0.7vmin); } }
-/* Brief neon-sign flicker, triggered (~every 2 min) by toggling .is-flicker. */
+/* Subtle, realistic neon waver — a couple of soft dips, mostly steady.
+   Triggered by toggling .is-flicker (auto ~every 2 min, or click the logo). */
 @keyframes neonFlicker {
-  0%{opacity:1} 3%{opacity:.25} 6%{opacity:1} 9%{opacity:.5} 12%{opacity:1}
-  15%{opacity:.2} 18%{opacity:.9} 22%{opacity:.4} 26%{opacity:1} 100%{opacity:1}
+  0%, 16% { opacity: 1; }
+  18%     { opacity: .72; }
+  19.5%   { opacity: 1; }
+  21%     { opacity: .86; }
+  22.5%   { opacity: 1; }
+  68%     { opacity: 1; }
+  70%     { opacity: .76; }
+  71%     { opacity: 1; }
+  100%    { opacity: 1; }
 }
-.disc.is-flicker .disc__tube { animation: neonFlicker 1.8s linear; }
+.disc.is-flicker .disc__tube { animation: neonFlicker 2.4s ease-out; }
 
 /* =================================================================
    CLOCK

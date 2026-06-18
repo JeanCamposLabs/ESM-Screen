@@ -915,11 +915,15 @@
 
   /* ---------- Logo neon flicker (~every 2 min) ----------
      Briefly flickers the disc like a neon sign coming to life. */
+  let flickerTimer = null;
   function neonFlicker() {
     const d = $("disc");
     if (!d || !state.logo || screen.classList.contains("is-night")) return;
+    d.classList.remove("is-flicker");
+    void d.offsetWidth;            // restart the CSS animation even if clicked mid-flicker
     d.classList.add("is-flicker");
-    setTimeout(() => d.classList.remove("is-flicker"), 1900);
+    clearTimeout(flickerTimer);
+    flickerTimer = setTimeout(() => d.classList.remove("is-flicker"), 2500);
   }
 
   /* ---------- Boot ---------- */
@@ -927,6 +931,7 @@
   setupMusic();
   apply();
   setInterval(neonFlicker, 120000);   // neon blink roughly every 2 minutes
+  $("disc").addEventListener("click", neonFlicker);   // click the logo to preview it
   tick(); setInterval(tick, 1000);
   setInterval(applySchedule, 20000);
   sizeCanvas();
