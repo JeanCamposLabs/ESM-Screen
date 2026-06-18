@@ -42,9 +42,9 @@ jobs:
           PY
           cat > _site/version.json <<EOF
           {
-            "version": "$(date -u +%Y.%m.%d)-${GITHUB_SHA::7}",
+            "version": "code-$(cat app.js styles.css index.html | sha1sum | cut -c1-10)",
             "builtAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "note": "Auto-stamped on deploy. The screen reloads when this changes."
+            "note": "version = hash of app.js+styles.css+index.html, so screens reload only on CODE changes, not config/panel pushes (those apply live via the 30s config poll)."
           }
           EOF
 

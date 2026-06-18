@@ -19,7 +19,8 @@ any TV browser and runs all day without babysitting.
 3. **Auto on/off:** shows the art during the day and fades to a dim idle clock at
    night (default **23:00**), back on in the morning (default **07:00**).
 4. **Self-updating:** every screen watches `version.json` and reloads itself when
-   you ship a new release — so all your TVs stay current with no manual refresh.
+   you ship a **code** release — so all your TVs stay current with no manual refresh.
+   Changing the *look* via the panel (config) applies live **without** a reload.
 
 ---
 

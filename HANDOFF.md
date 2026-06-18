@@ -65,7 +65,9 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
   stamps `version.json` with the commit, **auto‑generates `assets/backgrounds.json` from `assets/slides/*`**,
   publishes to GitHub Pages. (Pages source = **GitHub Actions**, set in repo Settings → Pages.)
 - **Auto‑refresh:** every screen polls `version.json` every **30 s**; when it changes it fades out and
-  reloads. So **any push to `main` updates all TVs within ~30 s** — no manual step.
+  reloads. `version` is a **hash of `app.js`+`styles.css`+`index.html`**, so only **code** pushes reload
+  the TVs (~30 s). **Config/panel pushes do NOT reload** — `config.json` changes apply live via the 30 s
+  config poll (`syncConfig`). This was changed to stop the screens "blinking" on every settings push.
 - **Dev workflow used:** branch `claude/determined-cannon-oJhoy` → rebase onto `main` → push → PR → merge.
 
 ## Central control (sync all TVs)
