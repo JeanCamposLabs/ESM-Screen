@@ -311,20 +311,27 @@ html[data-style="minimal"] .scene__vignette {
 }
 /* Gentle bob — the logo is the only element allowed to move. */
 @keyframes discFloat { 0%,100% { transform: translateY(-0.6vmin); } 50% { transform: translateY(0.7vmin); } }
-/* Subtle, realistic neon waver — a couple of soft dips, mostly steady.
-   Triggered by toggling .is-flicker (auto ~every 2 min, or click the logo). */
-@keyframes neonFlicker {
-  0%, 16% { opacity: 1; }
-  18%     { opacity: .72; }
-  19.5%   { opacity: 1; }
-  21%     { opacity: .86; }
-  22.5%   { opacity: 1; }
-  68%     { opacity: 1; }
-  70%     { opacity: .76; }
-  71%     { opacity: 1; }
-  100%    { opacity: 1; }
+/* Slow rainbow light sweeping across the disc surface (auto ~every 2 min, or
+   click the logo to preview). Clipped to the circle by .disc__tube overflow. */
+.disc__tube::after {
+  content: ""; position: absolute; top: -30%; height: 160%; left: 0; width: 55%;
+  pointer-events: none; opacity: 0; filter: blur(7px);
+  background: linear-gradient(68deg,
+    transparent 6%,
+    rgba(255,80,95,.55) 22%,
+    rgba(255,190,70,.55) 36%,
+    rgba(120,255,150,.55) 50%,
+    rgba(90,205,255,.55) 64%,
+    rgba(200,130,255,.55) 78%,
+    transparent 94%);
 }
-.disc.is-flicker .disc__tube { animation: neonFlicker 2.4s ease-out; }
+.disc.is-shine .disc__tube::after { animation: discShine 6.5s ease-in-out; }
+@keyframes discShine {
+  0%   { transform: translateX(-150%); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateX(330%); opacity: 0; }
+}
 
 /* =================================================================
    CLOCK

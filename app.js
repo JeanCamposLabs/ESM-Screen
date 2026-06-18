@@ -913,25 +913,25 @@
     $("musicbar").onclick = openPanel;
   }
 
-  /* ---------- Logo neon flicker (~every 2 min) ----------
-     Briefly flickers the disc like a neon sign coming to life. */
-  let flickerTimer = null;
-  function neonFlicker() {
+  /* ---------- Logo rainbow light sweep (~every 2 min, or on click) ----------
+     A slow band of rainbow light passes across the disc surface. */
+  let shineTimer = null;
+  function logoShine() {
     const d = $("disc");
     if (!d || !state.logo || screen.classList.contains("is-night")) return;
-    d.classList.remove("is-flicker");
-    void d.offsetWidth;            // restart the CSS animation even if clicked mid-flicker
-    d.classList.add("is-flicker");
-    clearTimeout(flickerTimer);
-    flickerTimer = setTimeout(() => d.classList.remove("is-flicker"), 2500);
+    d.classList.remove("is-shine");
+    void d.offsetWidth;            // restart the sweep even if clicked mid-pass
+    d.classList.add("is-shine");
+    clearTimeout(shineTimer);
+    shineTimer = setTimeout(() => d.classList.remove("is-shine"), 7000);
   }
 
   /* ---------- Boot ---------- */
   buildPanel();
   setupMusic();
   apply();
-  setInterval(neonFlicker, 120000);   // neon blink roughly every 2 minutes
-  $("disc").addEventListener("click", neonFlicker);   // click the logo to preview it
+  setInterval(logoShine, 120000);   // rainbow light passes roughly every 2 minutes
+  $("disc").addEventListener("click", logoShine);   // click the logo to preview it
   tick(); setInterval(tick, 1000);
   setInterval(applySchedule, 20000);
   sizeCanvas();
