@@ -360,13 +360,15 @@ html[data-style="minimal"] .scene__vignette {
   100% { transform: translateX(330%); opacity: 0; }
 }
 
-/* repeating, colourful EasyScaleMedia pattern, revealed under the rainbow */
+/* A dense grid of tiny "EasyScaleMedia" code that fills the whole disc and
+   sits behind the wordmark, revealed under the rainbow. Really small font so it
+   reads as a matrix of code rather than a few big words. */
 .disc__code {
   position: absolute; inset: 0; overflow: hidden; z-index: 1; opacity: 0;
   display: flex; align-items: center; justify-content: center;
-  padding: 7vmin; text-align: center; word-break: break-all;
+  padding: 3.4vmin; text-align: center; word-break: break-all;
   font-family: "Space Mono", ui-monospace, "Courier New", monospace;
-  font-weight: 700; font-size: 3.8vmin; line-height: 1.3; letter-spacing: .03em;
+  font-weight: 700; font-size: 1vmin; line-height: 1.1; letter-spacing: .02em;
   background: linear-gradient(90deg, #ff5e7a, #ffb347, #ffe15e, #6dffa0, #58c8ff, #b07bff, #ff5e7a);
   background-size: 220% 100%;
   -webkit-background-clip: text; background-clip: text;

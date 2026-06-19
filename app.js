@@ -932,7 +932,8 @@
   setupMusic();
   apply();
   const discCode = $("discCode");
-  if (discCode) discCode.textContent = "EasyScaleMedia".repeat(80);
+  // Enough repeats to densely fill the disc as a tiny code grid (overflow clipped to the circle).
+  if (discCode) discCode.textContent = "EasyScaleMedia".repeat(700);
   setInterval(playWave, 120000);   // the wave passes roughly every 2 minutes
   $("disc").addEventListener("click", playWave);   // click the logo to trigger it
   tick(); setInterval(tick, 1000);
