@@ -334,15 +334,18 @@ html[data-style="minimal"] .scene__vignette {
   100% { transform: translateX(300%); opacity: 0; }
 }
 
-/* on-screen elements ripple as the wave front reaches them (left→right) */
+/* On-screen elements lift in anticipation of the wave: each one starts a slow,
+   smooth glide ~1.2s BEFORE the light front reaches it and peaks just as the
+   band sweeps over (left→right), so the light looks like it's carrying motion
+   that's already flowing — no abrupt jump. */
 @keyframes ripple {
-  0%, 100% { transform: translateY(0); }
-  40%      { transform: translateY(-1.7vmin); }
-  72%      { transform: translateY(.45vmin); }
+  0%   { transform: translateY(0); }
+  54%  { transform: translateY(-1.6vmin); }
+  100% { transform: translateY(0); }
 }
-#screen.wave-go .weather  { animation: ripple .9s ease-in-out .8s; }
-#screen.wave-go .worldcup { animation: ripple .9s ease-in-out 2s; }
-#screen.wave-go .corner   { animation: ripple .9s ease-in-out 3.1s; }
+#screen.wave-go .weather  { animation: ripple 2.2s ease-in-out .3s; }
+#screen.wave-go .worldcup { animation: ripple 2.2s ease-in-out 1.15s; }
+#screen.wave-go .corner   { animation: ripple 2.2s ease-in-out 1.95s; }
 
 /* the logo: a rainbow band sweeps across the disc, synced with the wave */
 .disc__tube::after {
