@@ -913,25 +913,28 @@
     $("musicbar").onclick = openPanel;
   }
 
-  /* ---------- Logo rainbow light sweep (~every 2 min, or on click) ----------
-     A slow band of rainbow light passes across the disc surface. */
-  let shineTimer = null;
-  function logoShine() {
-    const d = $("disc");
-    if (!d || !state.logo || screen.classList.contains("is-night")) return;
-    d.classList.remove("is-shine");
-    void d.offsetWidth;            // restart the sweep even if clicked mid-pass
-    d.classList.add("is-shine");
-    clearTimeout(shineTimer);
-    shineTimer = setTimeout(() => d.classList.remove("is-shine"), 7000);
+  /* ---------- Full-screen light wave (~every 2 min, or click the logo) ----------
+     A light band sweeps the screen and elements ripple as it passes; over the
+     logo it becomes a rainbow that reveals the repeating EasyScaleMedia pattern.
+     Driven by one class on #screen so everything stays in sync. */
+  let waveTimer = null;
+  function playWave() {
+    if (screen.classList.contains("is-night")) return;
+    screen.classList.remove("wave-go");
+    void screen.offsetWidth;        // restart cleanly even if triggered mid-pass
+    screen.classList.add("wave-go");
+    clearTimeout(waveTimer);
+    waveTimer = setTimeout(() => screen.classList.remove("wave-go"), 5400);
   }
 
   /* ---------- Boot ---------- */
   buildPanel();
   setupMusic();
   apply();
-  setInterval(logoShine, 120000);   // rainbow light passes roughly every 2 minutes
-  $("disc").addEventListener("click", logoShine);   // click the logo to preview it
+  const discCode = $("discCode");
+  if (discCode) discCode.textContent = "EasyScaleMedia".repeat(80);
+  setInterval(playWave, 120000);   // the wave passes roughly every 2 minutes
+  $("disc").addEventListener("click", playWave);   // click the logo to trigger it
   tick(); setInterval(tick, 1000);
   setInterval(applySchedule, 20000);
   sizeCanvas();

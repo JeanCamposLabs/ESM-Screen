@@ -289,7 +289,7 @@ html[data-style="minimal"] .scene__vignette {
               0 0 6vmin color-mix(in srgb, var(--accent) 60%, transparent),
               inset 0 0 1.4vmin color-mix(in srgb, #fff 70%, var(--accent));
 }
-.disc__face { display: flex; align-items: center; gap: 2.2vmin; padding: 0 6vmin; }
+.disc__face { display: flex; align-items: center; gap: 2.2vmin; padding: 0 6vmin; position: relative; z-index: 2; }
 .disc__rocket {
   width: 13vmin; height: 13vmin; color: #fff; flex: none;
   filter: drop-shadow(0 0 .8vmin #fff)
@@ -311,27 +311,70 @@ html[data-style="minimal"] .scene__vignette {
 }
 /* Gentle bob — the logo is the only element allowed to move. */
 @keyframes discFloat { 0%,100% { transform: translateY(-0.6vmin); } 50% { transform: translateY(0.7vmin); } }
-/* Slow rainbow light sweeping across the disc surface (auto ~every 2 min, or
-   click the logo to preview). Clipped to the circle by .disc__tube overflow. */
+/* =================================================================
+   FULL-SCREEN LIGHT WAVE  (click the logo, or auto ~every 2 min)
+   A soft light band sweeps the whole screen; elements ripple in
+   sequence as it passes; over the logo it becomes a rainbow that
+   reveals a repeating "EasyScaleMedia" code pattern. Transform-based
+   so it's light on the TV, and it only runs during the ~5s pass.
+   ================================================================= */
+.wave {
+  position: fixed; top: 0; bottom: 0; left: 0; width: 42vw; z-index: 50;
+  pointer-events: none; opacity: 0; transform: translateX(-120%);
+  background: linear-gradient(72deg, transparent 30%,
+    rgba(255,255,255,.05) 42%, rgba(255,255,255,.17) 50%,
+    rgba(255,255,255,.05) 58%, transparent 70%);
+  mix-blend-mode: screen;
+}
+#screen.wave-go .wave { animation: waveSweep 5s ease-in-out; }
+@keyframes waveSweep {
+  0%   { transform: translateX(-120%); opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translateX(300%); opacity: 0; }
+}
+
+/* on-screen elements ripple as the wave front reaches them (left→right) */
+@keyframes ripple {
+  0%, 100% { transform: translateY(0); }
+  40%      { transform: translateY(-1.7vmin); }
+  72%      { transform: translateY(.45vmin); }
+}
+#screen.wave-go .weather  { animation: ripple .9s ease-in-out .8s; }
+#screen.wave-go .worldcup { animation: ripple .9s ease-in-out 2s; }
+#screen.wave-go .corner   { animation: ripple .9s ease-in-out 3.1s; }
+
+/* the logo: a rainbow band sweeps across the disc, synced with the wave */
 .disc__tube::after {
   content: ""; position: absolute; top: -30%; height: 160%; left: 0; width: 55%;
-  pointer-events: none; opacity: 0; filter: blur(7px);
-  background: linear-gradient(68deg,
-    transparent 6%,
-    rgba(255,80,95,.55) 22%,
-    rgba(255,190,70,.55) 36%,
-    rgba(120,255,150,.55) 50%,
-    rgba(90,205,255,.55) 64%,
-    rgba(200,130,255,.55) 78%,
-    transparent 94%);
+  pointer-events: none; opacity: 0; filter: blur(7px); z-index: 3;
+  background: linear-gradient(68deg, transparent 6%,
+    rgba(255,80,95,.6) 22%, rgba(255,190,70,.6) 36%, rgba(120,255,150,.6) 50%,
+    rgba(90,205,255,.6) 64%, rgba(200,130,255,.6) 78%, transparent 94%);
 }
-.disc.is-shine .disc__tube::after { animation: discShine 6.5s ease-in-out; }
+#screen.wave-go .disc__tube::after { animation: discShine 5s ease-in-out; }
 @keyframes discShine {
   0%   { transform: translateX(-150%); opacity: 0; }
-  10%  { opacity: 1; }
-  90%  { opacity: 1; }
+  18%  { opacity: 1; }
+  82%  { opacity: 1; }
   100% { transform: translateX(330%); opacity: 0; }
 }
+
+/* repeating, colourful EasyScaleMedia pattern, revealed under the rainbow */
+.disc__code {
+  position: absolute; inset: 0; overflow: hidden; z-index: 1; opacity: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 7vmin; text-align: center; word-break: break-all;
+  font-family: "Space Mono", ui-monospace, "Courier New", monospace;
+  font-weight: 700; font-size: 3.8vmin; line-height: 1.3; letter-spacing: .03em;
+  background: linear-gradient(90deg, #ff5e7a, #ffb347, #ffe15e, #6dffa0, #58c8ff, #b07bff, #ff5e7a);
+  background-size: 220% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+#screen.wave-go .disc__code { animation: codeReveal 5s ease-in-out, codeFlow 5s linear; }
+@keyframes codeReveal { 0%,28% { opacity: 0; } 50% { opacity: .95; } 74%,100% { opacity: 0; } }
+@keyframes codeFlow { from { background-position: 0 0; } to { background-position: 220% 0; } }
 
 /* =================================================================
    CLOCK

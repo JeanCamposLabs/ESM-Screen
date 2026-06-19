@@ -20,9 +20,13 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
   `.clock`/`.weather`/`.worldcup`; flying **rocket + particles back on** (`rocket:true`/`particles:true`
   in `DEFAULTS` & `config.json`); the **background is held static** (`panLayer` fixed `scale(1.08)`, no
   Ken-Burns — it was part of the original nausea complaint and wasn't exonerated). The logo keeps its
-  gentle bob (`discFloat`) + a slow **rainbow light sweep** across the disc ~every 2 min, or on click
-  (`logoShine()` → `.disc.is-shine` → `discShine` on `.disc__tube::after`). *(Replaced an earlier neon
-  flicker the user disliked — twice. Don't bring the flicker back.)*
+  gentle bob (`discFloat`). **Full-screen light wave** (`playWave()` toggles `.wave-go` on `#screen`,
+  auto ~every 2 min or on logo click): a light band (`.wave`) sweeps the screen, `.weather`/`.worldcup`/
+  `.corner` ripple in sequence (`@keyframes ripple`, staggered delays ≈ their x-position), and over the
+  logo it's a rainbow (`discShine` on `.disc__tube::after`) that reveals a repeating, colourful
+  **EasyScaleMedia** pattern in Space Mono (`.disc__code`, `codeReveal`+`codeFlow`). All transform/opacity
+  based and only runs during the ~5s pass = light on the TV. *(Earlier neon flicker was scrapped — user
+  disliked it twice; don't bring it back. Delays are approximate; tune in `styles.css`.)*
 - **Background sourcing (NOTE).** I tried generating gradient **SVG** backgrounds locally (this sandbox
   has no internet/image-model) — they looked cheap and the user rejected them, so they were removed and
   the gallery is back to the 12 Nano Banana JPGs. Don't re-attempt hand-coded gradients. The README now
