@@ -1,20 +1,16 @@
-# Render Blueprint for the lofi audio relay (lives in radio-relay/).
-# Must sit at the repo root so Render auto-detects it: New -> Blueprint ->
-# pick this repo + the claude/brave-ritchie-ea0gl5 branch -> Apply.
-# `rootDir` points the build at the radio-relay/ subfolder. The GitHub Pages
-# workflow only publishes index.html/styles.css/app.js/config.json/assets, so
-# this file is never served from the static site.
+# Render Blueprint for the ESM lofi audio relay.
+# This repo IS the relay (files live at the root), so no rootDir is needed:
+# New -> Blueprint in the Render dashboard, pick this repo + branch -> Apply.
 #
 # Free plan suits a screen that's only on during the day: it spins down when no
 # TV is connected (nothing billed overnight) and cold-starts in ~30-60s on the
 # first morning connection. No healthCheckPath on purpose, so Render lets it
 # idle instead of pinging it awake 24/7. For always-on with no cold start,
-# change `plan: free` to `plan: starter`. Docker alternative: radio-relay/Dockerfile.
+# change `plan: free` to `plan: starter`. Docker alternative: ./Dockerfile.
 services:
   - type: web
     name: esm-lofi-relay
     runtime: node
-    rootDir: radio-relay
     plan: free
     region: frankfurt
     buildCommand: npm install

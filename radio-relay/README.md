@@ -63,10 +63,12 @@ branch, and it reads `render.yaml`. Or create a Web Service manually with:
 | Setting        | Value                                               |
 |----------------|-----------------------------------------------------|
 | Runtime        | Node                                                 |
-| Root directory | `radio-relay`                                        |
 | Build command  | `npm install`                                        |
 | Start command  | `npm start`                                          |
 | Env var        | `STREAM_URL=https://www.youtube.com/@LofiGirl/live`  |
+
+(If you nest this project inside a subfolder of another repo, set the
+service's **Root directory** to that subfolder.)
 
 **Plan:** `render.yaml` uses **Free**, which suits a screen that's only on
 during the day — it spins down when no TV is connected (costs nothing overnight)
