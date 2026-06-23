@@ -32,6 +32,9 @@ const STREAM_URL = process.env.STREAM_URL || 'https://www.youtube.com/@LofiGirl/
 const BITRATE = process.env.BITRATE || '128k';
 const IDLE_TIMEOUT_MS = parseInt(process.env.IDLE_TIMEOUT_MS, 10) || 60000; // stop upstream after last TV leaves
 const PREBUFFER_BYTES = parseInt(process.env.PREBUFFER_BYTES, 10) || 256 * 1024; // kickstart playback fast
+// Caps so a flood of connections or a stalled client can't exhaust the host.
+const MAX_LISTENERS = parseInt(process.env.MAX_LISTENERS, 10) || 50;             // reject new connections past this
+const MAX_CLIENT_BACKLOG = parseInt(process.env.MAX_CLIENT_BACKLOG, 10) || 4 * 1024 * 1024; // drop a TV buffering > this
 
 /** @type {Set<import('http').ServerResponse>} */
 const listeners = new Set();
@@ -54,6 +57,15 @@ function remember(chunk) {
   }
 }
 function clearPrebuffer() { prebuffer.length = 0; prebufferBytes = 0; }
+
+// Single, idempotent cleanup path for a departing listener — called from the
+// request close/error handlers and when we drop a slow client. Schedules the
+// idle shutdown once the last TV is gone.
+function removeListener(res) {
+  if (!listeners.delete(res)) return;
+  log('listener -1 ->', listeners.size);
+  if (listeners.size === 0) scheduleIdleStop();
+}
 
 function log(...a) { console.log(new Date().toISOString(), ...a); }
 
@@ -100,7 +112,15 @@ async function startPipeline() {
       backoffMs = 1000;                   // healthy data flowing -> reset backoff
       remember(chunk);
       for (const res of listeners) {
-        try { res.write(chunk); } catch { listeners.delete(res); }
+        try {
+          res.write(chunk);
+          // A TV that can't keep up makes Node buffer unbounded RAM — cut it loose.
+          if (res.writableLength > MAX_CLIENT_BACKLOG) {
+            log('dropping slow listener (backlog over limit)');
+            res.destroy();
+            removeListener(res);
+          }
+        } catch { removeListener(res); }
       }
     });
     ffmpeg.stderr.on('data', (d) => { lastError = d.toString().trim(); });
@@ -178,24 +198,27 @@ const server = http.createServer((req, res) => {
   }
 
   if (path === '/lofi.mp3' || path === '/lofi') {
+    if (listeners.size >= MAX_LISTENERS) {
+      log('rejecting listener: at MAX_LISTENERS', MAX_LISTENERS);
+      res.writeHead(503, { 'Content-Type': 'text/plain', 'Retry-After': '30' });
+      return res.end('relay at capacity');
+    }
     res.writeHead(200, {
       'Content-Type': 'audio/mpeg',
       'Cache-Control': 'no-cache, no-store',
       'Connection': 'keep-alive',
       'Access-Control-Allow-Origin': '*', // TVs load this cross-origin from the Pages site
     });
+    res.flushHeaders(); // send headers now so the TV connects without waiting for the first audio byte
     if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
     for (const chunk of prebuffer) res.write(chunk); // instant-start burst
     listeners.add(res);
     log('listener +1 ->', listeners.size);
     startPipeline();
 
-    const drop = () => {
-      if (!listeners.delete(res)) return;
-      log('listener -1 ->', listeners.size);
-      if (listeners.size === 0) scheduleIdleStop();
-    };
+    const drop = () => removeListener(res);
     req.on('close', drop);
+    res.on('close', drop);
     res.on('error', drop);
     return;
   }

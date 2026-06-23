@@ -33,6 +33,8 @@ same URL and never notice.
 | `STREAM_URL`      | `https://www.youtube.com/@LofiGirl/live`  | Any YouTube live/video or playlist URL |
 | `BITRATE`         | `128k`                                    | MP3 bitrate                            |
 | `IDLE_TIMEOUT_MS` | `60000`                                   | Stop the upstream this long after the last TV disconnects |
+| `MAX_LISTENERS`   | `50`                                      | Reject new connections past this (flood guard) |
+| `MAX_CLIENT_BACKLOG` | `4194304`                              | Drop a client buffering more than this many bytes (slow-consumer guard) |
 
 ## Run locally
 
