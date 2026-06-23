@@ -1,0 +1,15 @@
+# Render Blueprint for the lofi relay.
+# Deploy via the Render dashboard (New > Blueprint, point it at this repo) or
+# let the ESM tooling create the service directly. Lives in radio-relay/ so it
+# never touches the static GitHub Pages site.
+services:
+  - type: web
+    name: esm-lofi-relay
+    runtime: docker
+    rootDir: radio-relay
+    dockerfilePath: ./Dockerfile
+    plan: starter # always-on; the free tier sleeps on idle and would drop the stream
+    healthCheckPath: /healthz
+    envVars:
+      - key: STREAM_URL
+        value: https://www.youtube.com/@LofiGirl/live
