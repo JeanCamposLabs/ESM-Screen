@@ -53,23 +53,29 @@ docker run -p 10000:10000 esm-lofi-relay
 
 ## Deploy (Render)
 
-Runs on Render's **native Node runtime** (no Docker needed) as a **web
-service**, **Starter** plan — always-on; the free tier sleeps on idle and would
-drop the stream. `ffmpeg` is bundled via the `ffmpeg-static` npm package and
-`yt-dlp` is downloaded by the `postinstall` script, so no system packages are
-required.
+Runs on Render's **native Node runtime** (no Docker needed). `ffmpeg` is bundled
+via the `ffmpeg-static` npm package and `yt-dlp` is downloaded by the
+`postinstall` script, so no system packages are required.
 
-| Setting        | Value                                   |
-|----------------|-----------------------------------------|
-| Runtime        | Node                                     |
-| Build command  | `cd radio-relay && npm install`          |
-| Start command  | `cd radio-relay && npm start`            |
-| Health check   | `/healthz`                               |
-| Env var        | `STREAM_URL=https://www.youtube.com/@LofiGirl/live` |
+Easiest: **New -> Blueprint** in the Render dashboard, point it at this repo +
+branch, and it reads `render.yaml`. Or create a Web Service manually with:
+
+| Setting        | Value                                               |
+|----------------|-----------------------------------------------------|
+| Runtime        | Node                                                 |
+| Root directory | `radio-relay`                                        |
+| Build command  | `npm install`                                        |
+| Start command  | `npm start`                                          |
+| Env var        | `STREAM_URL=https://www.youtube.com/@LofiGirl/live`  |
+
+**Plan:** `render.yaml` uses **Free**, which suits a screen that's only on
+during the day — it spins down when no TV is connected (costs nothing overnight)
+and cold-starts in ~30-60s on the first morning connection. Free instances have
+limited CPU (~0.1 vCPU); a single audio transcode should fit, but if playback
+stutters, switch to **Starter** for always-on, full-CPU streaming.
 
 For a Docker-based deploy instead (e.g. self-hosting), use the included
-`Dockerfile` / `render.yaml` — the server falls back to `ffmpeg`/`yt-dlp` on
-`PATH`.
+`Dockerfile` — the server falls back to `ffmpeg`/`yt-dlp` on `PATH`.
 
 ## Caveats
 

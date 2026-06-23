@@ -1,15 +1,24 @@
-# Render Blueprint for the lofi relay.
-# Deploy via the Render dashboard (New > Blueprint, point it at this repo) or
-# let the ESM tooling create the service directly. Lives in radio-relay/ so it
-# never touches the static GitHub Pages site.
+# Render Blueprint for the lofi relay (native Node runtime, Free plan).
+# Deploy: Render dashboard -> New -> Blueprint -> pick this repo + the
+# claude/brave-ritchie-ea0gl5 branch. Render reads this file and creates the
+# service. Lives in radio-relay/ so it never touches the static Pages site.
+#
+# Free plan fits an office screen that's only on during the day: it spins down
+# when no TV is connected (so it costs nothing overnight) and cold-starts in
+# ~30-60s on the first morning connection. No healthCheckPath on purpose, so
+# Render lets it idle instead of pinging it awake 24/7.
+#
+# For an always-on, no-cold-start experience, change `plan: free` to
+# `plan: starter`. A Docker-based alternative is in ./Dockerfile.
 services:
   - type: web
     name: esm-lofi-relay
-    runtime: docker
+    runtime: node
     rootDir: radio-relay
-    dockerfilePath: ./Dockerfile
-    plan: starter # always-on; the free tier sleeps on idle and would drop the stream
-    healthCheckPath: /healthz
+    plan: free
+    region: frankfurt
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
       - key: STREAM_URL
         value: https://www.youtube.com/@LofiGirl/live
