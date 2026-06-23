@@ -42,16 +42,18 @@
     weather: true,
     worldcup: true,
     music: false,            // ambient internet radio (audio only)
-    musicStation: "groovesalad",
+    musicStation: "lofigirl",
     musicVolume: 0.35,
     musicBar: true,          // show the small on-screen music control
   };
   const KEY = "esm-screen.v1";
 
-  // SomaFM internet-radio stations — commercial-free, listener-supported
-  // (https://somafm.com). Audio-only ambient music for the office; "Next"
-  // cycles through them. Add/remove freely — it's just this list.
+  // Audio-only stations for the office; "Next" cycles through them. The first is
+  // our self-hosted Lofi Girl relay (YouTube live -> MP3, see radio-relay/); the
+  // rest are SomaFM — commercial-free, listener-supported (https://somafm.com).
   const STATIONS = [
+    { id: "lofigirl",      name: "Lofi Girl",              genre: "Lo-fi hip-hop · live",
+      urls: ["https://esm-lofi-relay.onrender.com/lofi.mp3"] },
     { id: "groovesalad",   name: "Groove Salad",           genre: "Chill · downtempo" },
     { id: "fluid",         name: "Fluid",                  genre: "Lo-fi hip-hop · chillhop" },
     { id: "gsclassic",     name: "Groove Salad Classic",   genre: "Classic chill · ambient" },
