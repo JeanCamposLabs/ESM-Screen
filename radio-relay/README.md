@@ -51,9 +51,23 @@ docker run -p 10000:10000 esm-lofi-relay
 
 ## Deploy (Render)
 
-Runs as a Docker **web service**, `rootDir: radio-relay`, **Starter** plan
-(always-on — the free tier sleeps on idle and would drop the stream).
-Health check path `/healthz`. See `render.yaml`.
+Runs on Render's **native Node runtime** (no Docker needed) as a **web
+service**, **Starter** plan — always-on; the free tier sleeps on idle and would
+drop the stream. `ffmpeg` is bundled via the `ffmpeg-static` npm package and
+`yt-dlp` is downloaded by the `postinstall` script, so no system packages are
+required.
+
+| Setting        | Value                                   |
+|----------------|-----------------------------------------|
+| Runtime        | Node                                     |
+| Build command  | `cd radio-relay && npm install`          |
+| Start command  | `cd radio-relay && npm start`            |
+| Health check   | `/healthz`                               |
+| Env var        | `STREAM_URL=https://www.youtube.com/@LofiGirl/live` |
+
+For a Docker-based deploy instead (e.g. self-hosting), use the included
+`Dockerfile` / `render.yaml` — the server falls back to `ffmpeg`/`yt-dlp` on
+`PATH`.
 
 ## Caveats
 

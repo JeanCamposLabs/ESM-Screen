@@ -5,9 +5,13 @@
   "description": "Relays the Lofi Girl YouTube live stream as a plain always-on MP3 for ESM-Screen TVs (no video, no ads).",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "node scripts/fetch-ytdlp.js"
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0"
   }
 }

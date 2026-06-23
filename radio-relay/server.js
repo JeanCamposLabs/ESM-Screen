@@ -14,7 +14,18 @@
  */
 
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const { spawn } = require('child_process');
+
+// Resolve the ffmpeg / yt-dlp binaries. On Render's native Node runtime these
+// come from npm (ffmpeg-static) and the postinstall download (./bin/yt-dlp);
+// in Docker / locally they're system packages on PATH. Env vars override both.
+function tryRequire(name) { try { return require(name); } catch { return null; } }
+const FFMPEG = process.env.FFMPEG_PATH || tryRequire('ffmpeg-static') || 'ffmpeg';
+const LOCAL_YTDLP = path.join(__dirname, 'bin', 'yt-dlp');
+const YTDLP = process.env.YTDLP_PATH
+  || (fs.existsSync(LOCAL_YTDLP) ? LOCAL_YTDLP : 'yt-dlp');
 
 const PORT = parseInt(process.env.PORT, 10) || 10000;
 const STREAM_URL = process.env.STREAM_URL || 'https://www.youtube.com/@LofiGirl/live';
@@ -49,7 +60,7 @@ function log(...a) { console.log(new Date().toISOString(), ...a); }
 // Resolve the current live audio URL with yt-dlp (-g prints the direct media URL).
 function resolveAudioUrl() {
   return new Promise((resolve, reject) => {
-    const yt = spawn('yt-dlp', [
+    const yt = spawn(YTDLP, [
       '-g',                    // print resolved media URL(s) instead of downloading
       '-f', 'bestaudio/best',  // prefer audio-only; fall back to best (we drop video below)
       '--no-warnings',
@@ -75,7 +86,7 @@ async function startPipeline() {
     log('resolving live audio URL from', STREAM_URL);
     const url = await resolveAudioUrl();
     log('resolved; starting ffmpeg transcode ->', BITRATE, 'mp3');
-    const ffmpeg = spawn('ffmpeg', [
+    const ffmpeg = spawn(FFMPEG, [
       '-hide_banner', '-loglevel', 'error',
       // ride out brief network hiccups in the live feed instead of dying
       '-reconnect', '1', '-reconnect_streamed', '1', '-reconnect_delay_max', '5',
@@ -193,7 +204,10 @@ const server = http.createServer((req, res) => {
   res.end('not found');
 });
 
-server.listen(PORT, () => log(`relay listening on :${PORT}, source ${STREAM_URL}`));
+server.listen(PORT, () => {
+  log(`relay listening on :${PORT}, source ${STREAM_URL}`);
+  log('binaries -> ffmpeg:', FFMPEG, '| yt-dlp:', YTDLP);
+});
 
 process.on('uncaughtException', (e) => log('uncaughtException', e));
 process.on('SIGTERM', () => { stopPipeline(); server.close(() => process.exit(0)); });
