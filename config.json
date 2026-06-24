@@ -1,7 +1,7 @@
 {
   "style": "premium",
   "palette": "orange",
-  "bg": "01-liquid",
+  "bg": "09-teal",
   "logo": true,
   "rocket": true,
   "clock": true,
@@ -11,6 +11,6 @@
   "speed": 1.5,
   "dailyBg": false,
   "music": true,
-  "musicStation": "lofigirl",
-  "musicVolume": 0.5
+  "musicStation": "yourclassical",
+  "musicVolume": 0.45
 }
