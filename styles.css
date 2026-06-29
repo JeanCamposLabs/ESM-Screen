@@ -13,7 +13,7 @@ body {
   font-family: "Sora", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--text);
   overflow: hidden;
-  cursor: default;              /* mouse cursor visible on the screen */
+  cursor: default;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -31,31 +31,48 @@ kbd {
 
 /* =================================================================
    PALETTES  (brand orange is the default)
+
+   Each palette also declares:
+     --acc / --acc2 / --acc3 / --glo  — RGB triplets for rgba() so that
+       older TV browsers that lack color-mix() still get correct alpha tints.
+     --disc-light / --disc-dark / --disc-border / --disc-ring-inner
+       — pre-computed blends used inside the floating disc (the disc mixes
+         accent with white or a dark colour, which rgba() alone can't do).
    ================================================================= */
 html[data-palette="orange"] {
   --bg-0:#0a0805; --bg-1:#17100a; --bg-2:#2a1606;
   --accent:#ff7a18; --accent-2:#ffb454; --accent-3:#ff4d00;
   --glow:#ff9233; --text:#fff7ef; --text-dim:rgba(255,247,239,.62);
+  --acc:255,122,24; --acc2:255,180,84; --acc3:255,77,0; --glo:255,146,51;
+  --disc-light:#ff852a; --disc-dark:#d86513; --disc-border:#98480d; --disc-ring-inner:#ffd7ba;
 }
 html[data-palette="navy"] {
   --bg-0:#04070f; --bg-1:#0a1326; --bg-2:#102043;
   --accent:#e9c46a; --accent-2:#f6dc97; --accent-3:#caa14a;
   --glow:#ffd97a; --text:#f3f6ff; --text-dim:rgba(243,246,255,.62);
+  --acc:233,196,106; --acc2:246,220,151; --acc3:202,161,74; --glo:255,217,122;
+  --disc-light:#ebc976; --disc-dark:#c6a055; --disc-border:#8c703a; --disc-ring-inner:#f8edd2;
 }
 html[data-palette="electric"] {
   --bg-0:#02040a; --bg-1:#04101f; --bg-2:#072844;
   --accent:#23d4fd; --accent-2:#6ee7ff; --accent-3:#2a7bff;
   --glow:#4fe3ff; --text:#eef7ff; --text-dim:rgba(238,247,255,.62);
+  --acc:35,212,253; --acc2:110,231,255; --acc3:42,123,255; --glo:79,227,255;
+  --disc-light:#35d7fd; --disc-dark:#28adca; --disc-border:#1f798b; --disc-ring-inner:#bdf2fe;
 }
 html[data-palette="teal"] {
   --bg-0:#02100e; --bg-1:#052019; --bg-2:#063e2d;
   --accent:#2ee6a6; --accent-2:#7df0cf; --accent-3:#11b3c6;
   --glow:#48f0be; --text:#eafff7; --text-dim:rgba(234,255,247,.62);
+  --acc:46,230,166; --acc2:125,240,207; --acc3:17,179,198; --glo:72,240,190;
+  --disc-light:#3fe8ad; --disc-dark:#30bc85; --disc-border:#25835b; --disc-ring-inner:#c0f8e4;
 }
 html[data-palette="purple"] {
   --bg-0:#0a0512; --bg-1:#160a26; --bg-2:#2c0f49;
   --accent:#b15cff; --accent-2:#e08bff; --accent-3:#ff5cc8;
   --glow:#c77dff; --text:#f7eeff; --text-dim:rgba(247,238,255,.62);
+  --acc:177,92,255; --acc2:224,139,255; --acc3:255,92,200; --glo:199,125,255;
+  --disc-light:#b769ff; --disc-dark:#994dcc; --disc-border:#6d378c; --disc-ring-inner:#e8ceff;
 }
 
 /* =================================================================
@@ -66,7 +83,7 @@ html[data-palette="purple"] {
   background: var(--bg-0);
   overflow: hidden;
   user-select: none; -webkit-user-select: none;
-  animation: screen-in 1s ease both;        /* gentle fade-in on first load */
+  animation: screen-in 1s ease both;
 }
 @keyframes screen-in { from { opacity: 0; } to { opacity: 1; } }
 
@@ -75,21 +92,19 @@ body.is-updating .screen { animation: none; opacity: 0; transition: opacity .6s 
 .scene { position: absolute; inset: 0; }
 .scene > * { position: absolute; inset: 0; }
 
-/* Base gradient wash (always visible; sits under the Nano Banana image) */
+/* Base gradient wash */
 .scene__gradient {
   background:
-    radial-gradient(120% 90% at 75% 8%, color-mix(in srgb, var(--accent-3) 26%, transparent), transparent 55%),
-    radial-gradient(110% 80% at 12% 100%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%),
+    radial-gradient(120% 90% at 75% 8%, rgba(var(--acc3), 0.26), transparent 55%),
+    radial-gradient(110% 80% at 12% 100%, rgba(var(--acc), 0.22), transparent 60%),
     linear-gradient(160deg, var(--bg-1) 0%, var(--bg-0) 55%, var(--bg-2) 130%);
 }
 
-/* Nano Banana 4K image (set as inline background by app.js when the file
-   exists). Slow Ken-Burns drift keeps a still image feeling alive and is
-   gentle on OLED panels (no static pixels). */
+/* Nano Banana 4K image — slow pan driven per-slide in app.js */
 .scene__image {
   background-size: cover; background-position: center;
   opacity: 0; transition: opacity 1.6s ease;
-  will-change: transform, opacity;   /* slow pan is driven per-slide in app.js */
+  will-change: transform, opacity;
 }
 .scene__image.is-ready, .scene__image.is-on { opacity: 1; }
 @keyframes kenburns {
@@ -97,23 +112,23 @@ body.is-updating .screen { animation: none; opacity: 0; transition: opacity .6s 
   100% { transform: scale(1.16) translate(1.4%, 1%); }
 }
 
-/* Soft aurora blobs (premium / minimal) */
+/* Soft aurora blobs */
 .scene__blobs { mix-blend-mode: screen; filter: blur(2px); }
 .blob {
   position: absolute; border-radius: 50%;
   filter: blur(70px); opacity: .55; will-change: transform;
 }
 .blob--1 { width: 46vw; height: 46vw; left: -6vw; top: -10vw;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 75%, transparent), transparent 70%);
+  background: radial-gradient(circle, rgba(var(--acc), 0.75), transparent 70%);
   animation: drift1 calc(34s / var(--speed)) ease-in-out infinite alternate; }
 .blob--2 { width: 52vw; height: 52vw; right: -10vw; top: 12vh;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent-3) 70%, transparent), transparent 70%);
+  background: radial-gradient(circle, rgba(var(--acc3), 0.70), transparent 70%);
   animation: drift2 calc(42s / var(--speed)) ease-in-out infinite alternate; }
 .blob--3 { width: 40vw; height: 40vw; left: 22vw; bottom: -16vw;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent-2) 70%, transparent), transparent 70%);
+  background: radial-gradient(circle, rgba(var(--acc2), 0.70), transparent 70%);
   animation: drift3 calc(38s / var(--speed)) ease-in-out infinite alternate; }
 .blob--4 { width: 30vw; height: 30vw; right: 18vw; bottom: -6vw;
-  background: radial-gradient(circle, color-mix(in srgb, var(--glow) 60%, transparent), transparent 70%);
+  background: radial-gradient(circle, rgba(var(--glo), 0.60), transparent 70%);
   animation: drift1 calc(46s / var(--speed)) ease-in-out infinite alternate-reverse; }
 @keyframes drift1 { to { transform: translate(8vw, 6vh) scale(1.15); } }
 @keyframes drift2 { to { transform: translate(-7vw, 9vh) scale(1.1); } }
@@ -123,8 +138,8 @@ body.is-updating .screen { animation: none; opacity: 0; transition: opacity .6s 
 .scene__beams {
   opacity: 0;
   background:
-    linear-gradient(75deg, transparent 38%, color-mix(in srgb, var(--accent-2) 18%, transparent) 50%, transparent 62%),
-    linear-gradient(105deg, transparent 42%, color-mix(in srgb, var(--accent) 14%, transparent) 51%, transparent 60%);
+    linear-gradient(75deg, transparent 38%, rgba(var(--acc2), 0.18) 50%, transparent 62%),
+    linear-gradient(105deg, transparent 42%, rgba(var(--acc), 0.14) 51%, transparent 60%);
   background-size: 200% 200%;
   mix-blend-mode: screen;
   animation: beams calc(26s / var(--speed)) ease-in-out infinite alternate;
@@ -135,8 +150,8 @@ body.is-updating .screen { animation: none; opacity: 0; transition: opacity .6s 
 .scene__grid {
   opacity: 0;
   background-image:
-    linear-gradient(color-mix(in srgb, var(--accent) 28%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--accent) 28%, transparent) 1px, transparent 1px);
+    linear-gradient(rgba(var(--acc), 0.28) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--acc), 0.28) 1px, transparent 1px);
   background-size: 4vw 4vw;
   mask-image: radial-gradient(120% 80% at 50% 120%, #000 10%, transparent 70%);
   -webkit-mask-image: radial-gradient(120% 80% at 50% 120%, #000 10%, transparent 70%);
@@ -164,7 +179,7 @@ html[data-style="premium"] .scene__grid { opacity: 0; }
 html[data-style="nature"] .scene__blobs { opacity: .9; filter: blur(4px); }
 html[data-style="nature"] .scene__gradient {
   background:
-    radial-gradient(80% 55% at 70% 22%, color-mix(in srgb, var(--accent-2) 42%, transparent), transparent 60%),
+    radial-gradient(80% 55% at 70% 22%, rgba(var(--acc2), 0.42), transparent 60%),
     linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 45%, var(--bg-0) 100%);
 }
 
@@ -176,17 +191,14 @@ html[data-style="minimal"] .scene__blobs { opacity: .4; filter: blur(2px); }
 html[data-style="minimal"] .scene__grain { opacity: .025; }
 html[data-style="minimal"] .scene__gradient {
   background:
-    radial-gradient(100% 80% at 30% 20%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
+    radial-gradient(100% 80% at 30% 20%, rgba(var(--acc), 0.16), transparent 60%),
     linear-gradient(150deg, var(--bg-1), var(--bg-0));
 }
 html[data-style="minimal"] .scene__vignette {
   background: radial-gradient(130% 120% at 50% 45%, transparent 65%, rgba(0,0,0,.4) 100%);
 }
 
-/* When a real photo background loads, let it lead: ease off the generated
-   scenery so the image reads cleanly (grain + vignette stay for depth). */
-/* A photo is the background now — hide the heavy generated/blurred layers over
-   it (big perf win on TV GPUs, and cleaner). */
+/* When a real photo background loads, hide the heavy generated layers */
 .scene__image.is-on ~ .scene__blobs,  .scene__image.is-ready ~ .scene__blobs,
 .scene__image.is-on ~ .scene__beams,  .scene__image.is-ready ~ .scene__beams,
 .scene__image.is-on ~ .scene__grid,   .scene__image.is-ready ~ .scene__grid,
@@ -201,11 +213,10 @@ html[data-style="minimal"] .scene__vignette {
 }
 .rocket {
   position: absolute; left: 0; top: 0;
-  width: 12vmin; height: 12vmin;   /* the icon is square; nose points up-right */
-  color: #fff; opacity: 0;          /* shown only while a flight is running (see app.js) */
+  width: 12vmin; height: 12vmin;
+  color: #fff; opacity: 0;
   will-change: transform;
 }
-/* A gentle bob + tiny banking wobble layered on top of the cruise */
 .rocket__bob {
   position: relative; width: 100%; height: 100%;
   animation: bob calc(3.6s / var(--speed)) ease-in-out infinite;
@@ -217,13 +228,12 @@ html[data-style="minimal"] .scene__vignette {
 }
 .rocket__svg {
   width: 100%; height: 100%; display: block; overflow: visible;
-  filter: drop-shadow(0 0 1.6vmin color-mix(in srgb, var(--glow) 70%, transparent))
-          drop-shadow(0 0 .5vmin color-mix(in srgb, var(--accent) 60%, transparent));
+  filter: drop-shadow(0 0 1.6vmin rgba(var(--glo), 0.70))
+          drop-shadow(0 0 .5vmin rgba(var(--acc), 0.60));
 }
-/* Soft engine glow from the lower-left exhaust */
 .rocket__trail {
   position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(42% 42% at 33% 70%, color-mix(in srgb, var(--glow) 48%, transparent), transparent 70%);
+  background: radial-gradient(42% 42% at 33% 70%, rgba(var(--glo), 0.48), transparent 70%);
   filter: blur(1.2vmin); opacity: .55;
 }
 
@@ -232,7 +242,7 @@ html[data-style="minimal"] .scene__vignette {
    ================================================================= */
 .brand {
   position: absolute; left: 6vmin; top: 6vmin; z-index: 5;
-  animation: floaty calc(9s / var(--speed)) ease-in-out infinite;  /* burn-in safe */
+  animation: floaty calc(9s / var(--speed)) ease-in-out infinite;
 }
 @keyframes floaty { 0%,100%{ transform: translate(0,0);} 50%{ transform: translate(.6vmin,.8vmin);} }
 .brand__lockup { display: flex; align-items: center; gap: 1.6vmin; }
@@ -242,7 +252,7 @@ html[data-style="minimal"] .scene__vignette {
   font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 3.2vmin;
   letter-spacing: .04em; color: #fff;
   background: linear-gradient(150deg, var(--accent-2), var(--accent) 55%, var(--accent-3));
-  box-shadow: 0 0 5vmin color-mix(in srgb, var(--glow) 45%, transparent),
+  box-shadow: 0 0 5vmin rgba(var(--glo), 0.45),
               inset 0 0 1.6vmin rgba(255,255,255,.3);
 }
 .brand__name {
@@ -259,41 +269,45 @@ html[data-style="minimal"] .scene__vignette {
 /* =================================================================
    FLOATING BRAND DISC  (neon, colour-cycling, lifted off the scene)
    ================================================================= */
+/* NOTE: centering uses transform: translate(-50%,-50%) instead of the
+   standalone `translate:` shorthand — the shorthand requires Chrome 104+
+   and silently does nothing on older TV browsers. The discFloat animation
+   must also carry the centering offset so the two transforms don't fight. */
 .disc {
-  position: absolute; left: 50%; top: 47%; translate: -50% -50%;
+  position: absolute; left: 50%; top: 47%;
+  transform: translate(-50%, -50%);
   z-index: 6; width: 78vmin; height: 78vmin; pointer-events: auto; cursor: pointer;
   filter: drop-shadow(0 3vmin 3.6vmin rgba(0,0,0,.55));
-  animation: discFloat 14s ease-in-out infinite;   /* the only moving thing on screen — gentle */
+  animation: discFloat 14s ease-in-out infinite;
 }
 .disc__tube {
   position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
   display: grid; place-items: center;
   color: var(--accent);
-  /* warm, real orange acrylic */
   background:
     linear-gradient(122deg, rgba(255,255,255,.10) 0%, transparent 34%),
     radial-gradient(56% 40% at 50% 20%, rgba(255,255,255,.12), transparent 60%),
     radial-gradient(circle at 50% 50%,
-      color-mix(in srgb, var(--accent) 92%, #fff) 0%,
+      var(--disc-light) 0%,
       var(--accent) 52%,
-      color-mix(in srgb, var(--accent) 80%, #3a1200) 100%);
-  border: .5vmin solid color-mix(in srgb, var(--accent) 55%, #1a0a00);
-  box-shadow: 0 0 3.4vmin color-mix(in srgb, var(--accent) 72%, transparent),
-              0 0 11vmin color-mix(in srgb, var(--accent) 45%, transparent);  /* static glow (perf) */
+      var(--disc-dark) 100%);
+  border: .5vmin solid var(--disc-border);
+  box-shadow: 0 0 3.4vmin rgba(var(--acc), 0.72),
+              0 0 11vmin rgba(var(--acc), 0.45);
 }
-.disc__ring {            /* bright neon tube near the edge */
+.disc__ring {
   position: absolute; inset: 2vmin; border-radius: 50%;
   border: .5vmin solid #fff;
   box-shadow: 0 0 1.4vmin #fff,
               0 0 3vmin var(--accent),
-              0 0 6vmin color-mix(in srgb, var(--accent) 60%, transparent),
-              inset 0 0 1.4vmin color-mix(in srgb, #fff 70%, var(--accent));
+              0 0 6vmin rgba(var(--acc), 0.60),
+              inset 0 0 1.4vmin var(--disc-ring-inner);
 }
 .disc__face { display: flex; align-items: center; gap: 2.2vmin; padding: 0 6vmin; position: relative; z-index: 2; }
 .disc__rocket {
   width: 13vmin; height: 13vmin; color: #fff; flex: none;
   filter: drop-shadow(0 0 .8vmin #fff)
-          drop-shadow(0 0 2.2vmin color-mix(in srgb, var(--accent) 80%, transparent));
+          drop-shadow(0 0 2.2vmin rgba(var(--acc), 0.80));
 }
 .disc__rocket path { fill: none; stroke: currentColor; stroke-width: 30; stroke-linejoin: round; stroke-linecap: round; }
 .disc__word { display: flex; flex-direction: column; line-height: 1.05; }
@@ -301,22 +315,23 @@ html[data-style="minimal"] .scene__vignette {
   font-family: "Fredoka", "Sora", sans-serif; font-weight: 600; font-size: 6.4vmin; letter-spacing: .005em;
   color: #fff;
   text-shadow: 0 0 .6vmin #fff, 0 0 2.2vmin #fff,
-               0 0 5vmin color-mix(in srgb, var(--accent) 70%, transparent);
+               0 0 5vmin rgba(var(--acc), 0.70);
 }
 @keyframes discPulse {
-  0%,100% { box-shadow: 0 0 3vmin color-mix(in srgb, var(--accent) 65%, transparent),
-                        0 0 9vmin color-mix(in srgb, var(--accent) 38%, transparent); }
-  50%     { box-shadow: 0 0 4.4vmin color-mix(in srgb, var(--accent) 80%, transparent),
-                        0 0 13vmin color-mix(in srgb, var(--accent) 50%, transparent); }
+  0%,100% { box-shadow: 0 0 3vmin rgba(var(--acc), 0.65),
+                        0 0 9vmin rgba(var(--acc), 0.38); }
+  50%     { box-shadow: 0 0 4.4vmin rgba(var(--acc), 0.80),
+                        0 0 13vmin rgba(var(--acc), 0.50); }
 }
-/* Gentle bob — the logo is the only element allowed to move. */
-@keyframes discFloat { 0%,100% { transform: translateY(-0.6vmin); } 50% { transform: translateY(0.7vmin); } }
+/* Centering offset (translate -50% -50%) is baked into every keyframe so the
+   animation does not fight the transform on .disc itself. */
+@keyframes discFloat {
+  0%,100% { transform: translate(-50%, calc(-50% - 0.6vmin)); }
+  50%     { transform: translate(-50%, calc(-50% + 0.7vmin)); }
+}
+
 /* =================================================================
    FULL-SCREEN LIGHT WAVE  (click the logo, or auto ~every 2 min)
-   A soft light band sweeps the whole screen; elements ripple in
-   sequence as it passes; over the logo it becomes a rainbow that
-   reveals a repeating "EasyScaleMedia" code pattern. Transform-based
-   so it's light on the TV, and it only runs during the ~5s pass.
    ================================================================= */
 .wave {
   position: fixed; top: 0; bottom: 0; left: 0; width: 42vw; z-index: 50;
@@ -334,18 +349,21 @@ html[data-style="minimal"] .scene__vignette {
   100% { transform: translateX(300%); opacity: 0; }
 }
 
-/* On-screen elements lift in anticipation of the wave: each one starts a slow,
-   smooth glide ~1.2s BEFORE the light front reaches it and peaks just as the
-   band sweeps over (left→right), so the light looks like it's carrying motion
-   that's already flowing — no abrupt jump. */
 @keyframes ripple {
   0%   { transform: translateY(0); }
   54%  { transform: translateY(-1.6vmin); }
   100% { transform: translateY(0); }
 }
-#screen.wave-go .weather  { animation: ripple 2.2s ease-in-out .3s; }
-#screen.wave-go .worldcup { animation: ripple 2.2s ease-in-out 1.15s; }
-#screen.wave-go .corner   { animation: ripple 2.2s ease-in-out 1.95s; }
+/* .worldcup is centred with transform: translate(-50%,0), so its ripple variant
+   must preserve the X offset — plain ripple would drop it and the strip jumps. */
+@keyframes ripple-wc {
+  0%   { transform: translate(-50%, 0); }
+  54%  { transform: translate(-50%, -1.6vmin); }
+  100% { transform: translate(-50%, 0); }
+}
+#screen.wave-go .weather  { animation: ripple    2.2s ease-in-out .3s; }
+#screen.wave-go .worldcup { animation: ripple-wc 2.2s ease-in-out 1.15s; }
+#screen.wave-go .corner   { animation: ripple    2.2s ease-in-out 1.95s; }
 
 /* the logo: a rainbow band sweeps across the disc, synced with the wave */
 .disc__tube::after {
@@ -363,9 +381,6 @@ html[data-style="minimal"] .scene__vignette {
   100% { transform: translateX(330%); opacity: 0; }
 }
 
-/* A dense grid of tiny "EasyScaleMedia" code that fills the whole disc and
-   sits behind the wordmark, revealed under the rainbow. Really small font so it
-   reads as a matrix of code rather than a few big words. */
 .disc__code {
   position: absolute; inset: 0; overflow: hidden; z-index: 1; opacity: 0;
   display: flex; align-items: center; justify-content: center;
@@ -384,7 +399,6 @@ html[data-style="minimal"] .scene__vignette {
 /* =================================================================
    CLOCK
    ================================================================= */
-/* Bottom-right stack: clock defines the width; the music badge centres over it. */
 .corner {
   position: absolute; right: 6vmin; bottom: 6vmin; z-index: 5; width: max-content;
 }
@@ -420,8 +434,12 @@ html[data-style="minimal"] .scene__vignette {
 /* =================================================================
    WORLD CUP  (bottom-centre strip between weather and clock)
    ================================================================= */
+/* NOTE: uses transform: translate(-50%,0) instead of the `translate:` shorthand
+   for the same older-browser reason as .disc above. */
 .worldcup {
-  position: absolute; left: 50%; bottom: 5.6vmin; translate: -50% 0; z-index: 5;
+  position: absolute; left: 50%; bottom: 5.6vmin;
+  transform: translate(-50%, 0);
+  z-index: 5;
   display: flex; align-items: center; gap: 2.6vmin;
   max-width: 84vw; overflow: hidden; white-space: nowrap;
   padding: 1.3vmin 2.8vmin; border-radius: 100px;
@@ -436,9 +454,6 @@ html[data-style="minimal"] .scene__vignette {
 
 /* =================================================================
    AMBIENT MUSIC CONTROL
-   Small, subtle pill in the top-right (clear of the hidden settings
-   hotspot corner). Dim by default so it doesn't fight the artwork;
-   brightens on hover/interaction. Hidden on the night screen.
    ================================================================= */
 .musicbar {
   position: absolute; left: 50%; bottom: calc(100% + 3vmin); transform: translateX(-50%);
@@ -477,7 +492,7 @@ html[data-style="minimal"] .scene__vignette {
   font-family: "Space Grotesk", sans-serif; font-weight: 300;
   font-size: 6vmin; color: rgba(255,255,255,.16);
   opacity: 0; transition: opacity 2.5s ease 1.5s;
-  animation: nightdrift 40s ease-in-out infinite alternate;  /* drift = burn-in safe */
+  animation: nightdrift 40s ease-in-out infinite alternate;
 }
 .screen.is-night .night__clock { opacity: 1; }
 html:not([data-nightclock="1"]) .night__clock { display: none; }
@@ -489,8 +504,11 @@ html:not([data-nightclock="1"]) .night__clock { display: none; }
 /* =================================================================
    HINT + HOTSPOT
    ================================================================= */
+/* NOTE: transform: translate(-50%,0) instead of `translate:` shorthand. */
 .hint {
-  position: absolute; left: 50%; bottom: 4vmin; translate: -50% 0; z-index: 30;
+  position: absolute; left: 50%; bottom: 4vmin;
+  transform: translate(-50%, 0);
+  z-index: 30;
   padding: 1.2vmin 2.2vmin; border-radius: 100px;
   background: rgba(0,0,0,.5); backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,.14);
@@ -537,9 +555,7 @@ html:not([data-nightclock="1"]) .night__clock { display: none; }
   color: inherit; transition: border-color .15s, background .15s;
 }
 .opt:hover { background: rgba(255,255,255,.08); }
-.opt.is-active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
-.opt__name { font-weight: 600; font-size: 14px; }
-.opt__desc { font-size: 12px; color: rgba(255,255,255,.55); line-height: 1.3; }
+.opt.is-active { border-color: var(--accent); background: rgba(var(--acc), 0.16); }
 
 .swatch-row { display: flex; gap: 12px; flex-wrap: wrap; }
 .swatch {
@@ -558,7 +574,7 @@ html:not([data-nightclock="1"]) .night__clock { display: none; }
   transition: border-color .12s, box-shadow .12s;
 }
 .bg-opt:hover { border-color: rgba(255,255,255,.45); }
-.bg-opt.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); }
+.bg-opt.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(var(--acc), 0.45); }
 
 .toggle-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .toggle { display: flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; font-size: 14px; }
