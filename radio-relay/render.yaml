@@ -18,3 +18,5 @@ services:
     envVars:
       - key: STREAM_URL
         value: https://soundcloud.com/lofi_girl
+      - key: SELF_URL
+        value: https://esm-lofi-relay.onrender.com

@@ -296,5 +296,23 @@ server.listen(PORT, () => {
   loadTracks(true).catch((e) => log('initial track load failed:', String(e)));
 });
 
+// ---- Self-ping keepalive --------------------------------------------------
+// While the process is already running, ping our own public URL every 10 min
+// during office hours so Render's free-plan idle timer never fires.
+// This extends uptime between the external GitHub Actions cron pings; together
+// they ensure a cold start only happens once (first Monday ping of the week).
+// Set SELF_URL to the service's public URL in render.yaml.
+const SELF_URL = process.env.SELF_URL || '';
+if (SELF_URL) {
+  log('keepalive self-ping enabled ->', SELF_URL);
+  const _pingMod = SELF_URL.startsWith('https') ? require('https') : http;
+  setInterval(() => {
+    const d = new Date(), day = d.getUTCDay(), h = d.getUTCHours();
+    if (day === 0 || day === 6 || h < 6 || h >= 17) return;  // skip weekends + outside UTC 06-17
+    _pingMod.get(SELF_URL + '/healthz', (r) => r.resume())
+      .on('error', (e) => log('self-ping error:', e.message));
+  }, 10 * 60 * 1000);
+}
+
 process.on('uncaughtException', (e) => log('uncaughtException', e));
 process.on('SIGTERM', () => { stopPipeline(); server.close(() => process.exit(0)); });
