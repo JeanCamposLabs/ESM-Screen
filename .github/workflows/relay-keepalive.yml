@@ -1,0 +1,27 @@
+name: Keep lofi relay alive
+
+# Pings the Render relay every 10 minutes on weekdays during Amsterdam office
+# hours so it never hits the 15-minute idle spin-down. The first run each
+# morning wakes the service from the weekend spin-down; subsequent runs keep
+# it warm so TVs connect instantly. Pair with the SELF_URL self-ping in
+# radio-relay/server.js (extends uptime while the process is already running).
+#
+# Schedule: every 10 min, Mon-Fri, 06:00-16:59 UTC
+#   Summer (CEST, UTC+2) → 08:00-18:59 local
+#   Winter (CET,  UTC+1) → 07:00-17:59 local
+# Both cover the 08:30-17:00 Amsterdam window comfortably.
+on:
+  schedule:
+    - cron: '*/10 6-16 * * 1-5'
+  workflow_dispatch:   # allow a manual trigger from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping relay
+        run: |
+          curl -fsS --max-time 30 https://esm-lofi-relay.onrender.com/healthz \
+            && echo "relay ok" \
+            || echo "relay not responding — may be cold-starting (next ping in 10 min)"
