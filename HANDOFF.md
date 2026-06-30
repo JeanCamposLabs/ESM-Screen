@@ -27,9 +27,10 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
   **EasyScaleMedia** pattern in Space Mono (`.disc__code`, `codeReveal`+`codeFlow`). All transform/opacity
   based and only runs during the ~5s pass = light on the TV. *(Earlier neon flicker was scrapped — user
   disliked it twice; don't bring it back. Delays are approximate; tune in `styles.css`.)*
-- **Background gallery expanded to 32 (NEW).** The 12 original Unsplash JPGs (which shipped at only
-  1920×1080) were **upscaled**, and **20 new in-house backgrounds** were added — 11 stylized landscapes
-  (`13`–`17`, `27`–`32`) and 9 patterns (`18`–`26`). These were generated locally with **headless-Chromium HTML/SVG
+- **Background gallery expanded to 38 (NEW).** The 12 original Unsplash JPGs (which shipped at only
+  1920×1080) were **upscaled**, and **26 new in-house backgrounds** were added — 11 stylized landscapes
+  (`13`–`17`, `27`–`32`), 9 patterns (`18`–`26`) and 6 glossy liquid ribbons (`33`–`38`, the house
+  style like `01-liquid`). These were generated locally with **headless-Chromium HTML/SVG
   rasterization + numpy procedural fields**, each one visually reviewed before keeping (earlier *flat CSS*
   gradients looked cheap and were rejected — these are layered/cinematic, a different bar). Web sessions
   here can only reach GitHub + package registries, so external stock sites (Unsplash/Pexels) can't be
@@ -44,7 +45,7 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
   bottom, or keep inline buttons — it's a small change in `index.html`/`renderMusicbar`.)*
 - **Daily auto‑rotating background (NEW).** `dailyBg` (default **on**) shows a new background each day,
   same on every screen, chosen by date. Toggle under **Background → New background every day**; picking
-  one in the grid pins it and turns rotation off. Now cycles **32** backgrounds; add more art to
+  one in the grid pins it and turns rotation off. Now cycles **38** backgrounds; add more art to
   `assets/slides/` for more variety. See *Pieces → Background*.
 - **Ambient music added (NEW) + deployed.** Audio‑only **SomaFM** internet radio (commercial‑free,
   listener‑supported, HTTPS). 10 office stations; **`M`** = next station;
@@ -104,7 +105,7 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 - State persists in `localStorage` key `esm-screen.v1`; `DEFAULTS` is in `app.js`.
 
 ## Pieces
-- **Background gallery:** `assets/slides/` — 32 QHD (2560×1440) JPGs (`01‑`…`32‑`), 16:9. Add more by
+- **Background gallery:** `assets/slides/` — 38 QHD (2560×1440) JPGs (`01‑`…`38‑`), 16:9. Add more by
   dropping a `.jpg/.png/.webp` in that folder + push (auto‑added → daily rotation includes it; see the
   README *"Where to get more rotating backgrounds"*). **Daily auto‑rotation
   (NEW):** `dailyBg` (default on) picks the slide by local day number (`dayNumber()`/`dailyIndex()` in
