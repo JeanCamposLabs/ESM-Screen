@@ -41,11 +41,12 @@ All slides are cleared for **commercial use with no attribution required**.
   `10-purple`, `11-red`, `12-soft` (other colours). These shipped as 1920×1080 and have been
   **upscaled to 4096×2304** (Lanczos + light sharpen + fine de-banding grain) so they're crisp on
   4K/8K panels.
-- **`13`–`26`** — **original artwork generated in-house** for this screen (no third-party rights),
-  rendered natively at 4096×2304. Landscapes: `13-sunset-ridge`, `14-dunes`, `15-ocean-dusk`,
-  `16-aurora-peaks`, `17-mesa-dusk`. Patterns: `18-facets`, `19-ribbons`, `20-ripples`,
-  `21-aurora-bands`, `22-hex-mesh`, `23-ember-plasma`, `24-teal-plasma`, `25-nebula`,
-  `26-dusk-clouds`.
+- **`13`–`32`** — **original artwork generated in-house** for this screen (no third-party rights),
+  rendered natively at 4K. Landscapes: `13-sunset-ridge`, `14-dunes`, `15-ocean-dusk`,
+  `16-aurora-peaks`, `17-mesa-dusk`, `27-alpine-lake`, `28-foggy-peaks`, `29-pine-forest`,
+  `30-coastal-dusk`, `31-alpenglow`, `32-starry-desert`. Patterns: `18-facets`, `19-ribbons`,
+  `20-ripples`, `21-aurora-bands`, `22-hex-mesh`, `23-ember-plasma`, `24-teal-plasma`,
+  `25-nebula`, `26-dusk-clouds`.
 
 > Note: this repo's web sessions can only reach GitHub/package registries, so stock-photo sites
 > (Unsplash/Pexels/etc.) can't be fetched here. To add a *specific real photo*, just drop a 16:9
