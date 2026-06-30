@@ -523,6 +523,10 @@
     "assets/slides/27-alpine-lake.jpg", "assets/slides/28-foggy-peaks.jpg",
     "assets/slides/29-pine-forest.jpg", "assets/slides/30-coastal-dusk.jpg",
     "assets/slides/31-alpenglow.jpg", "assets/slides/32-starry-desert.jpg",
+    // glossy liquid ribbons (house style)
+    "assets/slides/33-liquid-twin.jpg", "assets/slides/34-liquid-drape.jpg",
+    "assets/slides/35-liquid-cross.jpg", "assets/slides/36-liquid-silk.jpg",
+    "assets/slides/37-liquid-crest.jpg", "assets/slides/38-liquid-ember.jpg",
   ];
   let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
   let lastDailyDay = null, bgPinned = false;
