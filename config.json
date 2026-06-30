@@ -1,7 +1,7 @@
 {
   "style": "premium",
   "palette": "orange",
-  "bg": "05-streaks",
+  "bg": "17-mesa-dusk",
   "logo": true,
   "rocket": true,
   "clock": true,
@@ -9,7 +9,7 @@
   "weather": true,
   "worldcup": true,
   "speed": 1.5,
-  "dailyBg": true,
+  "dailyBg": false,
   "music": true,
   "musicStation": "lofigirl",
   "musicVolume": 0.45
