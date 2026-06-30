@@ -510,6 +510,15 @@
     "assets/slides/04-gold.jpg", "assets/slides/05-streaks.jpg", "assets/slides/06-glow.jpg",
     "assets/slides/07-layers.jpg", "assets/slides/08-blue.jpg", "assets/slides/09-teal.jpg",
     "assets/slides/10-purple.jpg", "assets/slides/11-red.jpg", "assets/slides/12-soft.jpg",
+    // 4K landscapes
+    "assets/slides/13-sunset-ridge.jpg", "assets/slides/14-dunes.jpg", "assets/slides/15-ocean-dusk.jpg",
+    "assets/slides/16-aurora-peaks.jpg", "assets/slides/17-mesa-dusk.jpg",
+    // 4K vector patterns
+    "assets/slides/18-facets.jpg", "assets/slides/19-ribbons.jpg", "assets/slides/20-ripples.jpg",
+    "assets/slides/21-aurora-bands.jpg", "assets/slides/22-hex-mesh.jpg",
+    // 4K plasma / cloud patterns
+    "assets/slides/23-ember-plasma.jpg", "assets/slides/24-teal-plasma.jpg",
+    "assets/slides/25-nebula.jpg", "assets/slides/26-dusk-clouds.jpg",
   ];
   let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
   let lastDailyDay = null, bgPinned = false;

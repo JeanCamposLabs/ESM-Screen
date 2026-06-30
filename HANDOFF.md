@@ -27,20 +27,25 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
   **EasyScaleMedia** pattern in Space Mono (`.disc__code`, `codeReveal`+`codeFlow`). All transform/opacity
   based and only runs during the ~5s pass = light on the TV. *(Earlier neon flicker was scrapped — user
   disliked it twice; don't bring it back. Delays are approximate; tune in `styles.css`.)*
-- **Background sourcing (NOTE).** I tried generating gradient **SVG** backgrounds locally (this sandbox
-  has no internet/image-model) — they looked cheap and the user rejected them, so they were removed and
-  the gallery is back to the 12 Nano Banana JPGs. Don't re-attempt hand-coded gradients. The README now
-  has a *"Where to get more rotating backgrounds"* section (Nano Banana / other AI tools / free stock:
-  Unsplash·Pexels·Pixabay). Real images dropped in `assets/slides/` (`.jpg/.png/.webp`) auto-join the
-  daily rotation on push — that's the path to more/better backgrounds.
+- **Background gallery expanded to 26 (NEW).** The 12 original Unsplash JPGs (which shipped at only
+  1920×1080) were **upscaled**, and **14 new in-house backgrounds** were added — 5 stylized landscapes
+  (`13`–`17`) and 9 patterns (`18`–`26`). These were generated locally with **headless-Chromium HTML/SVG
+  rasterization + numpy procedural fields**, each one visually reviewed before keeping (earlier *flat CSS*
+  gradients looked cheap and were rejected — these are layered/cinematic, a different bar). Web sessions
+  here can only reach GitHub + package registries, so external stock sites (Unsplash/Pexels) can't be
+  fetched — dropping a real 16:9 image into `assets/slides/` still auto-joins the rotation on push.
+- **Background resolution = QHD 2560×1440 (NOTE).** Served at 2560×1440 (crisp on the 4K panel, ~15 MB
+  decoded/layer) rather than full 4K, to respect the Philips browser limit that forced the old 4K→1920
+  re-encode. Full-4K masters were generated; bump the re-encode in the deploy/source if the TV proves it
+  can handle 4096×2304.
 - **Music badge → opens the menu.** The on‑screen music control is now a single `<button>` that opens
   the settings panel on click (controls moved into the panel); the inline play/next mini‑buttons were
   removed. `M` still skips to the next station. *(If a different layout is wanted — e.g. badge at the
   bottom, or keep inline buttons — it's a small change in `index.html`/`renderMusicbar`.)*
 - **Daily auto‑rotating background (NEW).** `dailyBg` (default **on**) shows a new background each day,
   same on every screen, chosen by date. Toggle under **Background → New background every day**; picking
-  one in the grid pins it and turns rotation off. Add more art to `assets/slides/` for more variety (I
-  can't generate the 4K images — use the Nano Banana prompts in the README). See *Pieces → Background*.
+  one in the grid pins it and turns rotation off. Now cycles **26** backgrounds; add more art to
+  `assets/slides/` for more variety. See *Pieces → Background*.
 - **Ambient music added (NEW) + deployed.** Audio‑only **SomaFM** internet radio (commercial‑free,
   listener‑supported, HTTPS). 10 office stations; **`M`** = next station;
   toggle + station picker + volume in the panel under **Music**. Implementation detail in
@@ -99,7 +104,7 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 - State persists in `localStorage` key `esm-screen.v1`; `DEFAULTS` is in `app.js`.
 
 ## Pieces
-- **Background gallery:** `assets/slides/` — 12 Nano Banana JPGs (`01‑`…`12‑`), ~16:9. Add more by
+- **Background gallery:** `assets/slides/` — 26 QHD (2560×1440) JPGs (`01‑`…`26‑`), 16:9. Add more by
   dropping a `.jpg/.png/.webp` in that folder + push (auto‑added → daily rotation includes it; see the
   README *"Where to get more rotating backgrounds"*). **Daily auto‑rotation
   (NEW):** `dailyBg` (default on) picks the slide by local day number (`dayNumber()`/`dailyIndex()` in
@@ -128,8 +133,8 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
   shown in the **native TV browser** in its kiosk mode. **No external hardware allowed** (budget).
 - The built‑in browser engine is the bottleneck, **not** the panel.
 - Done: static disc glow (no animated box‑shadow), no canvas `shadowBlur`, blurred blob/beam/grid/grain
-  layers hidden over photos, particle canvas at 0.5× / ~24 fps / ≤50 motes, **backgrounds re‑encoded
-  4K→1920** (textures 9.5 MB→2.6 MB), gentle pan.
+  layers hidden over photos, particle canvas at 0.5× / ~24 fps / ≤50 motes, **backgrounds served at
+  QHD 2560×1440** (whole 26-image gallery ≈ 6 MB; was 4K→1920 before), gentle pan.
 - More levers if needed: static background (disable pan), fewer/no particles, a "lite" flag, or the USB
   video below. TV‑side: turn **off motion smoothing** + use **Game/Monitor** picture mode.
 

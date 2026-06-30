@@ -9,7 +9,7 @@
   "weather": true,
   "worldcup": true,
   "speed": 1.5,
-  "dailyBg": false,
+  "dailyBg": true,
   "music": true,
   "musicStation": "lofigirl",
   "musicVolume": 0.45

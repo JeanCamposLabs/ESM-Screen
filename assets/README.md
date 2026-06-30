@@ -33,7 +33,20 @@ a gentle Ken-Burns drift. To add more, just drop a **16:9** image in that folder
 and push — the deploy workflow lists every image into `backgrounds.json`
 automatically (no code change). Remove a file to drop it from the rotation.
 
-### Credits
-All slides are free **Unsplash License** (commercial use OK, no attribution required), from Unsplash:
-`01-liquid`, `02-waves`, `03-bronze`, `04-gold`, `05-streaks`, `06-glow`, `07-layers` (orange/amber)
-· `08-blue`, `09-teal`, `10-purple`, `11-red`, `12-soft` (other colours).
+### Credits & licensing
+All slides are cleared for **commercial use with no attribution required**.
+
+- **`01`–`12`** — free **Unsplash License**, from Unsplash. `01-liquid`, `02-waves`, `03-bronze`,
+  `04-gold`, `05-streaks`, `06-glow`, `07-layers` (orange/amber) · `08-blue`, `09-teal`,
+  `10-purple`, `11-red`, `12-soft` (other colours). These shipped as 1920×1080 and have been
+  **upscaled to 4096×2304** (Lanczos + light sharpen + fine de-banding grain) so they're crisp on
+  4K/8K panels.
+- **`13`–`26`** — **original artwork generated in-house** for this screen (no third-party rights),
+  rendered natively at 4096×2304. Landscapes: `13-sunset-ridge`, `14-dunes`, `15-ocean-dusk`,
+  `16-aurora-peaks`, `17-mesa-dusk`. Patterns: `18-facets`, `19-ribbons`, `20-ripples`,
+  `21-aurora-bands`, `22-hex-mesh`, `23-ember-plasma`, `24-teal-plasma`, `25-nebula`,
+  `26-dusk-clouds`.
+
+> Note: this repo's web sessions can only reach GitHub/package registries, so stock-photo sites
+> (Unsplash/Pexels/etc.) can't be fetched here. To add a *specific real photo*, just drop a 16:9
+> image into this folder and push — the deploy lists it into `backgrounds.json` automatically.
