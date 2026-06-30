@@ -46,7 +46,9 @@ All slides are cleared for **commercial use with no attribution required**.
   `16-aurora-peaks`, `17-mesa-dusk`, `27-alpine-lake`, `28-foggy-peaks`, `29-pine-forest`,
   `30-coastal-dusk`, `31-alpenglow`, `32-starry-desert`. Patterns: `18-facets`, `19-ribbons`,
   `20-ripples`, `21-aurora-bands`, `22-hex-mesh`, `23-ember-plasma`, `24-teal-plasma`,
-  `25-nebula`, `26-dusk-clouds`.
+  `25-nebula`, `26-dusk-clouds`. Glossy liquid ribbons (house style, like `01-liquid`):
+  `33-liquid-twin`, `34-liquid-drape`, `35-liquid-cross`, `36-liquid-silk`, `37-liquid-crest`,
+  `38-liquid-ember`.
 
 > Note: this repo's web sessions can only reach GitHub/package registries, so stock-photo sites
 > (Unsplash/Pexels/etc.) can't be fetched here. To add a *specific real photo*, just drop a 16:9
