@@ -519,6 +519,10 @@
     // 4K plasma / cloud patterns
     "assets/slides/23-ember-plasma.jpg", "assets/slides/24-teal-plasma.jpg",
     "assets/slides/25-nebula.jpg", "assets/slides/26-dusk-clouds.jpg",
+    // more landscapes
+    "assets/slides/27-alpine-lake.jpg", "assets/slides/28-foggy-peaks.jpg",
+    "assets/slides/29-pine-forest.jpg", "assets/slides/30-coastal-dusk.jpg",
+    "assets/slides/31-alpenglow.jpg", "assets/slides/32-starry-desert.jpg",
   ];
   let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
   let lastDailyDay = null, bgPinned = false;
