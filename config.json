@@ -1,14 +1,14 @@
 {
   "style": "premium",
   "palette": "orange",
-  "bg": "17-mesa-dusk",
+  "bg": "07-layers",
   "logo": true,
   "rocket": true,
   "clock": true,
   "particles": true,
   "weather": true,
   "speed": 1.5,
-  "dailyBg": true,
+  "dailyBg": false,
   "music": true,
   "musicStation": "lofigirl",
   "musicVolume": 0.45
