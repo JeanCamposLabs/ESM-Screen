@@ -6,6 +6,23 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 ---
 
 ## Recent fixes (latest session)
+- **`el.hidden` didn't hide (root cause of the "World Cup is still there" report).** After the strip was
+  removed and deployed, a TV still showed an empty **⚽ World Cup** pill. Two separate faults:
+  1. **`.worldcup` set `display: flex`**, and an author `display` rule beats the UA's `[hidden]
+     {display:none}` — so the strip was on screen **permanently**, toggle off or not, and once ESPN
+     stopped returning fixtures it rendered as an empty pill. Someone had already hit this and patched
+     `.panel`/`.panel-scrim` with their own `[hidden]` rules. Now fixed once for everything:
+     **`[hidden] { display: none !important; }`** in the reset (the per-panel rules are gone as
+     redundant). `.musicbar` had the same latent bug — its "On-screen control" toggle now really works.
+     *Consequence worth knowing: no `config.json` change could ever have hidden that strip on an
+     already-deployed screen — verified in-browser. Only shipping new code removes it.*
+  2. **The auto-updater could get permanently stuck on old code.** `reloadForUpdate()` called
+     `location.reload()`, which may be answered from the browser's HTTP cache (Pages serves
+     `index.html` with a `max-age`), re-running the **old** `app.js`. That boot then reads the *new*
+     `version.json` as its baseline, so `v !== bootVersion` never fires again and the screen sits on
+     stale code forever. It now reloads via `location.replace()` at a URL carrying the new version
+     (`?v=<version>`) — a different cache key, so the HTML is genuinely refetched. Existing kiosk
+     params (`?bg=`, `?admin`, `?style=`…) are preserved and it navigates exactly once (no loop).
 - **World Cup strip removed (the tournament is over).** Gone from `index.html` (`.worldcup` markup +
   the **Show → World Cup** toggle), `app.js` (`fetchWorldCup`/`WC_URL`/`wcTimer`/`wcHasGames`/`wcEsc`,
   the `worldcup` default, the `configForExport` key, both boot/visibility calls), `styles.css`
