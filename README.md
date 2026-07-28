@@ -33,7 +33,7 @@ any TV browser and runs all day without babysitting.
 | **Fullscreen** | Press **`F`**, or the Fullscreen button in settings |
 
 In the panel you can change **style**, **color palette**, toggle the
-**logo / rocket / clock / particles / weather / World Cup scores**, turn on
+**logo / rocket / clock / particles / weather**, turn on
 **ambient music** (pick a station + volume), edit the **company name + tagline**,
 set **motion speed**, and configure the **on/off schedule**. Everything saves to
 the TV automatically (localStorage), so it survives reloads and power cycles.
@@ -72,13 +72,11 @@ grid below pins it and turns auto-rotate off. Want more variety? Add more 4K
 art to `assets/slides/` (see [Adding your own art](#adding-your-own-art)) — the
 daily rotation automatically includes every image in the folder.
 
-### World Cup scores
-
-A slim strip at the bottom-centre shows **yesterday's results, live scores and
-the next kick-offs** for the FIFA World Cup (free ESPN scoreboard, no key).
-It refreshes every 5 minutes — every 60 seconds while a match is live — and
-hides itself automatically when there are no matches (e.g. after the
-tournament). Toggle it under **Show → World Cup**.
+> **Heads-up:** `config.json` wins over the on-screen toggle (every TV re-reads
+> it every 30 s). Because picking an image in the grid switches auto-rotate
+> **off**, pressing **“Apply this look to all screens”** right afterwards pushes
+> `"dailyBg": false` and pins *every* TV to that one image. If rotation ever
+> stops everywhere, check `dailyBg` in `config.json` first.
 
 ### Controlling all screens from your computer
 

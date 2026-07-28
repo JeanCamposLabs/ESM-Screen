@@ -6,6 +6,22 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 ---
 
 ## Recent fixes (latest session)
+- **World Cup strip removed (the tournament is over).** Gone from `index.html` (`.worldcup` markup +
+  the **Show → World Cup** toggle), `app.js` (`fetchWorldCup`/`WC_URL`/`wcTimer`/`wcHasGames`/`wcEsc`,
+  the `worldcup` default, the `configForExport` key, both boot/visibility calls), `styles.css`
+  (`.worldcup`/`.wc-*` block + the `ripple-wc` keyframes and its `.wave-go` rule) and `config.json`.
+  No more polling of the ESPN scoreboard. *(If a future tournament wants it back, it's all in the git
+  history — see this commit's diff.)*
+- **Background rotation fixed.** It wasn't a code bug: a panel push (`31924f2`) had written
+  `"dailyBg": false` + `"bg": "17-mesa-dusk"` into `config.json`, and since every screen polls that file
+  every 30 s and does `Object.assign(state, cfg)`, **the house config was force-pinning all TVs** — no
+  local toggle could survive the next poll. `config.json` is now `"dailyBg": true`. **Gotcha for next
+  time: clicking a background in the panel sets `dailyBg:false`, so an "Apply this look to all screens"
+  right after that silently disables rotation fleet-wide.** Also made the rotation more responsive:
+  `maybeDailyBg()` now runs every **5 min** (was 15) and additionally on `visibilitychange`, so a TV
+  that slept overnight rotates the moment it wakes instead of showing yesterday's image for up to 15 min.
+  Verified in headless Chromium (fresh boot, +1 day, a real midnight rollover with no reload, and a
+  pinned screen recovering via the config poll).
 - **Music badge centred over the clock + more stations.** The clock and badge now share a bottom-right
   `.corner` wrapper (`index.html`); the clock defines the width and the badge is centred over it
   (`position:absolute; left:50%; translateX(-50%)`), so it no longer drifts as the station name changes.
@@ -16,12 +32,12 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
   SomaFM slug; `stationUrls(station)` returns those or builds the SomaFM mirror list from `id`.
   *(Public-radio classical may carry brief underwriting/pledge, unlike SomaFM's strict commercial-free.)*
 - **Motion dialled back to the viewer's taste.** They clarified: rocket + particles are fine; only the
-  *floating clock / weather / World Cup* bothered them. So: `floaty` drift removed from
-  `.clock`/`.weather`/`.worldcup`; flying **rocket + particles back on** (`rocket:true`/`particles:true`
+  *floating clock / weather / scores strip* bothered them. So: `floaty` drift removed from
+  `.clock`/`.weather`; flying **rocket + particles back on** (`rocket:true`/`particles:true`
   in `DEFAULTS` & `config.json`); the **background is held static** (`panLayer` fixed `scale(1.08)`, no
   Ken-Burns — it was part of the original nausea complaint and wasn't exonerated). The logo keeps its
   gentle bob (`discFloat`). **Full-screen light wave** (`playWave()` toggles `.wave-go` on `#screen`,
-  auto ~every 2 min or on logo click): a light band (`.wave`) sweeps the screen, `.weather`/`.worldcup`/
+  auto ~every 2 min or on logo click): a light band (`.wave`) sweeps the screen, `.weather`/
   `.corner` ripple in sequence (`@keyframes ripple`, staggered delays ≈ their x-position), and over the
   logo it's a rainbow (`discShine` on `.disc__tube::after`) that reveals a repeating, colourful
   **EasyScaleMedia** pattern in Space Mono (`.disc__code`, `codeReveal`+`codeFlow`). All transform/opacity
@@ -110,7 +126,9 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
   README *"Where to get more rotating backgrounds"*). **Daily auto‑rotation
   (NEW):** `dailyBg` (default on) picks the slide by local day number (`dayNumber()`/`dailyIndex()` in
   `app.js`), so all screens show the same "background of the day" and advance at midnight (`maybeDailyBg`
-  every 15 min covers a TV left on across the rollover; otherwise the next morning's boot rotates it).
+  every 5 min — plus on `visibilitychange` — covers a TV left on or asleep across the rollover;
+  otherwise the next morning's boot rotates it). **`config.json`'s `dailyBg` overrides the local
+  toggle every 30 s, so rotation is only really on when the house config says so.**
   Priority: `?bg=` kiosk pin (`bgPinned`) > daily > saved `config.bg` > first. Picking one in the grid
   (or `N`) **pins it and turns `dailyBg` off**. Slow infinite Ken‑Burns drift = `panLayer()`.
 - **Disc (brand):** floating neon "Easy Scale Media" built in **CSS/SVG** (ring + rocket glyph + **Fredoka**

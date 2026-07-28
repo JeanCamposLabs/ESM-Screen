@@ -40,8 +40,7 @@
     bg: "10-purple",
     dailyBg: true,           // auto-rotate the background once a day
     weather: true,
-    worldcup: true,
-    music: false,            // ambient internet radio (audio only)
+    music: false,           // ambient internet radio (audio only)
     musicStation: "lofigirl",
     musicVolume: 0.35,
     musicBar: true,          // show the small on-screen music control
@@ -128,7 +127,6 @@
     $("clock").hidden = !state.clock;
     $("particles").style.display = state.particles ? "" : "none";
     $("weather").hidden = !state.weather;
-    $("worldcup").hidden = !(state.worldcup && wcHasGames);
 
     $("brandName").textContent = state.name;
     $("brandTag").textContent = state.tag;
@@ -296,7 +294,6 @@
     $("tgClock").onchange   = (e) => { state.clock = e.target.checked; commit(); };
     $("tgParticles").onchange = (e) => { state.particles = e.target.checked; commit(); };
     $("tgWeather").onchange = (e) => { state.weather = e.target.checked; if (state.weather) fetchWeather(); commit(); };
-    $("tgWorldcup").onchange = (e) => { state.worldcup = e.target.checked; commit(); if (state.worldcup) fetchWorldCup(); };
     $("tgDailyBg").onchange = (e) => { state.dailyBg = e.target.checked; save(); if (state.dailyBg) gotoDailyBg(); };
     $("inSpeed").oninput    = (e) => { state.speed = parseFloat(e.target.value); commit(); };
     $("tgSchedule").onchange= (e) => { state.schedule = e.target.checked; commit(); };
@@ -340,7 +337,6 @@
     $("tgClock").checked = state.clock;
     $("tgParticles").checked = state.particles;
     $("tgWeather").checked = state.weather;
-    $("tgWorldcup").checked = state.worldcup;
     $("inSpeed").value = state.speed;
     $("tgSchedule").checked = state.schedule;
     $("inOn").value = state.onTime;
@@ -456,7 +452,9 @@
   /* ---------- Re-sync when the device wakes or reconnects ---------- */
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) return;
-    tick(); applySchedule(); checkVersion(); requestWakeLock(); fetchWeather(); fetchWorldCup(); syncConfig();
+    // A TV that slept overnight wakes into a new day: re-check the daily
+    // background here so it rotates immediately instead of on the next 5-min tick.
+    tick(); applySchedule(); checkVersion(); requestWakeLock(); fetchWeather(); maybeDailyBg(); syncConfig();
   });
   addEventListener("online", checkVersion);
 
@@ -654,72 +652,6 @@
     } catch {}
   }
 
-  /* ---------- World Cup scores: ESPN public scoreboard (free, CORS-ok) ----------
-     Shows yesterday's results, live scores, and the next kick-offs in a slim
-     strip at the bottom-centre. Polls every 5 min, every 60 s while a match
-     is live. Hidden automatically when there are no matches in the window
-     (so it disappears by itself after the tournament). */
-  const WC_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
-  let wcTimer = null, wcHasGames = false;
-  function wcEsc(s) { const d = document.createElement("i"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
-  async function fetchWorldCup() {
-    clearTimeout(wcTimer);
-    let liveNow = false;
-    if (state.worldcup) {
-      try {
-        const fmt = (d) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
-        const from = new Date(), to = new Date();
-        from.setDate(from.getDate() - 1); to.setDate(to.getDate() + 1);
-        const r = await fetch(`${WC_URL}?dates=${fmt(from)}-${fmt(to)}&t=${Date.now()}`, { cache: "no-store" });
-        if (!r.ok) throw 0;
-        const d = await r.json();
-        const games = (d.events || []).map((e) => {
-          const comp = (e.competitions || [])[0] || {};
-          const team = (side) => ((comp.competitors || []).find((c) => c.homeAway === side) || {});
-          const h = team("home"), a = team("away");
-          const st = (e.status && e.status.type && e.status.type.state) || "pre";
-          return {
-            when: new Date(e.date), st,
-            clock: st === "in" ? (e.status.displayClock || "live")
-                 : st === "post" ? ((e.status.type && e.status.type.shortDetail) || "FT") : "",
-            h: (h.team && (h.team.abbreviation || h.team.shortDisplayName)) || "?", hs: h.score,
-            a: (a.team && (a.team.abbreviation || a.team.shortDisplayName)) || "?", as: a.score,
-          };
-        }).sort((x, y) => x.when - y.when);
-        // Pick up to 5: every live match first, then the most recent results,
-        // then the next kick-offs — shown in kick-off order.
-        const live = games.filter((g) => g.st === "in");
-        const done = games.filter((g) => g.st === "post");
-        const next = games.filter((g) => g.st === "pre");
-        const pick = live.slice(0, 5);
-        let room = 5 - pick.length;
-        const keepForNext = next.length && room > 0 ? 1 : 0;   // always show the next kick-off
-        const takeDone = Math.min(done.length, room - keepForNext);
-        if (takeDone > 0) pick.push(...done.slice(-takeDone));
-        room = 5 - pick.length;
-        if (room > 0) pick.push(...next.slice(0, room));
-        pick.sort((x, y) => x.when - y.when);
-        liveNow = live.length > 0;
-        wcHasGames = pick.length > 0;
-        if (wcHasGames) {
-          const today = new Date().toDateString();
-          $("wcGames").innerHTML = pick.map((g) => {
-            if (g.st === "pre") {
-              const day = g.when.toDateString() === today ? ""
-                : `${g.when.toLocaleDateString(undefined, { weekday: "short" })} `;
-              const t = `${pad(g.when.getHours())}:${pad(g.when.getMinutes())}`;
-              return `<span class="wc-game"><b>${wcEsc(g.h)}</b>–<b>${wcEsc(g.a)}</b> <i>${day}${t}</i></span>`;
-            }
-            return `<span class="wc-game${g.st === "in" ? " is-live" : ""}">` +
-              `<b>${wcEsc(g.h)}</b> ${wcEsc(g.hs)}–${wcEsc(g.as)} <b>${wcEsc(g.a)}</b> <i>${wcEsc(g.clock)}</i></span>`;
-          }).join("");
-        }
-        $("worldcup").hidden = !(state.worldcup && wcHasGames);
-      } catch { /* network blip — keep what's on screen, retry on the next tick */ }
-    }
-    wcTimer = setTimeout(fetchWorldCup, liveNow ? 60 * 1000 : 5 * 60 * 1000);
-  }
-
   /* ---------- One-click central control ----------
      "Apply to all screens" commits the current look to config.json on GitHub
      (via the REST API) — the deploy workflow republishes it and every screen
@@ -811,7 +743,7 @@
     return {
       style: state.style, palette: state.palette, bg,
       logo: state.logo, rocket: state.rocket, clock: state.clock,
-      particles: state.particles, weather: state.weather, worldcup: state.worldcup,
+      particles: state.particles, weather: state.weather,
       speed: state.speed, dailyBg: state.dailyBg,
       music: state.music, musicStation: state.musicStation, musicVolume: state.musicVolume,
     };
@@ -966,10 +898,9 @@
   setInterval(checkVersion, VERSION_POLL_MS);
   flyRocket();
   initSlides();
-  setInterval(maybeDailyBg, 15 * 60 * 1000);   // advance the background at the daily rollover
+  setInterval(maybeDailyBg, 5 * 60 * 1000);   // advance the background at the daily rollover
   fetchWeather();
   setInterval(fetchWeather, 30 * 60 * 1000);
-  fetchWorldCup();                            // self-rescheduling (5 min / 60 s live)
   syncConfig();
   setInterval(syncConfig, 30000);
 
