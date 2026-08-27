@@ -440,13 +440,25 @@
     const v = await fetchVersion();
     if (v == null) return;                  // missing file or network blip — ignore
     if (bootVersion == null) { bootVersion = v; return; }   // establish baseline
-    if (v !== bootVersion) reloadForUpdate();
+    if (v !== bootVersion) reloadForUpdate(v);
   }
-  function reloadForUpdate() {
+  function reloadForUpdate(v) {
     if (reloading) return;
     reloading = true;
     document.body.classList.add("is-updating");   // brief fade-out (see CSS)
-    setTimeout(() => location.reload(), 650);
+    setTimeout(() => {
+      // A plain location.reload() can be answered from the browser's HTTP cache
+      // (Pages serves index.html with max-age), which re-runs the OLD app.js —
+      // and because this boot then reads the NEW version.json as its baseline,
+      // no further reload is ever attempted and the screen is stuck on old code.
+      // Reloading at a URL carrying the new version is a different cache key, so
+      // the HTML is really refetched. Existing params (?bg=, ?admin, …) survive.
+      try {
+        const u = new URL(location.href);
+        u.searchParams.set("v", v);
+        location.replace(u.toString());
+      } catch { location.reload(true); }
+    }, 650);
   }
 
   /* ---------- Re-sync when the device wakes or reconnects ---------- */
