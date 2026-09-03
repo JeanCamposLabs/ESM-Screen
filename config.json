@@ -1,8 +1,8 @@
 {
   "style": "premium",
   "palette": "orange",
-  "bg": "07-layers",
-  "bgRotate": "hourly",
+  "bg": "39-space-cosmic-cliffs",
+  "bgRotate": "off",
   "bgSet": [
     "space",
     "earth",
