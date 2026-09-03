@@ -1,0 +1,243 @@
+[
+ {
+  "id": "lofigirl",
+  "name": "Lofi Girl",
+  "genre": "Lo-fi hip-hop · live",
+  "urls": [
+   "https://esm-lofi-relay.onrender.com/lofi.mp3"
+  ]
+ },
+ {
+  "id": "groovesalad",
+  "name": "Groove Salad",
+  "genre": "Chill · downtempo",
+  "urls": [
+   "https://ice1.somafm.com/groovesalad-128-mp3",
+   "https://ice2.somafm.com/groovesalad-128-mp3",
+   "https://ice4.somafm.com/groovesalad-128-mp3",
+   "https://ice6.somafm.com/groovesalad-128-mp3",
+   "https://ice.somafm.com/groovesalad"
+  ]
+ },
+ {
+  "id": "fluid",
+  "name": "Fluid",
+  "genre": "Lo-fi hip-hop · chillhop",
+  "urls": [
+   "https://ice1.somafm.com/fluid-128-mp3",
+   "https://ice2.somafm.com/fluid-128-mp3",
+   "https://ice4.somafm.com/fluid-128-mp3",
+   "https://ice6.somafm.com/fluid-128-mp3",
+   "https://ice.somafm.com/fluid"
+  ]
+ },
+ {
+  "id": "gsclassic",
+  "name": "Groove Salad Classic",
+  "genre": "Classic chill · ambient",
+  "urls": [
+   "https://ice1.somafm.com/gsclassic-128-mp3",
+   "https://ice2.somafm.com/gsclassic-128-mp3",
+   "https://ice4.somafm.com/gsclassic-128-mp3",
+   "https://ice6.somafm.com/gsclassic-128-mp3",
+   "https://ice.somafm.com/gsclassic"
+  ]
+ },
+ {
+  "id": "secretagent",
+  "name": "Secret Agent",
+  "genre": "Lounge · downtempo jazz",
+  "urls": [
+   "https://ice1.somafm.com/secretagent-128-mp3",
+   "https://ice2.somafm.com/secretagent-128-mp3",
+   "https://ice4.somafm.com/secretagent-128-mp3",
+   "https://ice6.somafm.com/secretagent-128-mp3",
+   "https://ice.somafm.com/secretagent"
+  ]
+ },
+ {
+  "id": "lush",
+  "name": "Lush",
+  "genre": "Mellow vocal chill",
+  "urls": [
+   "https://ice1.somafm.com/lush-128-mp3",
+   "https://ice2.somafm.com/lush-128-mp3",
+   "https://ice4.somafm.com/lush-128-mp3",
+   "https://ice6.somafm.com/lush-128-mp3",
+   "https://ice.somafm.com/lush"
+  ]
+ },
+ {
+  "id": "beatblender",
+  "name": "Beat Blender",
+  "genre": "Deep house · downtempo",
+  "urls": [
+   "https://ice1.somafm.com/beatblender-128-mp3",
+   "https://ice2.somafm.com/beatblender-128-mp3",
+   "https://ice4.somafm.com/beatblender-128-mp3",
+   "https://ice6.somafm.com/beatblender-128-mp3",
+   "https://ice.somafm.com/beatblender"
+  ]
+ },
+ {
+  "id": "thetrip",
+  "name": "The Trip",
+  "genre": "Downtempo · trip-hop",
+  "urls": [
+   "https://ice1.somafm.com/thetrip-128-mp3",
+   "https://ice2.somafm.com/thetrip-128-mp3",
+   "https://ice4.somafm.com/thetrip-128-mp3",
+   "https://ice6.somafm.com/thetrip-128-mp3",
+   "https://ice.somafm.com/thetrip"
+  ]
+ },
+ {
+  "id": "spacestation",
+  "name": "Space Station Soma",
+  "genre": "Ambient · space",
+  "urls": [
+   "https://ice1.somafm.com/spacestation-128-mp3",
+   "https://ice2.somafm.com/spacestation-128-mp3",
+   "https://ice4.somafm.com/spacestation-128-mp3",
+   "https://ice6.somafm.com/spacestation-128-mp3",
+   "https://ice.somafm.com/spacestation"
+  ]
+ },
+ {
+  "id": "sonicuniverse",
+  "name": "Sonic Universe",
+  "genre": "Modern jazz",
+  "urls": [
+   "https://ice1.somafm.com/sonicuniverse-128-mp3",
+   "https://ice2.somafm.com/sonicuniverse-128-mp3",
+   "https://ice4.somafm.com/sonicuniverse-128-mp3",
+   "https://ice6.somafm.com/sonicuniverse-128-mp3",
+   "https://ice.somafm.com/sonicuniverse"
+  ]
+ },
+ {
+  "id": "illstreet",
+  "name": "Illinois Street Lounge",
+  "genre": "Vintage lounge · exotica",
+  "urls": [
+   "https://ice1.somafm.com/illstreet-128-mp3",
+   "https://ice2.somafm.com/illstreet-128-mp3",
+   "https://ice4.somafm.com/illstreet-128-mp3",
+   "https://ice6.somafm.com/illstreet-128-mp3",
+   "https://ice.somafm.com/illstreet"
+  ]
+ },
+ {
+  "id": "dronezone",
+  "name": "Drone Zone",
+  "genre": "Ambient · minimal beats",
+  "urls": [
+   "https://ice1.somafm.com/dronezone-128-mp3",
+   "https://ice2.somafm.com/dronezone-128-mp3",
+   "https://ice4.somafm.com/dronezone-128-mp3",
+   "https://ice6.somafm.com/dronezone-128-mp3",
+   "https://ice.somafm.com/dronezone"
+  ]
+ },
+ {
+  "id": "deepspaceone",
+  "name": "Deep Space One",
+  "genre": "Deep ambient · space",
+  "urls": [
+   "https://ice1.somafm.com/deepspaceone-128-mp3",
+   "https://ice2.somafm.com/deepspaceone-128-mp3",
+   "https://ice4.somafm.com/deepspaceone-128-mp3",
+   "https://ice6.somafm.com/deepspaceone-128-mp3",
+   "https://ice.somafm.com/deepspaceone"
+  ]
+ },
+ {
+  "id": "seventies",
+  "name": "Left Coast 70s",
+  "genre": "Mellow 70s album rock",
+  "urls": [
+   "https://ice1.somafm.com/seventies-128-mp3",
+   "https://ice2.somafm.com/seventies-128-mp3",
+   "https://ice4.somafm.com/seventies-128-mp3",
+   "https://ice6.somafm.com/seventies-128-mp3",
+   "https://ice.somafm.com/seventies"
+  ]
+ },
+ {
+  "id": "u80s",
+  "name": "Underground 80s",
+  "genre": "80s new wave · synthpop",
+  "urls": [
+   "https://ice1.somafm.com/u80s-128-mp3",
+   "https://ice2.somafm.com/u80s-128-mp3",
+   "https://ice4.somafm.com/u80s-128-mp3",
+   "https://ice6.somafm.com/u80s-128-mp3",
+   "https://ice.somafm.com/u80s"
+  ]
+ },
+ {
+  "id": "indiepop",
+  "name": "Indie Pop Rocks",
+  "genre": "Indie pop",
+  "urls": [
+   "https://ice1.somafm.com/indiepop-128-mp3",
+   "https://ice2.somafm.com/indiepop-128-mp3",
+   "https://ice4.somafm.com/indiepop-128-mp3",
+   "https://ice6.somafm.com/indiepop-128-mp3",
+   "https://ice.somafm.com/indiepop"
+  ]
+ },
+ {
+  "id": "poptron",
+  "name": "PopTron",
+  "genre": "Electro-pop · indie dance",
+  "urls": [
+   "https://ice1.somafm.com/poptron-128-mp3",
+   "https://ice2.somafm.com/poptron-128-mp3",
+   "https://ice4.somafm.com/poptron-128-mp3",
+   "https://ice6.somafm.com/poptron-128-mp3",
+   "https://ice.somafm.com/poptron"
+  ]
+ },
+ {
+  "id": "bootliquor",
+  "name": "Boot Liquor",
+  "genre": "Americana roots",
+  "urls": [
+   "https://ice1.somafm.com/bootliquor-128-mp3",
+   "https://ice2.somafm.com/bootliquor-128-mp3",
+   "https://ice4.somafm.com/bootliquor-128-mp3",
+   "https://ice6.somafm.com/bootliquor-128-mp3",
+   "https://ice.somafm.com/bootliquor"
+  ]
+ },
+ {
+  "id": "suburbsofgoa",
+  "name": "Suburbs of Goa",
+  "genre": "Desi · world beats",
+  "urls": [
+   "https://ice1.somafm.com/suburbsofgoa-128-mp3",
+   "https://ice2.somafm.com/suburbsofgoa-128-mp3",
+   "https://ice4.somafm.com/suburbsofgoa-128-mp3",
+   "https://ice6.somafm.com/suburbsofgoa-128-mp3",
+   "https://ice.somafm.com/suburbsofgoa"
+  ]
+ },
+ {
+  "id": "yourclassical",
+  "name": "YourClassical",
+  "genre": "Classical",
+  "urls": [
+   "https://ycradio.stream.publicradio.org/ycradio.mp3",
+   "https://ycradio.stream.publicradio.org/ycradio.aac"
+  ]
+ },
+ {
+  "id": "wcpe",
+  "name": "The Classical Station",
+  "genre": "Classical (WCPE)",
+  "urls": [
+   "https://playerservices.streamtheworld.com/api/livestream-redirect/WCPE_FMAAC.aac"
+  ]
+ }
+]

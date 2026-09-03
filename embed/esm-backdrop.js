@@ -7,6 +7,7 @@
    <script>
      ESMBackdrop.mount({ intervalMinutes: 3 });          // full-screen, disc on
      ESMBackdrop.mount({ follow: true });                 // paired: mirror the ESM screen's config
+     ESMBackdrop.mount({ motion: "lively" });             // how much each image drifts
    </script>
 
    See README.md for every option. The image list and the images come from
@@ -18,11 +19,18 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.1.0";
+  var VERSION = "1.2.0";
   var DEFAULT_BASE = "https://jeancamposlabs.github.io/ESM-Screen/";
   // config.json → minutes (same table as the ESM screen's shared.js)
   var ROTATE_MINUTES = { off: 0, daily: 1440, "4h": 240, hourly: 60, "30m": 30, "15m": 15, "5m": 5, "3m": 3 };
   var PALETTES = { orange: 1, navy: 1, electric: 1, teal: 1, purple: 1 };
+  // Background drift. Every image carries its own motion (motion.json, computed
+  // from the picture itself); this only scales it. Same numbers as the ESM screen,
+  // so a paired screen drifts identically.
+  var MOTION_K = { off: 0, subtle: 0.6, gentle: 1, lively: 1.5 };
+  var MOTION_BASE_SCALE = 1.09;   // 4.5% of overhang each side, so an edge can never show
+  var MOTION_MARGIN = 4.0;        // % — hard cap on the pan
+  var MOTION_FALLBACK = { x: 1.1, y: 1.05, z: 0.012, d: 115 };
   var TOKEN_RE = /^[A-Za-z0-9_-]{1,80}$/;                                  // a slide token or a category id
   var PATH_RE = /^(?!.*\.\.)[A-Za-z0-9_./-]{1,200}\.(jpe?g|png|webp)$/i;   // a manifest entry, relative
   var URL_RE = /^https:\/\/[A-Za-z0-9.-]+\/[A-Za-z0-9_./%-]{1,300}\.(jpe?g|png|webp)$/i;  // or absolute https
@@ -112,6 +120,23 @@
     return { index: index, slot: slot, nextChangeMs: ((slot + 1) * span - ls) * 1000 };
   }
 
+  var REDUCED = false;
+  try { REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) {}
+  function motionFrames(m, motionId) {
+    var k = MOTION_K[motionId];
+    if (k == null) k = 1;
+    if (!k || REDUCED) return null;
+    var cap = function (v) { return Math.max(-MOTION_MARGIN, Math.min(MOTION_MARGIN, v * k)); };
+    var x = cap(m.x), y = cap(m.y), z = Math.max(0, m.z * k);
+    if (!x && !y && !z) return null;
+    var s0 = MOTION_BASE_SCALE;
+    return {
+      from: "translate(" + (-x).toFixed(2) + "%, " + (-y).toFixed(2) + "%) scale(" + s0.toFixed(3) + ")",
+      to: "translate(" + x.toFixed(2) + "%, " + y.toFixed(2) + "%) scale(" + (s0 + z).toFixed(3) + ")",
+      duration: Math.max(30, m.d) * 1000
+    };
+  }
+
   /* ---------- helpers ---------- */
   function el(tag, cls, html) {
     var e = document.createElement(tag);
@@ -194,6 +219,8 @@
       host.appendChild(disc);
     }
 
+    var motionId = MOTION_K[opts.motion] != null ? opts.motion : "gentle";
+    var motionMap = null;
     var all = [], slides = [], front = 0, current = -1, pinned = null, pinnedToken = null;
     var timer = null, poll = null, follower = null, destroyed = false, lastSlot = null, started = false, pendingCfg = null;
 
@@ -220,6 +247,7 @@
         layers[front].classList.remove("is-on");
         if (instant) setTimeout(function () { back.style.transition = ""; }, 50);
         front ^= 1; current = i;
+        drift(back, src);
         if (opts.onChange) { try { opts.onChange(Object.assign({ src: src, index: i, total: slides.length }, slideInfo(src))); } catch (e) {} }
         // warm the cache for the one after this, so the next fade is clean on a slow TV
         var nx = pick(slides.length, minutes, new Date(Date.now() + minutes * 60000), shuffle);
@@ -227,6 +255,25 @@
       };
       preload(src, function () { swap(); });   // decode first, then fade — no flash of empty layer
     }
+    // Slow, per-image drift: horizons slide sideways, a bright subject is pushed
+    // into, textures drift diagonally. Eases at both ends, never jumps back.
+    function drift(el, src) {
+      try { if (el._esmAnim) { el._esmAnim.cancel(); el._esmAnim = null; } } catch (e) {}
+      var m = (motionMap && motionMap[slideToken(src)]) || MOTION_FALLBACK;
+      var f = el.animate ? motionFrames(m, motionId) : null;
+      if (!f) { el.style.transform = "scale(" + MOTION_BASE_SCALE.toFixed(3) + ")"; return; }
+      el.style.transform = f.from;
+      try {
+        el._esmAnim = el.animate([{ transform: f.from }, { transform: f.to }],
+          { duration: f.duration, direction: "alternate", iterations: Infinity, easing: "ease-in-out" });
+      } catch (e) { el.style.transform = "scale(" + MOTION_BASE_SCALE.toFixed(3) + ")"; }
+    }
+    function setMotion(id) {
+      if (MOTION_K[id] == null || id === motionId) return;
+      motionId = id;
+      if (current >= 0) drift(layers[front], slides[current]);
+    }
+
     function tick(force) {
       if (destroyed || pinned != null) return;
       var p = pick(slides.length, minutes, null, shuffle);
@@ -251,6 +298,10 @@
     }
     function start(list) {
       all = list.map(function (p) { return joinUrl(base, p); });
+      // per-image motion; absent → every slide uses the same fallback drift
+      fetchJson(joinUrl(base, opts.motionManifest || "assets/motion.json"))
+        .then(function (d) { if (d && typeof d === "object") { motionMap = d; if (current >= 0) drift(layers[front], slides[current]); } })
+        .catch(function () {});
       started = true;
       if (opts.start != null) pinnedToken = String(opts.start);
       if (pendingCfg) { var c = pendingCfg; pendingCfg = null; applyConfig(c); }
@@ -280,6 +331,7 @@
       var pinTo = (!minutes && typeof cfg.bg === "string" && TOKEN_RE.test(cfg.bg)) ? cfg.bg : null;
       if (pinTo !== pinnedToken) { pinnedToken = pinTo; changed = true; }
       if (opts.followPalette !== false && typeof cfg.palette === "string" && PALETTES[cfg.palette]) host.setAttribute("data-palette", cfg.palette);
+      if (opts.followMotion !== false && typeof cfg.bgMotion === "string") setMotion(cfg.bgMotion);
       if (changed) rebuild();
     }
     var followUrl = null;
@@ -315,9 +367,11 @@
       pin: function (token) { var i = indexOfToken(token); if (i >= 0) { pinned = i; pinnedToken = slideToken(slides[i]); show(i); } return api; },
       unpin: function () { pinned = null; pinnedToken = null; lastSlot = null; tick(true); return api; },
       palette: function (p) { if (PALETTES[p]) host.setAttribute("data-palette", p); return api; },
+      motion: function (id) { setMotion(id); return api; },
       interval: function (m) { minutes = Number(m) || 0; lastSlot = null; if (pinned == null) tick(true); return api; },
       destroy: function () {
         destroyed = true; clearTimeout(timer); clearInterval(poll); clearInterval(follower);
+        layers.forEach(function (el) { try { if (el._esmAnim) el._esmAnim.cancel(); } catch (e) {} });
         document.removeEventListener("visibilitychange", onVis);
         if (created) host.parentNode && host.parentNode.removeChild(host);
         else host.innerHTML = "";
@@ -326,5 +380,5 @@
     return api;
   }
 
-  global.ESMBackdrop = { mount: mount, pick: pick, slideInfo: slideInfo, slideToken: slideToken, FALLBACK_SLIDES: FALLBACK_SLIDES, ROTATE_MINUTES: ROTATE_MINUTES, VERSION: VERSION };
+  global.ESMBackdrop = { mount: mount, pick: pick, slideInfo: slideInfo, slideToken: slideToken, FALLBACK_SLIDES: FALLBACK_SLIDES, ROTATE_MINUTES: ROTATE_MINUTES, MOTION_K: MOTION_K, VERSION: VERSION };
 })(window);

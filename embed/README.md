@@ -18,7 +18,34 @@ esm-backdrop/
 Full pack (with images): **https://jeancamposlabs.github.io/ESM-Screen/embed/esm-backdrop-pack.zip**
 Live demo: **https://jeancamposlabs.github.io/ESM-Screen/embed/demo.html** (`?interval=0.2` to see it change fast)
 
-## 1. Quickest: hot-link everything from the ESM site
+## 1. Easiest and safest: one iframe (nothing to copy, nothing to update)
+
+```html
+<iframe src="https://jeancamposlabs.github.io/ESM-Screen/backdrop.html?follow=1"
+        style="position:fixed;inset:0;width:100%;height:100%;border:0;z-index:0"
+        sandbox="allow-scripts" loading="eager"></iframe>
+```
+
+The images, the per-image motion, this code and the settings all stay on the ESM
+site, so the screen is steered from `remote.html` and **never needs a file
+copied or updated again**. The browser puts the iframe in its own origin:
+nothing inside it can read your DOM, your variables, your cookies or your
+storage, and `sandbox="allow-scripts"` also stops it navigating your page
+(verified — the checks come back BLOCKED and the frame's origin is `null`).
+Put your own content on top with a higher `z-index`.
+
+Parameters: `follow=1` (mirror the house config — rotation, playlist, pin,
+palette, movement), or drive it yourself with `interval=3`, `motion=gentle`,
+`palette=teal`, `disc=0`, `discsize=60vmin`, `wordmark=Your|Brand`,
+`categories=space,earth`, `start=52-space-andromeda`, `vignette=0`.
+
+*Requires the host to send CORS headers (GitHub Pages does).* If you ever serve
+this from somewhere that doesn't, drop `sandbox` or add `allow-same-origin`.
+
+Trade-off: it needs the ESM site reachable. For a screen that must survive the
+site being down, self-host instead (§3).
+
+## 2. Hot-link the two files from the ESM site
 
 ```html
 <link rel="stylesheet" href="https://jeancamposlabs.github.io/ESM-Screen/embed/esm-backdrop.css">
@@ -32,7 +59,7 @@ The image list is fetched from the site (`assets/backgrounds.json`), the images
 stream from there too. Your own content goes on top: anything with
 `position: fixed/absolute` and `z-index` above 0.
 
-## 2. Self-hosted (recommended for a TV that must work when the ESM site is down)
+## 3. Self-hosted (for a screen that must work when the ESM site is down)
 
 Copy the two files into your project, then either unzip the full pack (it already
 contains `backgrounds.json` + `slides/`) or run `sh fetch-slides.sh` next to them.
@@ -53,7 +80,7 @@ Then point `base` at that folder:
 If the manifest cannot be loaded the module falls back to its built-in list of
 the 104 file names (resolved against `base + "assets/slides/"`, the site layout).
 
-## 3. Inside a box instead of full-screen
+## 4. Inside a box instead of full-screen
 
 ```html
 <div id="stage" style="position:relative; width:100%; aspect-ratio:16/9;"></div>
@@ -74,7 +101,8 @@ meant for a TV; pass `discSize` (any CSS length) for a box.
 
 `follow: true` makes this screen read the ESM house config
 (`https://jeancamposlabs.github.io/ESM-Screen/config.json`, once a minute) and
-mirror it: the rotation interval, the playlist, a pinned image and the palette.
+mirror it: the rotation interval, the playlist, a pinned image, the palette and
+the movement setting.
 Both screens then compute the same slot from the clock and switch at the same
 second, and the ESM remote (`remote.html`) steers both. Nothing is sent back.
 
@@ -87,11 +115,13 @@ keeps your own palette; `followEveryMs` changes the polling (min 15 s).
 
 ## Security notes (for the other project)
 
-- **Self-host the two files.** Copy `esm-backdrop.js` and `esm-backdrop.css`
-  into your project instead of hot-linking them. Hot-linking would let anyone
-  who controls the ESM-Screen repo run code inside your page; a local copy
-  can't change under you.
-- With self-hosted code, the only things that cross from the ESM site are
+- **Use the iframe (§1), or self-host the two files (§3).** Both keep ESM code
+  out of your page's origin: the iframe because the browser isolates it, the
+  copy because it can't change under you. What to avoid is §2 — hot-linking the
+  script into your page, which lets anyone who controls the ESM-Screen repo run
+  code in your app.
+- With the iframe, what crosses into *your page* is a picture, nothing else.
+  With self-hosted code, the only things that cross from the ESM site are
   **data**: two JSON files (image list, config) and JPEGs. The module validates
   every field it uses (whitelisted keys, tokens `[A-Za-z0-9_-]`, image paths
   that must end in `.jpg/.png/.webp` and stay on the `base` origin, palette from
@@ -113,6 +143,9 @@ keeps your own palette; `followEveryMs` changes the polling (min 15 s).
 | `manifest` | `assets/backgrounds.json` | image list (string or array of candidates, relative to `base` or absolute) |
 | `slides` | — | explicit array of image URLs; skips the manifest |
 | `intervalMinutes` | `3` | minutes per image (`0.5`, `3`, `60`, `1440`…) |
+| `motion` | `"gentle"` | drift: `off` · `subtle` · `gentle` · `lively` (each image's own motion, scaled) |
+| `motionManifest` | `assets/motion.json` | per-image motion, relative to `base` |
+| `followMotion` | `true` | in follow mode, also take the movement setting |
 | `follow` | — | `true` = mirror the ESM `config.json` (interval, playlist, pin, palette); or a URL/path to another config |
 | `followPalette` | `true` | in follow mode, also take the palette |
 | `followEveryMs` | `60000` | how often the followed config is re-read (min 15 s) |
@@ -131,7 +164,19 @@ keeps your own palette; `followEveryMs` changes the polling (min 15 s).
 | `onChange(info)` | — | called after every change: `{ src, index, total, token, cat, name }` |
 
 `mount()` returns a controller: `next()`, `prev()` (both pin), `pin(token)`,
-`unpin()`, `interval(minutes)`, `current()`, `palette(id)`, `slides`, `destroy()`.
+`unpin()`, `interval(minutes)`, `motion(id)`, `current()`, `palette(id)`, `slides`,
+`destroy()`.
+
+## The drift
+
+Each image moves slowly in the way that suits it, decided from the picture
+itself (`tools/make_motion.py` in the repo writes `motion.json`): a strong
+horizon slides sideways, a bright subject in the middle is pushed into, an
+all-over texture drifts diagonally. Amplitudes are ~1–3% of the frame over
+1.5–2.5 minutes, at the same apparent speed for every image, easing at both ends
+— alive, not a screensaver. `motion: "off"` freezes it, and
+`prefers-reduced-motion` is honoured automatically. Without `motion.json`
+everything falls back to one gentle diagonal drift.
 
 ## How the rotation picks an image
 

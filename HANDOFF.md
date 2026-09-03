@@ -75,8 +75,51 @@ control from my computer". What changed:
   For that, `ROTATIONS` gained `5m` and `3m`, `rotationPick().nextChangeMs` is now second-precise,
   and the screen arms a timer for the exact boundary (`rotTimer`) besides the 30 s safety tick.
 
+- **Google speakers (`cast-follower/`).** Nest speakers have no shell/ADB; the Cast protocol on the
+  LAN is the only way in. `cast_follower.py` (pychromecast 14) polls `config.json` +
+  `assets/stations.json` (generated from `shared.js` on deploy) and makes a speaker/group play the
+  station at `musicVolume` inside the schedule, stop otherwise, step aside when someone else casts,
+  and retry the next mirror when the stream drops. New config key **`musicOutput`**
+  (`tvs` default · `speakers` · `both`): TVs play only for `tvs`/`both` (`intendPlay()`), the
+  follower only for `speakers`/`both`. Unit-tested + dry-run here; **not tested against a real
+  speaker** (no LAN devices in this sandbox). Must run on a box that sees the speakers' LAN.
+
+- **Per-image background motion (asked for: "make it more alive").** The Ken-Burns was cut in an
+  earlier session as a nausea suspect (never actually exonerated), so this comes back deliberately
+  small and **tailored per image**: `tools/make_motion.py` analyses every slide and writes
+  `assets/motion.json` (`{x, y, z, d}` per token). Edge-gradient energy gives a **horizon score**
+  (horizontal edges packed into few rows → slide sideways, never up/down through the horizon) and
+  **brightness-mass concentration** gives a **subject score** (edge energy can't tell a galaxy from
+  its starfield — the stars win on count — but bright mass can → push in). Textures get a diagonal
+  drift. Duration is derived so the *apparent speed* is constant (`SPEED` %/s), which is what keeps
+  it calm. `shared.js` holds `MOTIONS` (off/subtle/gentle/lively = 0/0.6/1/1.5), the base scale
+  **1.09** (4.5% overhang each side; the worst pan is 2.4 × 1.5 = 3.6%, so an edge can never show)
+  and `motionFrames()`. The screen animates with WAAPI `alternate`/`infinite`/`ease-in-out` and
+  stores the handle on `el._esmAnim` (the TV browser lacks `getAnimations()`, and WAAPI ignores the
+  CSS `animation-play-state` used for the night screen — `setMotionPaused()` handles that).
+  New config key **`bgMotion`**; the pack follows it too (`followMotion`), so paired screens drift
+  alike. Measured: gentle ≈ 2.1 px/s peak on a 4K panel, 44 px of travel per ~75 s cycle, layer
+  edge covered by ≥33 px at every point of the cycle at "lively"; `prefers-reduced-motion` → still.
+  Re-run `python3 tools/make_motion.py` after adding slides (the deploy does `--only-missing`).
+
+- **`backdrop.html` — the one-line embed (added when the user asked "why do they need the pack?").**
+  Fair question: the images, motion and settings were always served from here; only the *renderer*
+  was a copied file, and only because of my own self-hosting advice. `backdrop.html` mounts the pack
+  full-screen from URL params (`follow`, `interval`, `motion`, `palette`, `disc`, `discsize`,
+  `wordmark`, `categories`, `start`, `vignette`), so another project embeds one sandboxed iframe and
+  never updates anything again. Verified cross-origin with `sandbox="allow-scripts"`: it renders,
+  follows the config (78-slide playlist, the pinned image, per-image motion `d=73` not the 115 s
+  fallback) and every reach into the host — `parent.document`, a parent global, `document.cookie` —
+  comes back BLOCKED with origin `null`. **Gotcha found while testing:** in that sandbox the frame
+  is an *opaque* origin, so `backgrounds.json`/`motion.json`/`config.json` are cross-origin fetches
+  and need CORS. GitHub Pages sends `access-control-allow-origin: *`, so it works live; a plain
+  `python3 -m http.server` does not, and the pack then silently falls back to its built-in slide
+  list (104 entries, 115 s motion) — which is exactly what the first test run showed.
+
 ### Next-agent notes
 - The rotation is clock-based; a TV with a wrong clock shows a different image. Fine.
+- Motion amplitudes are capped in `shared.js` (`MOTION_MARGIN`), not in the JSON — if you raise
+  `MAX_PAN` in the tool, raise the base scale too or the layer edge will show at "lively".
 - `compactPlaylist` collapses whole categories to their id, so `config.json` stays short.
 - `waitForDeploy` compares configs with `sameConfig()` (normalised, `CONFIG_KEYS` only).
 - If you add a config key: `CONFIG_KEYS` + `CONFIG_DEFAULTS` in `shared.js`, an input with

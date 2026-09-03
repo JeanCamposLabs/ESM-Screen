@@ -25,22 +25,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Thumbnail tooling
-        run: python3 -m pip install --quiet pillow || echo "Pillow unavailable — thumbnails for new slides will be skipped"
+      - name: Image tooling (thumbnails + per-image motion)
+        run: python3 -m pip install --quiet pillow numpy || echo "Pillow/numpy unavailable — thumbnails and motion for new slides will be skipped"
 
       - name: Assemble site (+ stamp version for auto-refresh)
         run: |
           mkdir -p _site/assets
-          cp index.html styles.css app.js shared.js remote.html remote.css remote.js config.json _site/
+          cp index.html styles.css app.js shared.js remote.html remote.css remote.js backdrop.html config.json _site/
           # cache-bust JS/CSS per deploy so TV browsers can't serve a stale copy
           sed -i "s#app\.js\"#app.js?v=${GITHUB_SHA::7}\"#; s#shared\.js\"#shared.js?v=${GITHUB_SHA::7}\"#; s#styles\.css\"#styles.css?v=${GITHUB_SHA::7}\"#" _site/index.html
           sed -i "s#remote\.js\"#remote.js?v=${GITHUB_SHA::7}\"#; s#shared\.js\"#shared.js?v=${GITHUB_SHA::7}\"#; s#remote\.css\"#remote.css?v=${GITHUB_SHA::7}\"#" _site/remote.html
           cp -r assets/. _site/assets/ 2>/dev/null || true
+          # station list + stream URLs for the cast follower (from shared.js, so it can never drift)
+          node -e 'global.window={};require("./shared.js");const E=window.ESM;process.stdout.write(JSON.stringify(E.STATIONS.map(s=>({id:s.id,name:s.name,genre:s.genre,urls:E.stationUrls(s)})),null,1)+"\n")' > _site/assets/stations.json
           # the drop-in pack (embed/): served as-is, plus one zip with the images for other projects
           mkdir -p _site/embed _pack/esm-backdrop/slides
           cp embed/esm-backdrop.js embed/esm-backdrop.css embed/demo.html embed/README.md embed/fetch-slides.sh _site/embed/
           cp embed/esm-backdrop.js embed/esm-backdrop.css embed/demo.html embed/README.md embed/fetch-slides.sh _pack/esm-backdrop/
           cp assets/slides/* _pack/esm-backdrop/slides/ 2>/dev/null || true
+          cp assets/motion.json _pack/esm-backdrop/motion.json 2>/dev/null || true
           python3 - <<'PY'
           import os, json
           d = '_site/assets/slides'; t = '_site/assets/thumbs'
@@ -65,6 +68,9 @@ jobs:
               print('thumbnail step skipped:', e)
           PY
           (cd _pack && zip -qr ../_site/embed/esm-backdrop-pack.zip esm-backdrop) && ls -la _site/embed/esm-backdrop-pack.zip
+          # per-image background motion for any slide that doesn't have one yet
+          python3 tools/make_motion.py --slides _site/assets/slides --out _site/assets/motion.json --only-missing \
+            || echo "motion step skipped (numpy/Pillow missing) — slides without an entry use the fallback drift"
           cat > _site/version.json <<EOF
           {
             "version": "code-$(cat app.js shared.js styles.css index.html | sha1sum | cut -c1-10)",

@@ -65,6 +65,22 @@
     { id: "5m",     name: "Every 5 minutes",  minutes: 5 },
     { id: "3m",     name: "Every 3 minutes",  minutes: 3 },
   ];
+  // How much the background drifts. Each image carries its own motion (assets/
+  // motion.json, computed from the picture itself by tools/make_motion.py);
+  // this only scales it. "off" holds every image perfectly still.
+  const MOTIONS = [
+    { id: "off",    name: "Still",        k: 0 },
+    { id: "subtle", name: "Barely there", k: 0.6 },
+    { id: "gentle", name: "Gentle",       k: 1 },
+    { id: "lively", name: "Lively",       k: 1.5 },
+  ];
+  // The image layer is drawn this much bigger than the screen, so it can drift
+  // without ever showing an edge: 1.09 → 4.5% of overhang on each side, and the
+  // pan is capped below that (2.0% x 1.5 = 3.0% at the liveliest setting).
+  const MOTION_BASE_SCALE = 1.09;
+  const MOTION_MARGIN = 4.0;                                   // % — hard cap on the pan
+  const MOTION_FALLBACK = { x: 1.1, y: 1.05, z: 0.012, d: 115 }; // used if motion.json is missing
+
   // Gallery categories, read from the file name (see slideInfo).
   const CATEGORIES = [
     { id: "space",    name: "Deep space",        blurb: "Hubble / Webb / Spitzer — NASA, public domain" },
@@ -76,18 +92,25 @@
   // The keys that make up the house config (config.json). Anything else in
   // the screen's state (name, tag, musicBar…) stays local to that device.
   const CONFIG_KEYS = [
-    "style", "palette", "bg", "bgRotate", "bgSet",
+    "style", "palette", "bg", "bgRotate", "bgSet", "bgMotion",
     "logo", "rocket", "clock", "particles", "weather", "speed",
-    "music", "musicStation", "musicVolume",
+    "music", "musicStation", "musicVolume", "musicOutput",
     "schedule", "onTime", "offTime", "nightClock",
+  ];
+  // Where the music plays: the TVs' own speakers, a Google Cast speaker group
+  // (see cast-follower/), or both. The TVs only play when it is "tvs" or "both".
+  const MUSIC_OUTPUTS = [
+    { id: "tvs",      name: "The TVs" },
+    { id: "speakers", name: "Google speakers (cast follower)" },
+    { id: "both",     name: "TVs and speakers" },
   ];
 
   // House-config defaults (the screen adds its device-only keys on top).
   const CONFIG_DEFAULTS = {
     style: "premium", palette: "orange",
-    bg: "10-purple", bgRotate: "daily", bgSet: [],
+    bg: "10-purple", bgRotate: "daily", bgSet: [], bgMotion: "gentle",
     logo: true, rocket: true, clock: false, particles: true, weather: true, speed: 1,
-    music: false, musicStation: "lofigirl", musicVolume: 0.35,
+    music: false, musicStation: "lofigirl", musicVolume: 0.35, musicOutput: "tvs",
     schedule: true, onTime: "07:00", offTime: "23:00", nightClock: true,
   };
 
@@ -213,6 +236,34 @@
     return { index, slot, nextChangeMs };
   }
 
+  /* ---------- Background motion ----------
+     Each slide has its own drift; the setting only scales it. Returns the two
+     transforms and a duration, or null when nothing should move. The animation
+     runs `alternate` and forever, so the image eases out to one side, comes back,
+     and never jumps. */
+  function motionFor(map, src) {
+    const m = map && map[slideToken(src)];
+    return m && typeof m.d === "number" ? m : MOTION_FALLBACK;
+  }
+  function motionScale(id) {
+    const m = MOTIONS.find((x) => x.id === id);
+    return m ? m.k : 1;
+  }
+  function motionFrames(motion, motionId, reduced) {
+    const k = motionScale(motionId);
+    if (!k || reduced) return null;
+    const cap = (v) => Math.max(-MOTION_MARGIN, Math.min(MOTION_MARGIN, v * k));
+    const x = cap(motion.x), y = cap(motion.y), z = Math.max(0, motion.z * k);
+    if (!x && !y && !z) return null;
+    const s0 = MOTION_BASE_SCALE;
+    return {
+      from: "translate(" + (-x).toFixed(2) + "%, " + (-y).toFixed(2) + "%) scale(" + s0.toFixed(3) + ")",
+      to: "translate(" + x.toFixed(2) + "%, " + y.toFixed(2) + "%) scale(" + (s0 + z).toFixed(3) + ")",
+      duration: Math.max(30, motion.d) * 1000,
+    };
+  }
+  const motionStill = () => "scale(" + MOTION_BASE_SCALE.toFixed(3) + ")";
+
   /* ---------- Config ---------- */
   // Accept older configs: `dailyBg: true/false` becomes `bgRotate`.
   function normalizeConfig(cfg) {
@@ -223,6 +274,8 @@
     if (c.bgSet != null && !Array.isArray(c.bgSet)) delete c.bgSet;
     if (Array.isArray(c.bgSet)) c.bgSet = c.bgSet.map(slideToken).filter(Boolean);
     if (c.bg != null) c.bg = slideToken(c.bg);
+    if (c.musicOutput != null && !MUSIC_OUTPUTS.some((o) => o.id === c.musicOutput)) delete c.musicOutput;
+    if (c.bgMotion != null && !MOTIONS.some((m) => m.id === c.bgMotion)) delete c.bgMotion;
     return c;
   }
   // The house config as it is written to config.json (stable key order).
@@ -312,10 +365,11 @@
   }
 
   global.ESM = {
-    STYLES, PALETTES, STATIONS, ROTATIONS, CATEGORIES, CONFIG_KEYS, CONFIG_DEFAULTS, REPO, SITE,
+    STYLES, PALETTES, STATIONS, ROTATIONS, CATEGORIES, MUSIC_OUTPUTS, MOTIONS, CONFIG_KEYS, CONFIG_DEFAULTS, REPO, SITE,
     stationUrls, findStation,
     slideToken, slideInfo, thumbFor, effectiveSlides, compactPlaylist, findSlide,
     rotationMinutes, localMinutes, seededOrder, rotationPick,
+    motionFor, motionScale, motionFrames, motionStill, MOTION_BASE_SCALE,
     normalizeConfig, pickConfig, sameConfig,
     pushConfig, fetchLiveConfig, waitForDeploy, explainGithub,
   };

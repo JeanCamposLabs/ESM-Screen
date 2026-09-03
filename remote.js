@@ -81,6 +81,10 @@
       b.onclick = () => set("palette", p.id);
       pr.appendChild(b);
     });
+    const mo = $("inMusicOutput"); mo.innerHTML = "";
+    ESM.MUSIC_OUTPUTS.forEach((o) => { const opt = document.createElement("option"); opt.value = o.id; opt.textContent = o.name; mo.appendChild(opt); });
+    const mot = $("inBgMotion"); mot.innerHTML = "";
+    ESM.MOTIONS.forEach((m) => { const o = document.createElement("option"); o.value = m.id; o.textContent = m.name; mot.appendChild(o); });
     const rot = $("inBgRotate"); rot.innerHTML = "";
     ROTATIONS.forEach((r) => {
       const o = document.createElement("option");
@@ -213,6 +217,7 @@
   /* ---------- Draft changes ---------- */
   function set(key, value) {
     draft[key] = value;
+    if (key === "bgMotion") post({ type: "esm:motion", motion: value });
     if (key === "bgRotate" && value === "off" && !draft.bg) draft.bg = ESM.slideToken(currentDraftSlide());
     if (key === "bgRotate") previewing = null;                       // show what the rotation would show
     if (key === "bgSet" && previewing && included().indexOf(previewing) < 0) previewing = null;
@@ -278,7 +283,7 @@
     const st = ESM.findStation(live.musicStation);
     const parts = [
       `<span class="dot"></span>On the TVs now: <b>${esc(ESM.slideInfo(src).name)}</b>` + (pick ? ` · changes in ${fmtDur(pick.nextChangeMs)} (${esc(rot ? rot.name.toLowerCase() : "")}, ${list.length} images)` : " · pinned"),
-      live.music ? `music <b>${esc(st.name)}</b> at ${Math.round(live.musicVolume * 100)}%` : "music off",
+      live.music ? `music <b>${esc(st.name)}</b> at ${Math.round(live.musicVolume * 100)}%${live.musicOutput === "speakers" ? " on the speakers" : live.musicOutput === "both" ? " on TVs + speakers" : ""}` : "music off",
       live.schedule ? `on ${esc(live.onTime)}–${esc(live.offTime)}` : "always on",
     ];
     $("liveStatus").innerHTML = parts.join(" · ");
@@ -298,6 +303,7 @@
     if (!draft || !frameReady) return;
     post({ type: "esm:config", config: ESM.pickConfig(draft) });
     if (previewing) post({ type: "esm:bg", bg: ESM.slideToken(previewing) });
+    post({ type: "esm:motion", motion: draft.bgMotion });
   }
   addEventListener("message", (e) => {
     const d = e.data || {};

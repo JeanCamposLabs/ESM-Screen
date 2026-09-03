@@ -89,6 +89,16 @@ photographic categories (78 images) and leaves the flat *Illustrated* set out �
 tick it back in on the remote if you miss it. The gallery is grouped by category
 in both the remote and the panel, with real thumbnails.
 
+**Movement.** Each image drifts slowly, in the way that suits *that picture*:
+`tools/make_motion.py` looks at every slide and writes `assets/motion.json` —
+a strong horizon (a landscape, Earth's limb) slides sideways, a bright subject
+in the middle (a galaxy, a nebula) is pushed into, an all-over texture drifts
+diagonally. Amplitudes are 1–3.5% of the frame over 70–100 s, the same apparent
+speed for every image, easing at both ends. `bgMotion` sets how much:
+`off` (dead still) · `subtle` · `gentle` (default) · `lively`;
+`prefers-reduced-motion` disables it, and the night screen pauses it.
+Add a slide and the deploy analyses it automatically.
+
 Picking a specific image in the panel (or pressing `N`) **pins that TV** to it
 until a rotation is chosen again; on the remote, *Pin this* pins every TV.
 Want more variety? Drop more 16:9 art into `assets/slides/` (see
@@ -160,6 +170,18 @@ Good **free** sources:
 
 ---
 
+## Google speakers: the music follows the same remote
+
+Nest / Google Cast speakers can't be "entered" (no shell, no ADB), but they
+accept the Cast protocol on the local network. `cast-follower/` is a small
+always-on script for a Pi/Mac/NAS on the office LAN that makes a speaker or a
+**speaker group** follow `config.json`: station, volume and the on/off schedule.
+On the remote, **Music → Play on** chooses where the music comes from: the TVs,
+the speakers (TVs go silent; the group stays in Google's own multi-room sync),
+or both. Setup and caveats in [`cast-follower/README.md`](cast-follower/README.md).
+
+---
+
 ## Reusing the backgrounds + disc elsewhere (drop-in pack)
 
 `embed/` is a two-file module (`esm-backdrop.js` + `esm-backdrop.css`) that
@@ -169,16 +191,22 @@ is built on every deploy at `/embed/esm-backdrop-pack.zip`. Options, API and the
 self-hosting recipe are in [`embed/README.md`](embed/README.md).
 
 ```html
-<link rel="stylesheet" href="https://jeancamposlabs.github.io/ESM-Screen/embed/esm-backdrop.css">
-<script src="https://jeancamposlabs.github.io/ESM-Screen/embed/esm-backdrop.js"></script>
-<script>ESMBackdrop.mount({ follow: true });</script>   <!-- or { intervalMinutes: 3 } to run on its own -->
+<iframe src="https://jeancamposlabs.github.io/ESM-Screen/backdrop.html?follow=1"
+        style="position:fixed;inset:0;width:100%;height:100%;border:0;z-index:0"
+        sandbox="allow-scripts"></iframe>
 ```
 
-`follow: true` keeps the other screen in step with this one: it reads this
-site's `config.json` (interval, playlist, pin, palette) and, since both compute
-the image from the clock, they switch at the same second — one remote steers
-both. The other project should self-host the two files (only JSON + images then
-cross over, validated); see the security notes in `embed/README.md`.
+That one line is the whole integration: images, motion, code and settings all
+stay here, so the other screen follows `remote.html` and never needs a file
+updated. The browser isolates the iframe, so nothing in it can touch the host
+page. The two-file version (`embed/`) is for a screen that must keep working
+when this site is unreachable.
+
+`follow=1` keeps the other screen in step with this one: it reads this site's
+`config.json` (interval, playlist, pin, palette, movement) and, since both
+compute the image from the clock, they switch at the same second — one remote
+steers both. See `embed/README.md` for the parameters, the self-hosted route and
+the security notes.
 
 ---
 
@@ -282,11 +310,10 @@ so it's fully automatic: **just push to `main`.**
 The screen requests a **Wake Lock** so supported panels won't dim or sleep, and
 re-requests it after the device wakes.
 
-> **Burn-in note (OLED):** the background changes on the rotation, the rocket
-> and particles keep moving, the light wave passes every couple of minutes and
-> the idle clock wanders at night. The logo, clock and weather are deliberately
-> still (the drift was found nauseating) — on a true OLED, keep the hourly
-> rotation on.
+> **Burn-in note (OLED):** the background changes on the rotation *and* drifts
+> slowly within each slide, the rocket and particles keep moving, the light wave
+> passes every couple of minutes and the idle clock wanders at night. The logo,
+> clock and weather are deliberately still (that drift was found nauseating).
 
 ---
 
@@ -313,10 +340,12 @@ file for you; the manual route is **Copy config** (remote or panel) → paste in
 `config.json` on GitHub → commit.
 
 Fields: `style`, `palette`, `bg` (pinned slide token, e.g. `06-glow`),
-`bgRotate` (`off`/`daily`/`4h`/`hourly`/`30m`/`15m`), `bgSet` (playlist: tokens
-and/or category ids, `[]` = all), `logo`, `rocket`, `clock`, `particles`,
+`bgRotate` (`off`/`daily`/`4h`/`hourly`/`30m`/`15m`/`5m`/`3m`), `bgSet` (playlist:
+tokens and/or category ids, `[]` = all), `bgMotion` (`off`/`subtle`/`gentle`/`lively`),
+`logo`, `rocket`, `clock`, `particles`,
 `weather`, `speed`, `music`, `musicStation` (e.g. `lofigirl`, `groovesalad`),
-`musicVolume` (0–1), `schedule`, `onTime`, `offTime`, `nightClock`. The old
+`musicVolume` (0–1), `musicOutput` (`tvs` · `speakers` · `both`), `schedule`,
+`onTime`, `offTime`, `nightClock`. The old
 `dailyBg: true/false` is still understood (= `bgRotate: daily`/`off`).
 
 ---

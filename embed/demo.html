@@ -16,7 +16,7 @@
 <body>
   <!-- The backdrop mounts itself as a fixed full-screen layer. Put your own
        content on top (z-index above 0), or pass { el: "#someBox" } to fill a box. -->
-  <div class="overlay"><span id="name">…</span><small id="meta">ESM Backdrop demo · ?interval=3&palette=orange&disc=1&categories=space,earth,nature,abstract</small></div>
+  <div class="overlay"><span id="name">…</span><small id="meta">ESM Backdrop demo · ?interval=3&motion=gentle&palette=orange&disc=1&categories=…</small></div>
 
   <script src="esm-backdrop.js"></script>
   <script>
@@ -29,9 +29,11 @@
         // In the repo the images live one level up; in the unpacked zip they sit next to this file.
         base: inRepo ? here.replace(/embed\/$/, "") : here,
         manifest: inRepo ? ["assets/backgrounds.json"] : ["backgrounds.json", "assets/backgrounds.json"],
+        motionManifest: inRepo ? "assets/motion.json" : "motion.json",
         intervalMinutes: q.get("interval") != null ? Number(q.get("interval")) : 3,
         palette: q.get("palette") || "orange",
         disc: q.get("disc") !== "0",
+        motion: q.get("motion") || "gentle",
         categories: cats ? cats.split(",") : ["space", "earth", "nature", "abstract"],
         onChange: function (s) { document.getElementById("name").textContent = s.name + " · " + s.cat + " · " + (s.index + 1) + "/" + s.total; }
       });

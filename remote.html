@@ -83,8 +83,12 @@
           <span>Volume <em id="volLabel"></em></span>
           <input type="range" data-key="musicVolume" min="0" max="1" step="0.05" class="range" />
         </label>
+        <label class="field">
+          <span>Play on</span>
+          <select data-key="musicOutput" class="select" id="inMusicOutput"></select>
+        </label>
         <div class="st-list" id="stationList"></div>
-        <p class="hint">▶ listens here, on this device, so you can pick before you push. The TVs need one tap after a reload before sound starts (browser rule).</p>
+        <p class="hint">▶ listens here, on this device, so you can pick before you push. The TVs need one tap after a reload before sound starts (browser rule). "Google speakers" needs the cast follower running on the office network (see <code>cast-follower/</code> in the repo); it plays the same station, in sync across a speaker group, and the TVs stay silent.</p>
         <audio id="listen" preload="none"></audio>
       </section>
 
@@ -106,10 +110,11 @@
         <h2>Backgrounds</h2>
         <div class="bg-tools">
           <label class="field field--inline"><span>Change</span><select data-key="bgRotate" class="select" id="inBgRotate"></select></label>
+          <label class="field field--inline"><span>Movement</span><select data-key="bgMotion" class="select" id="inBgMotion"></select></label>
           <span class="muted" id="bgSummary"></span>
         </div>
       </div>
-      <p class="hint">Tick the images you want in the rotation (the <b>playlist</b>) — every TV shows the same one and they all switch together. Click an image to preview it; <b>Pin this</b> keeps every screen on it.</p>
+      <p class="hint"><b>Movement</b> is a slow drift tailored to each picture (a horizon slides sideways, a galaxy is pushed into) — the preview shows it live; <b>Still</b> freezes every image. Tick the images you want in the rotation (the <b>playlist</b>) — every TV shows the same one and they all switch together. Click an image to preview it; <b>Pin this</b> keeps every screen on it.</p>
       <div id="gallery" class="gallery"></div>
     </section>
 
