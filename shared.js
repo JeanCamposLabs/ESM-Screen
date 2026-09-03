@@ -62,6 +62,8 @@
     { id: "hourly", name: "Every hour",       minutes: 60 },
     { id: "30m",    name: "Every 30 minutes", minutes: 30 },
     { id: "15m",    name: "Every 15 minutes", minutes: 15 },
+    { id: "5m",     name: "Every 5 minutes",  minutes: 5 },
+    { id: "3m",     name: "Every 3 minutes",  minutes: 3 },
   ];
   // Gallery categories, read from the file name (see slideInfo).
   const CATEGORIES = [
@@ -200,12 +202,14 @@
   function rotationPick(count, rotateId, now) {
     const mins = rotationMinutes(rotateId);
     if (!mins || !count) return null;
-    const lm = localMinutes(now);
-    const slot = Math.floor(lm / mins);
+    const d = now || new Date();
+    const slot = Math.floor(localMinutes(d) / mins);
     const epoch = Math.floor(slot / count);
     const order = seededOrder(count, epoch * 7919 + count * 31 + mins);
     const index = order[((slot % count) + count) % count];
-    const nextChangeMs = ((slot + 1) * mins - lm) * 60000;
+    // to the second, so a screen can switch right on the boundary (paired screens switch together)
+    const localSec = Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 1000);
+    const nextChangeMs = ((slot + 1) * mins * 60 - localSec) * 1000;
     return { index, slot, nextChangeMs };
   }
 

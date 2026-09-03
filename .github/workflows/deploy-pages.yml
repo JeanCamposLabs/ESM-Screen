@@ -36,6 +36,11 @@ jobs:
           sed -i "s#app\.js\"#app.js?v=${GITHUB_SHA::7}\"#; s#shared\.js\"#shared.js?v=${GITHUB_SHA::7}\"#; s#styles\.css\"#styles.css?v=${GITHUB_SHA::7}\"#" _site/index.html
           sed -i "s#remote\.js\"#remote.js?v=${GITHUB_SHA::7}\"#; s#shared\.js\"#shared.js?v=${GITHUB_SHA::7}\"#; s#remote\.css\"#remote.css?v=${GITHUB_SHA::7}\"#" _site/remote.html
           cp -r assets/. _site/assets/ 2>/dev/null || true
+          # the drop-in pack (embed/): served as-is, plus one zip with the images for other projects
+          mkdir -p _site/embed _pack/esm-backdrop/slides
+          cp embed/esm-backdrop.js embed/esm-backdrop.css embed/demo.html embed/README.md embed/fetch-slides.sh _site/embed/
+          cp embed/esm-backdrop.js embed/esm-backdrop.css embed/demo.html embed/README.md embed/fetch-slides.sh _pack/esm-backdrop/
+          cp assets/slides/* _pack/esm-backdrop/slides/ 2>/dev/null || true
           python3 - <<'PY'
           import os, json
           d = '_site/assets/slides'; t = '_site/assets/thumbs'
@@ -43,6 +48,8 @@ jobs:
           files = [f for f in files if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]
           json.dump([f"assets/slides/{f}" for f in files], open('_site/assets/backgrounds.json', 'w'))
           print('backgrounds.json ->', len(files), 'slides')
+          # the pack's manifest points at its own slides/ folder
+          json.dump([f"slides/{f}" for f in files], open('_pack/esm-backdrop/backgrounds.json', 'w'), indent=1)
           # a 480x270 thumbnail for every slide that lacks one (the gallery in the panel/remote)
           try:
               from PIL import Image
@@ -57,6 +64,7 @@ jobs:
           except Exception as e:
               print('thumbnail step skipped:', e)
           PY
+          (cd _pack && zip -qr ../_site/embed/esm-backdrop-pack.zip esm-backdrop) && ls -la _site/embed/esm-backdrop-pack.zip
           cat > _site/version.json <<EOF
           {
             "version": "code-$(cat app.js shared.js styles.css index.html | sha1sum | cut -c1-10)",
