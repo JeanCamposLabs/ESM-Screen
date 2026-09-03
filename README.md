@@ -160,6 +160,22 @@ Good **free** sources:
 
 ---
 
+## Reusing the backgrounds + disc elsewhere (drop-in pack)
+
+`embed/` is a two-file module (`esm-backdrop.js` + `esm-backdrop.css`) that
+mounts the rotating backgrounds and the ESM disc into any page — for another
+screen or project. Live demo: `/embed/demo.html`; the full pack with all images
+is built on every deploy at `/embed/esm-backdrop-pack.zip`. Options, API and the
+self-hosting recipe are in [`embed/README.md`](embed/README.md).
+
+```html
+<link rel="stylesheet" href="https://jeancamposlabs.github.io/ESM-Screen/embed/esm-backdrop.css">
+<script src="https://jeancamposlabs.github.io/ESM-Screen/embed/esm-backdrop.js"></script>
+<script>ESMBackdrop.mount({ intervalMinutes: 3 });</script>
+```
+
+---
+
 ## Nano Banana Pro prompts
 
 **Settings in Nano Banana Pro:** Resolution **4K**, Aspect ratio **16:9**

@@ -1,0 +1,82 @@
+/* =================================================================
+   ESM Backdrop — styles for esm-backdrop.js  (v1.0.0)
+   Everything is prefixed `esmb` so it can't collide with the host page.
+   The disc scales with --esmb-disc (default 78vmin): inner sizes are in em
+   with 1em = 1/78 of the disc, so one variable resizes the whole thing.
+   ================================================================= */
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@600&display=swap");
+
+.esmb {
+  position: absolute; inset: 0; overflow: hidden;
+  background: #0a0805;
+  --esmb-disc: 78vmin;
+  --esmb-fade: 1.6s;
+  font-family: "Fredoka", "Sora", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-user-select: none; user-select: none;
+}
+.esmb--fixed { position: fixed; z-index: 0; }
+
+/* Palettes (same values as the ESM screen). --acc is an RGB triplet for rgba(). */
+.esmb[data-palette="orange"]   { --accent:#ff7a18; --acc:255,122,24;  --disc-light:#ff852a; --disc-dark:#d86513; --disc-border:#98480d; --disc-ring-inner:#ffd7ba; }
+.esmb[data-palette="navy"]     { --accent:#e9c46a; --acc:233,196,106; --disc-light:#ebc976; --disc-dark:#c6a055; --disc-border:#8c703a; --disc-ring-inner:#f8edd2; }
+.esmb[data-palette="electric"] { --accent:#23d4fd; --acc:35,212,253;  --disc-light:#35d7fd; --disc-dark:#28adca; --disc-border:#1f798b; --disc-ring-inner:#bdf2fe; }
+.esmb[data-palette="teal"]     { --accent:#2ee6a6; --acc:46,230,166;  --disc-light:#3fe8ad; --disc-dark:#30bc85; --disc-border:#25835b; --disc-ring-inner:#c0f8e4; }
+.esmb[data-palette="purple"]   { --accent:#b15cff; --acc:177,92,255;  --disc-light:#b769ff; --disc-dark:#994dcc; --disc-border:#6d378c; --disc-ring-inner:#e8ceff; }
+
+/* Two image layers cross-fade; the image is held still (a slow zoom was found nauseating on a big TV). */
+.esmb__layer {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  opacity: 0; transition: opacity var(--esmb-fade) ease;
+  transform: scale(1.04); will-change: opacity;
+}
+.esmb__layer.is-on { opacity: 1; }
+.esmb__vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(130% 110% at 50% 42%, transparent 55%, rgba(0,0,0,.55) 100%);
+}
+
+/* ---------- the disc ---------- */
+.esmb__disc {
+  position: absolute; left: 50%; top: 47%;
+  width: var(--esmb-disc); height: var(--esmb-disc);
+  font-size: calc(var(--esmb-disc) / 78);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 3em 3.6em rgba(0,0,0,.55));
+  animation: esmbFloat 14s ease-in-out infinite;
+  pointer-events: none;
+}
+.esmb__disc--still { animation: none; }
+.esmb__tube {
+  position: absolute; inset: 0; border-radius: 50%; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+  background:
+    linear-gradient(122deg, rgba(255,255,255,.10) 0%, transparent 34%),
+    radial-gradient(56% 40% at 50% 20%, rgba(255,255,255,.12), transparent 60%),
+    radial-gradient(circle at 50% 50%, var(--disc-light) 0%, var(--accent) 52%, var(--disc-dark) 100%);
+  border: .5em solid var(--disc-border);
+  box-shadow: 0 0 3.4em rgba(var(--acc), .72), 0 0 11em rgba(var(--acc), .45);
+}
+.esmb__ring {
+  position: absolute; inset: 2em; border-radius: 50%;
+  border: .5em solid #fff;
+  box-shadow: 0 0 1.4em #fff, 0 0 3em var(--accent), 0 0 6em rgba(var(--acc), .60), inset 0 0 1.4em var(--disc-ring-inner);
+}
+.esmb__face { display: flex; align-items: center; gap: 2.2em; padding: 0 6em; position: relative; z-index: 2; }
+.esmb__rocket {
+  width: 13em; height: 13em; color: #fff; flex: none; display: block; overflow: visible;
+  filter: drop-shadow(0 0 .8em #fff) drop-shadow(0 0 2.2em rgba(var(--acc), .80));
+}
+.esmb__rocket path { fill: none; stroke: currentColor; stroke-width: 30; stroke-linejoin: round; stroke-linecap: round; }
+.esmb__word { display: flex; flex-direction: column; line-height: 1.05; }
+.esmb__word b {
+  font-family: "Fredoka", "Sora", sans-serif; font-weight: 600; font-size: 6.4em; letter-spacing: .005em;
+  color: #fff; white-space: nowrap;
+  text-shadow: 0 0 .1em #fff, 0 0 .35em #fff, 0 0 .8em rgba(var(--acc), .70);
+}
+@keyframes esmbFloat {
+  0%, 100% { transform: translate(-50%, calc(-50% - 0.6em)); }
+  50%      { transform: translate(-50%, calc(-50% + 0.7em)); }
+}
+@media (prefers-reduced-motion: reduce) { .esmb__disc { animation: none; } }

@@ -62,6 +62,15 @@ control from my computer". What changed:
   rotation maths, 104 tiles / 78 included. The real GitHub push was **not** exercised here
   (no token) — the request code is the same as before, moved into `shared.js`.
 
+- **Drop-in pack (`embed/`), added on request for a second, bigger screen project.**
+  `esm-backdrop.js` + `esm-backdrop.css` mount the rotating backgrounds + the ESM disc into any
+  page (`ESMBackdrop.mount({ intervalMinutes: 3 })`); options in `embed/README.md`. Same rotation
+  maths as `shared.js` (verified identical picks for whole-minute intervals; the pack uses
+  second-granularity slots so sub-minute demo intervals work). The deploy serves `embed/` as-is
+  and builds `embed/esm-backdrop-pack.zip` (code + `backgrounds.json` + all `slides/`, ~38 MB) from
+  a staging dir — the zip is never committed. `demo.html` works in both layouts (repo: images one
+  level up; unpacked zip: `slides/` next to it).
+
 ### Next-agent notes
 - The rotation is clock-based; a TV with a wrong clock shows a different image. Fine.
 - `compactPlaylist` collapses whole categories to their id, so `config.json` stays short.
