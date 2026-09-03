@@ -75,6 +75,15 @@ control from my computer". What changed:
   For that, `ROTATIONS` gained `5m` and `3m`, `rotationPick().nextChangeMs` is now second-precise,
   and the screen arms a timer for the exact boundary (`rotTimer`) besides the 30 s safety tick.
 
+- **Google speakers (`cast-follower/`).** Nest speakers have no shell/ADB; the Cast protocol on the
+  LAN is the only way in. `cast_follower.py` (pychromecast 14) polls `config.json` +
+  `assets/stations.json` (generated from `shared.js` on deploy) and makes a speaker/group play the
+  station at `musicVolume` inside the schedule, stop otherwise, step aside when someone else casts,
+  and retry the next mirror when the stream drops. New config key **`musicOutput`**
+  (`tvs` default · `speakers` · `both`): TVs play only for `tvs`/`both` (`intendPlay()`), the
+  follower only for `speakers`/`both`. Unit-tested + dry-run here; **not tested against a real
+  speaker** (no LAN devices in this sandbox). Must run on a box that sees the speakers' LAN.
+
 ### Next-agent notes
 - The rotation is clock-based; a TV with a wrong clock shows a different image. Fine.
 - `compactPlaylist` collapses whole categories to their id, so `config.json` stays short.

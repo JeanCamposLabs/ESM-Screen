@@ -83,8 +83,12 @@
           <span>Volume <em id="volLabel"></em></span>
           <input type="range" data-key="musicVolume" min="0" max="1" step="0.05" class="range" />
         </label>
+        <label class="field">
+          <span>Play on</span>
+          <select data-key="musicOutput" class="select" id="inMusicOutput"></select>
+        </label>
         <div class="st-list" id="stationList"></div>
-        <p class="hint">▶ listens here, on this device, so you can pick before you push. The TVs need one tap after a reload before sound starts (browser rule).</p>
+        <p class="hint">▶ listens here, on this device, so you can pick before you push. The TVs need one tap after a reload before sound starts (browser rule). "Google speakers" needs the cast follower running on the office network (see <code>cast-follower/</code> in the repo); it plays the same station, in sync across a speaker group, and the TVs stay silent.</p>
         <audio id="listen" preload="none"></audio>
       </section>
 

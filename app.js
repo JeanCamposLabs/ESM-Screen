@@ -274,6 +274,10 @@
     });
     $("tgMusic").onchange    = (e) => { state.music = e.target.checked; if (state.music) manualPaused = false; commit(); };
     $("tgMusicBar").onchange = (e) => { state.musicBar = e.target.checked; commit(); };
+    const mo = $("inMusicOutput");
+    mo.innerHTML = "";
+    ESM.MUSIC_OUTPUTS.forEach((o) => { const opt = document.createElement("option"); opt.value = o.id; opt.textContent = o.name; mo.appendChild(opt); });
+    mo.onchange = (e) => { state.musicOutput = e.target.value; commit(); };
     $("inMusicVol").oninput  = (e) => { state.musicVolume = parseFloat(e.target.value); audio.volume = clamp(state.musicVolume, 0, 1); save(); renderMusicbar(); };
     $("btnNextStation").onclick = nextStation;
 
@@ -312,6 +316,7 @@
     $("tgMusic").checked = state.music;
     $("tgMusicBar").checked = state.musicBar;
     $("inMusicVol").value = state.musicVolume;
+    $("inMusicOutput").value = state.musicOutput || "tvs";
     $("inBgRotate").value = state.bgRotate;
     syncMusicPanel();
     syncBgGrid();
@@ -748,7 +753,7 @@
   // Do we intend audio to be playing right now? (feature on, not manually
   // paused, and not the dim night screen.)
   const intendPlay = () =>
-    !PREVIEW && state.music && !manualPaused && !screen.classList.contains("is-night");
+    !PREVIEW && state.music && state.musicOutput !== "speakers" && !manualPaused && !screen.classList.contains("is-night");
 
   function loadStation(resetMirror = true) {
     if (resetMirror) urlIdx = 0;
@@ -811,7 +816,9 @@
     const show = state.music && state.musicBar && !screen.classList.contains("is-night");
     bar.hidden = !show && !bar.classList.contains("is-peek");
     if (bar.hidden) return;
-    if (state.music && !userGestured) {
+    if (state.musicOutput === "speakers") {
+      $("musicState").textContent = "♪ " + currentStation().name + " · on the speakers";
+    } else if (state.music && !userGestured) {
       $("musicState").textContent = "🔊 Tap to start music";
     } else {
       $("musicState").textContent = ((audio.paused && !PREVIEW) ? "❚❚ " : "♪ ") + currentStation().name;

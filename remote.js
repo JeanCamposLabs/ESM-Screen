@@ -81,6 +81,8 @@
       b.onclick = () => set("palette", p.id);
       pr.appendChild(b);
     });
+    const mo = $("inMusicOutput"); mo.innerHTML = "";
+    ESM.MUSIC_OUTPUTS.forEach((o) => { const opt = document.createElement("option"); opt.value = o.id; opt.textContent = o.name; mo.appendChild(opt); });
     const rot = $("inBgRotate"); rot.innerHTML = "";
     ROTATIONS.forEach((r) => {
       const o = document.createElement("option");
@@ -278,7 +280,7 @@
     const st = ESM.findStation(live.musicStation);
     const parts = [
       `<span class="dot"></span>On the TVs now: <b>${esc(ESM.slideInfo(src).name)}</b>` + (pick ? ` · changes in ${fmtDur(pick.nextChangeMs)} (${esc(rot ? rot.name.toLowerCase() : "")}, ${list.length} images)` : " · pinned"),
-      live.music ? `music <b>${esc(st.name)}</b> at ${Math.round(live.musicVolume * 100)}%` : "music off",
+      live.music ? `music <b>${esc(st.name)}</b> at ${Math.round(live.musicVolume * 100)}%${live.musicOutput === "speakers" ? " on the speakers" : live.musicOutput === "both" ? " on TVs + speakers" : ""}` : "music off",
       live.schedule ? `on ${esc(live.onTime)}–${esc(live.offTime)}` : "always on",
     ];
     $("liveStatus").innerHTML = parts.join(" · ");

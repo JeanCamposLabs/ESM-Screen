@@ -160,6 +160,18 @@ Good **free** sources:
 
 ---
 
+## Google speakers: the music follows the same remote
+
+Nest / Google Cast speakers can't be "entered" (no shell, no ADB), but they
+accept the Cast protocol on the local network. `cast-follower/` is a small
+always-on script for a Pi/Mac/NAS on the office LAN that makes a speaker or a
+**speaker group** follow `config.json`: station, volume and the on/off schedule.
+On the remote, **Music → Play on** chooses where the music comes from: the TVs,
+the speakers (TVs go silent; the group stays in Google's own multi-room sync),
+or both. Setup and caveats in [`cast-follower/README.md`](cast-follower/README.md).
+
+---
+
 ## Reusing the backgrounds + disc elsewhere (drop-in pack)
 
 `embed/` is a two-file module (`esm-backdrop.js` + `esm-backdrop.css`) that
@@ -316,7 +328,8 @@ Fields: `style`, `palette`, `bg` (pinned slide token, e.g. `06-glow`),
 `bgRotate` (`off`/`daily`/`4h`/`hourly`/`30m`/`15m`), `bgSet` (playlist: tokens
 and/or category ids, `[]` = all), `logo`, `rocket`, `clock`, `particles`,
 `weather`, `speed`, `music`, `musicStation` (e.g. `lofigirl`, `groovesalad`),
-`musicVolume` (0–1), `schedule`, `onTime`, `offTime`, `nightClock`. The old
+`musicVolume` (0–1), `musicOutput` (`tvs` · `speakers` · `both`), `schedule`,
+`onTime`, `offTime`, `nightClock`. The old
 `dailyBg: true/false` is still understood (= `bgRotate: daily`/`off`).
 
 ---

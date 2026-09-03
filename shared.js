@@ -78,8 +78,15 @@
   const CONFIG_KEYS = [
     "style", "palette", "bg", "bgRotate", "bgSet",
     "logo", "rocket", "clock", "particles", "weather", "speed",
-    "music", "musicStation", "musicVolume",
+    "music", "musicStation", "musicVolume", "musicOutput",
     "schedule", "onTime", "offTime", "nightClock",
+  ];
+  // Where the music plays: the TVs' own speakers, a Google Cast speaker group
+  // (see cast-follower/), or both. The TVs only play when it is "tvs" or "both".
+  const MUSIC_OUTPUTS = [
+    { id: "tvs",      name: "The TVs" },
+    { id: "speakers", name: "Google speakers (cast follower)" },
+    { id: "both",     name: "TVs and speakers" },
   ];
 
   // House-config defaults (the screen adds its device-only keys on top).
@@ -87,7 +94,7 @@
     style: "premium", palette: "orange",
     bg: "10-purple", bgRotate: "daily", bgSet: [],
     logo: true, rocket: true, clock: false, particles: true, weather: true, speed: 1,
-    music: false, musicStation: "lofigirl", musicVolume: 0.35,
+    music: false, musicStation: "lofigirl", musicVolume: 0.35, musicOutput: "tvs",
     schedule: true, onTime: "07:00", offTime: "23:00", nightClock: true,
   };
 
@@ -223,6 +230,7 @@
     if (c.bgSet != null && !Array.isArray(c.bgSet)) delete c.bgSet;
     if (Array.isArray(c.bgSet)) c.bgSet = c.bgSet.map(slideToken).filter(Boolean);
     if (c.bg != null) c.bg = slideToken(c.bg);
+    if (c.musicOutput != null && !MUSIC_OUTPUTS.some((o) => o.id === c.musicOutput)) delete c.musicOutput;
     return c;
   }
   // The house config as it is written to config.json (stable key order).
@@ -312,7 +320,7 @@
   }
 
   global.ESM = {
-    STYLES, PALETTES, STATIONS, ROTATIONS, CATEGORIES, CONFIG_KEYS, CONFIG_DEFAULTS, REPO, SITE,
+    STYLES, PALETTES, STATIONS, ROTATIONS, CATEGORIES, MUSIC_OUTPUTS, CONFIG_KEYS, CONFIG_DEFAULTS, REPO, SITE,
     stationUrls, findStation,
     slideToken, slideInfo, thumbFor, effectiveSlides, compactPlaylist, findSlide,
     rotationMinutes, localMinutes, seededOrder, rotationPick,

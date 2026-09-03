@@ -36,6 +36,8 @@ jobs:
           sed -i "s#app\.js\"#app.js?v=${GITHUB_SHA::7}\"#; s#shared\.js\"#shared.js?v=${GITHUB_SHA::7}\"#; s#styles\.css\"#styles.css?v=${GITHUB_SHA::7}\"#" _site/index.html
           sed -i "s#remote\.js\"#remote.js?v=${GITHUB_SHA::7}\"#; s#shared\.js\"#shared.js?v=${GITHUB_SHA::7}\"#; s#remote\.css\"#remote.css?v=${GITHUB_SHA::7}\"#" _site/remote.html
           cp -r assets/. _site/assets/ 2>/dev/null || true
+          # station list + stream URLs for the cast follower (from shared.js, so it can never drift)
+          node -e 'global.window={};require("./shared.js");const E=window.ESM;process.stdout.write(JSON.stringify(E.STATIONS.map(s=>({id:s.id,name:s.name,genre:s.genre,urls:E.stationUrls(s)})),null,1)+"\n")' > _site/assets/stations.json
           # the drop-in pack (embed/): served as-is, plus one zip with the images for other projects
           mkdir -p _site/embed _pack/esm-backdrop/slides
           cp embed/esm-backdrop.js embed/esm-backdrop.css embed/demo.html embed/README.md embed/fetch-slides.sh _site/embed/
