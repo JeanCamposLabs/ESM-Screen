@@ -1,321 +1,66 @@
-# ESM‑Screen — Handoff / project notes
+# ESM-Screen handoff
 
-Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static site**
-(vanilla HTML/CSS/JS, no build step). Live: **https://jeancamposlabs.github.io/ESM-Screen/**
-· Remote control: **https://jeancamposlabs.github.io/ESM-Screen/remote.html**
+## Current architecture
 
----
+This repository is the screen/display half only. Public PAT administration is
+retired. `remote.html` is a no-secret signpost to authenticated Scale OS at
+<https://responseslatracker-eu.onrender.com/>; `remote.js` and `remote.css` were
+removed and the Pages workflow does not publish them.
 
-## Latest session — remote control, timed rotation, real photography
-The brief was "the UX is inefficient, the backgrounds are boring, and it is hard to
-control from my computer". What changed:
+`wall-background.js` is the isolated, dependency-free boundary for the sole
+Scale OS read. It fixes the origin/path, omits credentials, bounds JSON, uses an
+in-memory ETag, rejects unknown schema fields, and constructs fixed-origin image
+URLs from opaque IDs/versions. Never expand it to accept URLs or call accounts,
+sessions, rosters, or another API.
 
-- **`remote.html` (+ `remote.css`, `remote.js`) — the control room.** A normal page for a
-  laptop/phone: live preview of the screen in an iframe (`index.html?preview=1`), the
-  live state of the TVs ("On the TVs now: X · changes in N min · music …"), Look/Music/
-  Schedule cards, the whole gallery with a **playlist** (checkbox per image, All/None per
-  category), *Pin this*, a ▶ listen button per station (plays on the operator's device),
-  and one **Push to all screens** button that commits `config.json` and then **polls the
-  published site until the new config is live** ("Live ✓"). Draft vs live is tracked
-  (*Unpushed changes* badge, *Discard*, and a notice if someone else pushed meanwhile).
-- **`shared.js` — one source of truth for both pages** (`window.ESM`): styles, palettes,
-  stations, `ROTATIONS`, `CATEGORIES`, `CONFIG_KEYS`/`CONFIG_DEFAULTS`, slide naming
-  (`slideInfo`), thumbnails (`thumbFor`), playlist (`effectiveSlides`/`compactPlaylist`),
-  the rotation maths (`rotationPick`), config normalisation, and the GitHub push +
-  `waitForDeploy`. The deploy cache-busts it and includes it in the version hash.
-- **Timed rotation replaces "daily".** `bgRotate` = `off | daily | 4h | hourly | 30m | 15m`.
-  `rotationPick(count, mode, now)` cuts local time into slots; slot → image through a
-  seeded shuffle per cycle, so every image shows exactly once per cycle in a shuffled order
-  and **all TVs agree from the clock alone** (verified: 78 unique picks per cycle; slot
-  boundaries on the hour / at local midnight; `daily` slot == the old `dayNumber()`).
-  `rotationTick()` runs every 30 s + on `visibilitychange`. Legacy `dailyBg` is mapped in
-  `normalizeConfig()`.
-- **Playlist `bgSet`.** Tokens and/or **category ids** (`space`, `earth`, `nature`,
-  `abstract`, `art`); `[]`/absent = everything. Category comes from the **file name**
-  (`NN-space-…`, `NN-earth-…`, `NN-nature-…`; `01–12` = abstract, `13–38` = art). The
-  remote writes the shortest form (`compactPlaylist`). **Gotcha:** on the TV, an absent
-  `bgSet` in `config.json` resets the local playlist to "all" (`adoptConfig`) — the house
-  config owns it.
-- **104 backgrounds (was 38).** Added **32 NASA** public-domain images (Webb/Hubble/Spitzer
-  nebulae + galaxies; auroras and the limb from the ISS) via `images-api.nasa.gov`, and
-  **34 real landscapes** (Unsplash License, fetched through `picsum.photos` by ID — Unsplash
-  itself is bot-walled from here). All centre-cropped to 2560×1440, visually curated
-  (contact sheets), credits in `assets/README.md`. `assets/thumbs/` holds **480×270
-  thumbnails** for every slide (the old panel loaded all full-size JPGs as thumbnails —
-  that was the "inefficient" part); the deploy renders thumbs for any new slide (Pillow).
-- **House config now:** `bgRotate: hourly`, `bgSet: [space, earth, nature, abstract]`
-  (the flat illustrated set is out by default but one click away), schedule keys are part
-  of the config (`schedule`, `onTime`, `offTime`, `nightClock`).
-- **On-screen panel redesigned:** five tabs (Look / Background / Music / Schedule / All
-  screens), sticky tab bar, rotation `<select>` + "Now: X · next change in N min", 2-column
-  thumbnail gallery grouped by category, compact station rows, push status that reports
-  "Live ✓" after verifying the publish, link to the remote, build number.
-- **Preview mode** (`?preview=1`): no localStorage read/write, no polling, no audio, no wake
-  lock; listens for `postMessage` — `esm:config` (adopt a config), `esm:bg` (show a slide),
-  `esm:wave`, `esm:night {on}`, `esm:panel {open}`; replies `esm:state`.
-- **Music:** the screen now **tries to autoplay at boot** (works in kiosk browsers / once
-  Chrome's media-engagement score is high); if refused, the "Tap to start" pill stays.
-  A stream that was dead at boot is reloaded on the first tap and the mirror cycle
-  restarts every 20 s tick (a cold relay is picked up when it comes back).
-- Verified in headless Chromium (no page errors): screen boot + all panel tabs, preview
-  mode adopting a posted config without saving, remote dirty-state/preview/pin/discard, the
-  rotation maths, 104 tiles / 78 included. The real GitHub push was **not** exercised here
-  (no token) — the request code is the same as before, moved into `shared.js`.
+A valid `selected-library` response is authoritative over all local background
+controls. Future revisions remain pending until their UTC activation instant;
+the prior active revision is retained until that boundary. Selection then uses
+the elapsed 180-second slot plus revision offset. Exact-boundary timers are
+backed by a 30-second safety/feed poll. `bundled-fallback`,
+invalid/unavailable feed, and image failure use the bundled slides
+deterministically.
 
-- **Drop-in pack (`embed/`), added on request for a second, bigger screen project.**
-  `esm-backdrop.js` + `esm-backdrop.css` mount the rotating backgrounds + the ESM disc into any
-  page (`ESMBackdrop.mount({ intervalMinutes: 3 })`); options in `embed/README.md`. Same rotation
-  maths as `shared.js` (verified identical picks for whole-minute intervals; the pack uses
-  second-granularity slots so sub-minute demo intervals work). The deploy serves `embed/` as-is
-  and builds `embed/esm-backdrop-pack.zip` (code + `backgrounds.json` + all `slides/`, ~38 MB) from
-  a staging dir — the zip is never committed. `demo.html` works in both layouts (repo: images one
-  level up; unpacked zip: `slides/` next to it). **Paired mode** (`follow: true`) reads this
-  site's `config.json` (CORS is `*` on Pages) and mirrors rotation/playlist/pin/palette, with every
-  field validated — so the ESM remote steers both screens and they switch at the same second.
-  For that, `ROTATIONS` gained `5m` and `3m`, `rotationPick().nextChangeMs` is now second-precise,
-  and the screen arms a timer for the exact boundary (`rotTimer`) besides the 30 s safety tick.
+Night mode uses `Europe/Amsterdam` 07:00–23:00 through `Intl`, including DST.
+HTML audio is disabled/absent. Music intent is `true`, Lofi Girl, volume `0.45`;
+only the Google Cast group may output it.
 
-- **Google speakers (`cast-follower/`).** Nest speakers have no shell/ADB; the Cast protocol on the
-  LAN is the only way in. `cast_follower.py` (pychromecast 14) polls `config.json` +
-  `assets/stations.json` (generated from `shared.js` on deploy) and makes a speaker/group play the
-  station at `musicVolume` inside the schedule, stop otherwise, step aside when someone else casts,
-  and retry the next mirror when the stream drops. New config key **`musicOutput`**
-  (`tvs` default · `speakers` · `both`): TVs play only for `tvs`/`both` (`intendPlay()`), the
-  follower only for `speakers`/`both`. Unit-tested + dry-run here; **not tested against a real
-  speaker** (no LAN devices in this sandbox). Must run on a box that sees the speakers' LAN.
+## Preserved motion work
 
-- **Per-image background motion (asked for: "make it more alive").** The Ken-Burns was cut in an
-  earlier session as a nausea suspect (never actually exonerated), so this comes back deliberately
-  small and **tailored per image**: `tools/make_motion.py` analyses every slide and writes
-  `assets/motion.json` (`{x, y, z, d}` per token). Edge-gradient energy gives a **horizon score**
-  (horizontal edges packed into few rows → slide sideways, never up/down through the horizon) and
-  **brightness-mass concentration** gives a **subject score** (edge energy can't tell a galaxy from
-  its starfield — the stars win on count — but bright mass can → push in). Textures get a diagonal
-  drift. Duration is derived so the *apparent speed* is constant (`SPEED` %/s), which is what keeps
-  it calm. `shared.js` holds `MOTIONS` (off/subtle/gentle/lively = 0/0.6/1/1.5), the base scale
-  **1.09** (4.5% overhang each side; the worst pan is 2.4 × 1.5 = 3.6%, so an edge can never show)
-  and `motionFrames()`. The screen animates with WAAPI `alternate`/`infinite`/`ease-in-out` and
-  stores the handle on `el._esmAnim` (the TV browser lacks `getAnimations()`, and WAAPI ignores the
-  CSS `animation-play-state` used for the night screen — `setMotionPaused()` handles that).
-  New config key **`bgMotion`**; the pack follows it too (`followMotion`), so paired screens drift
-  alike. Measured: gentle ≈ 2.1 px/s peak on a 4K panel, 44 px of travel per ~75 s cycle, layer
-  edge covered by ≥33 px at every point of the cycle at "lively"; `prefers-reduced-motion` → still.
-  Re-run `python3 tools/make_motion.py` after adding slides (the deploy does `--only-missing`).
+PR #37's smooth per-image motion remains intact. `tools/make_motion.py`
+maintains `assets/motion.json`; `shared.js` caps movement and exposes
+off/subtle/gentle/lively levels; `app.js` uses its tailored Web Animations
+profiles and pauses them in night mode. Reduced-motion remains still. New
+Scale OS image URLs safely use the fallback motion profile when they have no
+local token entry.
 
-- **`backdrop.html` — the one-line embed (added when the user asked "why do they need the pack?").**
-  Fair question: the images, motion and settings were always served from here; only the *renderer*
-  was a copied file, and only because of my own self-hosting advice. `backdrop.html` mounts the pack
-  full-screen from URL params (`follow`, `interval`, `motion`, `palette`, `disc`, `discsize`,
-  `wordmark`, `categories`, `start`, `vignette`), so another project embeds one sandboxed iframe and
-  never updates anything again. Verified cross-origin with `sandbox="allow-scripts"`: it renders,
-  follows the config (78-slide playlist, the pinned image, per-image motion `d=73` not the 115 s
-  fallback) and every reach into the host — `parent.document`, a parent global, `document.cookie` —
-  comes back BLOCKED with origin `null`. **Gotcha found while testing:** in that sandbox the frame
-  is an *opaque* origin, so `backgrounds.json`/`motion.json`/`config.json` are cross-origin fetches
-  and need CORS. GitHub Pages sends `access-control-allow-origin: *`, so it works live; a plain
-  `python3 -m http.server` does not, and the pack then silently falls back to its built-in slide
-  list (104 entries, 115 s motion) — which is exactly what the first test run showed.
+## Google Home blocker
 
-### Next-agent notes
-- The rotation is clock-based; a TV with a wrong clock shows a different image. Fine.
-- Motion amplitudes are capped in `shared.js` (`MOTION_MARGIN`), not in the JSON — if you raise
-  `MAX_PAN` in the tool, raise the base scale too or the layer edge will show at "lively".
-- `compactPlaylist` collapses whole categories to their id, so `config.json` stays short.
-- `waitForDeploy` compares configs with `sameConfig()` (normalised, `CONFIG_KEYS` only).
-- If you add a config key: `CONFIG_KEYS` + `CONFIG_DEFAULTS` in `shared.js`, an input with
-  `data-key` in `remote.html`, and the panel wiring in `app.js`.
-- Pages deploy: `deploy-pages.yml` copies `remote.*` + `shared.js`, cache-busts them, and
-  the version hash now includes `shared.js` (a code push still reloads every TV once).
+Google Home automation is **not deliverable yet**. The Public Preview wall
+account's Home has no address (`time.schedule` fails), autocomplete exposes
+only two OnOff TVs without `assistant.command.OkGoogle`, and no compatible
+speaker/group appears.
 
----
+An attended Google Home mobile session must add the Home address, link a
+compatible Assistant speaker into that Home, then validate—not merely save—the
+07:00 “Play Lofi Girl on Speqckers centrake r” and 23:00 “Stop music on
+Speqckers centrake r” scripts. Do not report these as working before that test.
 
-## Earlier sessions
-### Recent fixes (previous session)
-- **`el.hidden` didn't hide (root cause of the "World Cup is still there" report).** After the strip was
-  removed and deployed, a TV still showed an empty **⚽ World Cup** pill. Two separate faults:
-  1. **`.worldcup` set `display: flex`**, and an author `display` rule beats the UA's `[hidden]
-     {display:none}` — so the strip was on screen **permanently**, toggle off or not, and once ESPN
-     stopped returning fixtures it rendered as an empty pill. Someone had already hit this and patched
-     `.panel`/`.panel-scrim` with their own `[hidden]` rules. Now fixed once for everything:
-     **`[hidden] { display: none !important; }`** in the reset (the per-panel rules are gone as
-     redundant). `.musicbar` had the same latent bug — its "On-screen control" toggle now really works.
-     *Consequence worth knowing: no `config.json` change could ever have hidden that strip on an
-     already-deployed screen — verified in-browser. Only shipping new code removes it.*
-  2. **The auto-updater could get permanently stuck on old code.** `reloadForUpdate()` called
-     `location.reload()`, which may be answered from the browser's HTTP cache (Pages serves
-     `index.html` with a `max-age`), re-running the **old** `app.js`. That boot then reads the *new*
-     `version.json` as its baseline, so `v !== bootVersion` never fires again and the screen sits on
-     stale code forever. It now reloads via `location.replace()` at a URL carrying the new version
-     (`?v=<version>`) — a different cache key, so the HTML is genuinely refetched. Existing kiosk
-     params (`?bg=`, `?admin`, `?style=`…) are preserved and it navigates exactly once (no loop).
-- **World Cup strip removed (the tournament is over).** Gone from `index.html` (`.worldcup` markup +
-  the **Show → World Cup** toggle), `app.js` (`fetchWorldCup`/`WC_URL`/`wcTimer`/`wcHasGames`/`wcEsc`,
-  the `worldcup` default, the `configForExport` key, both boot/visibility calls), `styles.css`
-  (`.worldcup`/`.wc-*` block + the `ripple-wc` keyframes and its `.wave-go` rule) and `config.json`.
-  No more polling of the ESPN scoreboard. *(If a future tournament wants it back, it's all in the git
-  history — see this commit's diff.)*
-- **Background rotation fixed.** It wasn't a code bug: a panel push (`31924f2`) had written
-  `"dailyBg": false` + `"bg": "17-mesa-dusk"` into `config.json`, and since every screen polls that file
-  every 30 s and does `Object.assign(state, cfg)`, **the house config was force-pinning all TVs** — no
-  local toggle could survive the next poll. `config.json` is now `"dailyBg": true`. **Gotcha for next
-  time: clicking a background in the panel sets `dailyBg:false`, so an "Apply this look to all screens"
-  right after that silently disables rotation fleet-wide.** Also made the rotation more responsive:
-  `maybeDailyBg()` now runs every **5 min** (was 15) and additionally on `visibilitychange`, so a TV
-  that slept overnight rotates the moment it wakes instead of showing yesterday's image for up to 15 min.
-  Verified in headless Chromium (fresh boot, +1 day, a real midnight rollover with no reload, and a
-  pinned screen recovering via the config poll).
-- **Music badge centred over the clock + more stations.** The clock and badge now share a bottom-right
-  `.corner` wrapper (`index.html`); the clock defines the width and the badge is centred over it
-  (`position:absolute; left:50%; translateX(-50%)`), so it no longer drifts as the station name changes.
-  Added stations (now ~20): SomaFM **The Trip, Space Station Soma, Left Coast 70s, Underground 80s,
-  Indie Pop Rocks, PopTron, Boot Liquor, Suburbs of Goa**, plus two **classical** stations that are *not*
-  SomaFM — **YourClassical** and **WCPE (The Classical Station)**, listener-supported public radio. To
-  support those, `STATIONS` entries may now carry explicit `urls: [...]` (tried in order) instead of a
-  SomaFM slug; `stationUrls(station)` returns those or builds the SomaFM mirror list from `id`.
-  *(Public-radio classical may carry brief underwriting/pledge, unlike SomaFM's strict commercial-free.)*
-- **Motion dialled back to the viewer's taste.** They clarified: rocket + particles are fine; only the
-  *floating clock / weather / scores strip* bothered them. So: `floaty` drift removed from
-  `.clock`/`.weather`; flying **rocket + particles back on** (`rocket:true`/`particles:true`
-  in `DEFAULTS` & `config.json`); the **background is held static** (`panLayer` fixed `scale(1.08)`, no
-  Ken-Burns — it was part of the original nausea complaint and wasn't exonerated). The logo keeps its
-  gentle bob (`discFloat`). **Full-screen light wave** (`playWave()` toggles `.wave-go` on `#screen`,
-  auto ~every 2 min or on logo click): a light band (`.wave`) sweeps the screen, `.weather`/
-  `.corner` ripple in sequence (`@keyframes ripple`, staggered delays ≈ their x-position), and over the
-  logo it's a rainbow (`discShine` on `.disc__tube::after`) that reveals a repeating, colourful
-  **EasyScaleMedia** pattern in Space Mono (`.disc__code`, `codeReveal`+`codeFlow`). All transform/opacity
-  based and only runs during the ~5s pass = light on the TV. *(Earlier neon flicker was scrapped — user
-  disliked it twice; don't bring it back. Delays are approximate; tune in `styles.css`.)*
-- **Background gallery expanded to 38 (NEW).** The 12 original Unsplash JPGs (which shipped at only
-  1920×1080) were **upscaled**, and **26 new in-house backgrounds** were added — 11 stylized landscapes
-  (`13`–`17`, `27`–`32`), 9 patterns (`18`–`26`) and 6 glossy liquid ribbons (`33`–`38`, the house
-  style like `01-liquid`). These were generated locally with **headless-Chromium HTML/SVG
-  rasterization + numpy procedural fields**, each one visually reviewed before keeping (earlier *flat CSS*
-  gradients looked cheap and were rejected — these are layered/cinematic, a different bar). Web sessions
-  here can only reach GitHub + package registries, so external stock sites (Unsplash/Pexels) can't be
-  fetched — dropping a real 16:9 image into `assets/slides/` still auto-joins the rotation on push.
-- **Background resolution = QHD 2560×1440 (NOTE).** Served at 2560×1440 (crisp on the 4K panel, ~15 MB
-  decoded/layer) rather than full 4K, to respect the Philips browser limit that forced the old 4K→1920
-  re-encode. Full-4K masters were generated; bump the re-encode in the deploy/source if the TV proves it
-  can handle 4096×2304.
-- **Music badge → opens the menu.** The on‑screen music control is now a single `<button>` that opens
-  the settings panel on click (controls moved into the panel); the inline play/next mini‑buttons were
-  removed. `M` still skips to the next station. *(If a different layout is wanted — e.g. badge at the
-  bottom, or keep inline buttons — it's a small change in `index.html`/`renderMusicbar`.)*
-- **Daily auto‑rotating background (NEW).** `dailyBg` (default **on**) shows a new background each day,
-  same on every screen, chosen by date. Toggle under **Background → New background every day**; picking
-  one in the grid pins it and turns rotation off. Now cycles **38** backgrounds; add more art to
-  `assets/slides/` for more variety. See *Pieces → Background*.
-- **Ambient music added (NEW) + deployed.** Audio‑only **SomaFM** internet radio (commercial‑free,
-  listener‑supported, HTTPS). 10 office stations; **`M`** = next station;
-  toggle + station picker + volume in the panel under **Music**. Implementation detail in
-  *Pieces → Ambient music* below. **Autoplay:** browsers need one user gesture, so it shows
-  "Tap to start music" until the first tap/click/key (one tap per boot). User confirmed it works.
-- **Music rollout state:** **live and ON house‑wide.** Deployed to `main`, then enabled for all screens
-  via the admin panel's **"Apply this look to all screens"** button (commit *Update screen config from
-  admin panel*). The house `config.json` is now `"music": true`, `"musicStation": "gsclassic"`
-  (Groove Salad Classic), `"musicVolume": 0.5`. To change or disable it for all screens, use that panel
-  button again or edit `config.json` (`music` / `musicStation` / `musicVolume`) and push to `main`; all
-  TVs adopt in ~2 min. Each screen still shows the one‑tap "Tap to start" pill after a reload (nothing
-  auto‑plays until tapped). *(It was briefly shipped `music:false` for a no‑risk test, then turned on.)*
-- **Add/remove stations:** edit the `STATIONS` array in `app.js` (each = SomaFM channel `slug` + `name`
-  + `genre`); URLs are generated with mirror fallback, so just the slug is needed.
-- **Background photo not showing on the TV = FIXED.** The Philips browser (older Chromium)
-  supports `el.animate()` but not `el.getAnimations()`; `panLayer` called it unguarded and
-  threw *before* the image layer got `is-on`, so the photo never appeared (gradient fallback)
-  while the rocket still animated. Now guarded, and the image is revealed before the pan runs.
-- **Per-deploy cache-busting** of `app.js`/`styles.css` (`?v=<sha>` injected by the workflow)
-  so TV browsers can't serve a stale copy.
-- **Slideshow hardened:** `initSlides` retries the manifest 3× and falls back to an embedded
-  slide list — it never gets stuck on the bare gradient.
-- Defaults: **purple** bg (`10-purple`), clock + weather on, background held static.
+An optional foreground-only LAN follower is isolated under `cast-follower/`.
+It is a temporary fallback, not installed or auto-started, and must not become a
+persistent service without explicit authorization. It reads no remote config,
+uses one allowlisted HTTPS station, requires the group name explicitly, and
+never replaces or stops playback it did not start.
 
-## How it's built & deployed
-- Files: `index.html`, `styles.css`, `app.js`, `shared.js`, `remote.html`, `remote.css`, `remote.js`, `config.json`, `version.json`, `assets/`.
-- **Deploy:** `.github/workflows/deploy-pages.yml` runs on every push to `main` → assembles `_site`,
-  stamps `version.json` with the commit, **auto‑generates `assets/backgrounds.json` from `assets/slides/*`**,
-  publishes to GitHub Pages. (Pages source = **GitHub Actions**, set in repo Settings → Pages.)
-- **Auto‑refresh:** every screen polls `version.json` every **30 s**; when it changes it fades out and
-  reloads. `version` is a **hash of `app.js`+`styles.css`+`index.html`**, so only **code** pushes reload
-  the TVs (~30 s). **Config/panel pushes do NOT reload** — `config.json` changes apply live via the 30 s
-  config poll (`syncConfig`). This was changed to stop the screens "blinking" on every settings push.
-- **Dev workflow used:** branch `claude/determined-cannon-oJhoy` → rebase onto `main` → push → PR → merge.
+## Hosting and verification
 
-## Central control (sync all TVs)
-- **`config.json`** (repo root) is the house config every screen obeys: `style`, `palette`,
-  `bg` (pinned slide token), `bgRotate` (`off|daily|4h|hourly|30m|15m`), `bgSet` (playlist), `logo`, `rocket`,
-  `clock`, `particles`, `weather`, `speed`, `music`, `musicStation`, `musicVolume` (0–1), `schedule`,
-  `onTime`, `offTime`, `nightClock`. (`dailyBg` is legacy and still understood.)
-- Screens poll it every 30 s and adopt it (config wins; local panel tweaks persist until config changes).
-- **One‑click (new):** admin panel → **“Apply this look to all screens”** commits `config.json` to `main`
-  via the GitHub REST API (`pushConfigToAllScreens()` in `app.js`); the deploy republishes and every TV
-  follows in ~2 min. Needs a one‑time **fine‑grained PAT** (repo: ESM‑Screen only, Contents read/write),
-  stored only in that browser's localStorage (`esm-screen.ghtoken`) — never synced to TVs.
-- Manual fallbacks still work: edit `config.json` + commit, or panel → **“Copy config”** → paste.
-- A truly instant push (no ~2 min Pages deploy) would still need a tiny backend (Render/Worker + PIN’d
-  write). Render MCP was available but had **no workspace selected**, so not built; the GitHub‑API
-  route was chosen instead (free, durable, no new infra).
+Pages remains the production host until a replacement is tested. Repository
+privacy does not improve performance. The workflow still uses
+`actions/deploy-pages`, publishes `remote.html`, and excludes `remote.js`,
+`remote.css`, and `config.json`.
 
-## Admin / settings panel
-- Open: add **`?admin`** to the URL, or **triple‑click the top‑right corner**, or press **`C`**.
-- Keys: `C`/`S` settings · `F` fullscreen · `N` next background · `Esc` close.
-- Controls: style, palette, show‑toggles (logo/rocket/clock/particles/weather), **background picker**,
-  motion speed, on/off schedule, fullscreen, reset, **copy‑config**.
-- State persists in `localStorage` key `esm-screen.v1`; `DEFAULTS` is in `app.js`.
-
-## Pieces
-- **Background gallery:** `assets/slides/` — 38 QHD (2560×1440) JPGs (`01‑`…`38‑`), 16:9. Add more by
-  dropping a `.jpg/.png/.webp` in that folder + push (auto‑added → daily rotation includes it; see the
-  README *"Where to get more rotating backgrounds"*). **Daily auto‑rotation
-  (NEW):** `dailyBg` (default on) picks the slide by local day number (`dayNumber()`/`dailyIndex()` in
-  `app.js`), so all screens show the same "background of the day" and advance at midnight (`maybeDailyBg`
-  every 5 min — plus on `visibilitychange` — covers a TV left on or asleep across the rollover;
-  otherwise the next morning's boot rotates it). **`config.json`'s `dailyBg` overrides the local
-  toggle every 30 s, so rotation is only really on when the house config says so.**
-  Priority: `?bg=` kiosk pin (`bgPinned`) > daily > saved `config.bg` > first. Picking one in the grid
-  (or `N`) **pins it and turns `dailyBg` off**. Slow infinite Ken‑Burns drift = `panLayer()`.
-- **Disc (brand):** floating neon "Easy Scale Media" built in **CSS/SVG** (ring + rocket glyph + **Fredoka**
-  wordmark), orange‑acrylic look, **static** (no float), recolors with the palette. Vector so it stays crisp.
-- **Rocket:** WAAPI flight (`flyRocket()`), random entry each pass, **tip‑first** (`NOSE_OFFSET=45`), slow.
-- **Weather:** Open‑Meteo (free, no key, CORS‑ok). Maastricht `50.8514, 5.6909`. Current + tomorrow +
-  day‑after. Bottom‑left, toggle in Show, refresh 30 min + on wake.
-- **Ambient music:** audio‑only **SomaFM** internet radio (commercial‑free, listener‑supported, HTTPS).
-  `STATIONS` list + `setupMusic()` in `app.js`. The lower‑right badge (`.musicbar`, above the clock; a single `<button>`)
-  shows the current station and **opens the settings panel on click** — play/pause, station picker and
-  volume live in the panel; **`M`** = next station. Stream URLs built per station with **mirror
-  fallback** (ice1/2/4/6 → ice.somafm.com) and a
-  stalled‑stream auto‑recover via the schedule tick. **Autoplay caveat:** browsers need a user gesture,
-  so it shows “Tap to start music” until the first tap/click/key (one tap per boot). Auto‑mutes on the
-  night screen; a manual pause stays paused (won’t auto‑resume). No files hosted, no ads, no API key.
-  Self‑hosting a few MP3s was the first idea but rejected: can’t quality‑check binaries blind, repo bloat,
-  finite loop — radio gives an endless, curated, consistently‑mastered library instead.
-
-## Performance — the TV is the constraint
-- Hardware: **Philips 85PUS8500/12** (85" 4K QLED Ambilight) running **Titan OS** (closed platform),
-  shown in the **native TV browser** in its kiosk mode. **No external hardware allowed** (budget).
-- The built‑in browser engine is the bottleneck, **not** the panel.
-- Done: static disc glow (no animated box‑shadow), no canvas `shadowBlur`, blurred blob/beam/grid/grain
-  layers hidden over photos, particle canvas at 0.5× / ~24 fps / ≤50 motes, **backgrounds served at
-  QHD 2560×1440** (whole 26-image gallery ≈ 6 MB; was 4K→1920 before), gentle pan.
-- More levers if needed: static background (disable pan), fewer/no particles, a "lite" flag, or the USB
-  video below. TV‑side: turn **off motion smoothing** + use **Game/Monitor** picture mode.
-
-## Open threads / TODO
-1. **Boot‑to‑screen / "home" (user will try later).** Plan given, safe‑first:
-   (1) favourite the URL on the Titan home, (2) set the browser homepage to the URL,
-   (3) Settings → System → startup / "resume last app", (4) hidden professional/hotel menu via remote code
-   **`0 6 2 5 9 6` then Home (⌂)** — *only* touch a "Hotel/Professional" or "Power‑on app/source" option,
-   **never** change service/calibration numbers, exiting without saving is safe, stop if it asks a password.
-   Full Hotel/PBS mode is mainly an **HFL hospitality** feature; the consumer PUS8500 may have a slimmed
-   version or none. Next agent: have the user report what each menu shows, then guide.
-2. **Custom TV app:** Titan OS apps are hosted HTML5 + there's a dev portal (`docs.titanos.tv`), **but**
-   publishing is a submission/partner process — **no consumer sideload**, and screensaver/Home‑button
-   aren't customizable. So a self‑serve app isn't realistic on this set.
-3. **USB looping video (smoothest; uses the user's pen‑drive idea).** Pre‑render the scene to a seamless
-   MP4 → play from USB (Philips supports USB autoplay/scheduling). Trade‑off: no live clock/weather.
-   Build path: a GitHub Action with headless Chromium + ffmpeg (the agent sandbox has no browser/ffmpeg).
-   **Not built yet** — proposed.
-
-## User preferences / constraints
-- **No paid hardware/accessories.** Security‑conscious (avoid unnecessary external exposure).
-- Wants: smooth on the **native TV browser**; one central control for all TVs; eventually
-  "home/screensaver" behavior. Treats this web build as the **mock** while the app idea is assessed.
+Run `node --test tests/wall-background.test.js` and
+`python3 -m unittest cast-follower/test_cast_follower.py`. Tests cover exact validation,
+URL confinement, unknown/URL field rejection, deterministic boundary/revision,
+Amsterdam CET/CEST, fallback, credential omission, ETag, absence of PAT/GitHub
+writes and HTML audio, remote retirement, and continued Pages deployment.

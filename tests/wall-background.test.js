@@ -1,0 +1,131 @@
+"use strict";
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const wall = require("../wall-background");
+
+const ID = "a".repeat(32);
+const VERSION = "b".repeat(32);
+function projection(overrides) {
+  return {
+    v: 1,
+    revision: 3,
+    source: "selected-library",
+    images: [{ id: ID, version: VERSION }],
+    slotMs: 180000,
+    activatedAt: "2026-09-03T10:03:00.000Z",
+    revisionOffset: 2,
+    schedule: { timezone: "Europe/Amsterdam", on: "07:00", off: "23:00" },
+    browserAudio: false,
+    output: "cast-group",
+    ...(overrides || {})
+  };
+}
+function headers(values) {
+  const map = Object.fromEntries(Object.entries(values || {}).map(([key, value]) => [key.toLowerCase(), value]));
+  return { get: (key) => map[String(key).toLowerCase()] || null };
+}
+function response(body, options) {
+  const config = options || {};
+  return {
+    ok: config.ok !== false,
+    status: config.status == null ? 200 : config.status,
+    headers: headers(config.headers),
+    text: async () => body
+  };
+}
+
+test("strict projection accepts only the narrow fixed contract", () => {
+  assert.equal(wall.validate(projection()).revision, 3);
+  assert.equal(wall.validate({ ...projection(), url: "https://evil.test/x" }), null);
+  assert.equal(wall.validate(projection({ images: [{ id: "https://evil.test", version: VERSION }] })), null);
+  assert.equal(wall.validate(projection({ schedule: { timezone: "UTC", on: "07:00", off: "23:00" } })), null);
+  assert.equal(wall.validate(projection({ browserAudio: true })), null);
+  assert.equal(wall.validate(projection({ source: "bundled-fallback", images: [] })).source, "bundled-fallback");
+  assert.equal(wall.validate(projection({ source: "bundled-fallback" })), null);
+});
+
+test("image URLs are constructed only from fixed origin and opaque descriptors", () => {
+  assert.equal(wall.imageUrl({ id: ID, version: VERSION }),
+    wall.ORIGIN + "/wall-background/display-image?id=" + ID + "&v=" + VERSION);
+  assert.equal(wall.imageUrl({ id: ID, version: "https://evil.test" }), null);
+  assert.equal(wall.imageUrl({ id: ID, version: VERSION, url: "https://evil.test" }), null);
+});
+
+test("selection activates and advances on exact common UTC boundaries", () => {
+  const feed = projection();
+  const activation = Date.parse(feed.activatedAt);
+  assert.equal(wall.pick(feed, activation - 1), null);
+  assert.equal(wall.pick(feed, activation).slot, 0);
+  assert.equal(wall.pick(feed, activation + feed.slotMs - 1).slot, 0);
+  assert.equal(wall.pick(feed, activation + feed.slotMs).slot, 1);
+  const two = projection({ images: [{ id: ID, version: VERSION }, { id: "c".repeat(32), version: "d".repeat(32) }] });
+  assert.notEqual(wall.pick(two, activation).index, wall.pick({ ...two, revisionOffset: 3 }, activation).index);
+});
+
+test("bundled fallback is deterministic on the same UTC clock", () => {
+  const boundary = Date.parse("2026-09-03T10:03:00.000Z");
+  const one = wall.bundledPick(12, boundary);
+  const two = wall.bundledPick(12, boundary);
+  assert.deepEqual(one, two);
+  assert.equal(wall.bundledPick(12, boundary + wall.SLOT_MS).slot, one.slot + 1);
+  assert.equal(wall.bundledPick(0, boundary), null);
+});
+
+test("client omits credentials, revalidates by ETag and promotes pending revisions", async () => {
+  const first = projection({ activatedAt: "2026-09-03T10:00:00.000Z" });
+  const future = projection({ revision: 4, revisionOffset: 3, activatedAt: "2026-09-03T10:06:00.000Z" });
+  const calls = [];
+  const replies = [
+    response(JSON.stringify(first), { headers: { etag: '"one"' } }),
+    response(JSON.stringify(future), { headers: { etag: '"two"' } }),
+    response("", { status: 304, ok: false })
+  ];
+  const client = new wall.Client(async (url, options) => {
+    calls.push({ url, options });
+    return replies.shift();
+  });
+  assert.equal((await client.refresh(Date.parse("2026-09-03T10:01:00Z"))).revision, 3);
+  assert.equal((await client.refresh(Date.parse("2026-09-03T10:04:00Z"))).revision, 3);
+  assert.equal(client.current(Date.parse("2026-09-03T10:06:00Z")).revision, 4);
+  assert.equal((await client.refresh(Date.parse("2026-09-03T10:07:00Z"))).revision, 4);
+  assert.equal(calls[0].url, wall.FEED_URL);
+  assert.equal(calls[0].options.credentials, "omit");
+  assert.equal(calls[0].options.cache, "no-cache");
+  assert.equal(calls[2].options.headers["If-None-Match"], '"two"');
+  client.clear();
+  assert.equal(client.current(), null);
+});
+
+test("client rejects oversized bodies and malformed JSON", async () => {
+  const tooLarge = new wall.Client(async () => response("", { headers: { "content-length": String(wall.MAX_BYTES + 1) } }));
+  await assert.rejects(tooLarge.refresh(), /too large/);
+  const malformed = new wall.Client(async () => response("{"));
+  await assert.rejects(malformed.refresh(), /invalid display JSON/);
+  const multibyte = new wall.Client(async () => response('"€'.repeat(12000) + '"'));
+  await assert.rejects(multibyte.refresh(), /too large/);
+});
+
+test("Amsterdam schedule remains 07:00 through 23:00 over DST", () => {
+  assert.equal(wall.isDaytime(Date.parse("2026-01-15T05:59:00Z")), false);
+  assert.equal(wall.isDaytime(Date.parse("2026-01-15T06:00:00Z")), true);
+  assert.equal(wall.isDaytime(Date.parse("2026-07-15T04:59:00Z")), false);
+  assert.equal(wall.isDaytime(Date.parse("2026-07-15T05:00:00Z")), true);
+  assert.equal(wall.isDaytime(Date.parse("2026-07-15T21:00:00Z")), false);
+});
+
+test("repository retires PAT writes, browser audio and published admin assets", () => {
+  const root = path.join(__dirname, "..");
+  const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const remote = fs.readFileSync(path.join(root, "remote.html"), "utf8");
+  const workflow = fs.readFileSync(path.join(root, ".github/workflows/deploy-pages.yml"), "utf8");
+  const active = [app, html, remote, workflow, fs.readFileSync(path.join(root, "shared.js"), "utf8")].join("\n");
+  assert.doesNotMatch(active, /esm-screen\.ghtoken|api\.github\.com\/repos|Authorization:\s*Bearer|localStorage/);
+  assert.doesNotMatch(html, /<audio\b/i);
+  assert.match(remote, /public screen remote has retired/i);
+  assert.doesNotMatch(workflow, /cp .*remote\.(?:js|css)|cp .*config\.json/);
+  assert.match(workflow, /actions\/deploy-pages/);
+});

@@ -1,8 +1,7 @@
 /* =================================================================
    Easy Scale Media — shared catalog + helpers
-   Loaded by BOTH the screen (index.html → app.js) and the remote
-   control page (remote.html → remote.js), so the two can never drift:
-   same styles, palettes, stations, rotation maths and GitHub push.
+   Loaded by the screen (index.html → app.js) for the local visual catalog
+   and bundled fallback rotation. Shared background control belongs to Scale OS.
    Exposed as window.ESM. No dependencies, no build. Keep it compatible
    with the older Chromium in the Philips TV browser (no ??, no .at()).
    ================================================================= */
@@ -89,28 +88,20 @@
     { id: "abstract", name: "Abstract",          blurb: "Liquid light, gold, waves — Unsplash licence" },
     { id: "art",      name: "Illustrated",       blurb: "Generated in-house (flat, stylised)" },
   ];
-  // The keys that make up the house config (config.json). Anything else in
-  // the screen's state (name, tag, musicBar…) stays local to that device.
+  // Legacy local visual-state keys. They are not read from or written to a
+  // shared config file; Scale OS owns the narrow display-background feed.
   const CONFIG_KEYS = [
     "style", "palette", "bg", "bgRotate", "bgSet", "bgMotion",
     "logo", "rocket", "clock", "particles", "weather", "speed",
-    "music", "musicStation", "musicVolume", "musicOutput",
+    "music", "musicStation", "musicVolume",
     "schedule", "onTime", "offTime", "nightClock",
   ];
-  // Where the music plays: the TVs' own speakers, a Google Cast speaker group
-  // (see cast-follower/), or both. The TVs only play when it is "tvs" or "both".
-  const MUSIC_OUTPUTS = [
-    { id: "tvs",      name: "The TVs" },
-    { id: "speakers", name: "Google speakers (cast follower)" },
-    { id: "both",     name: "TVs and speakers" },
-  ];
-
-  // House-config defaults (the screen adds its device-only keys on top).
+  // Local visual defaults used only in memory.
   const CONFIG_DEFAULTS = {
     style: "premium", palette: "orange",
     bg: "10-purple", bgRotate: "daily", bgSet: [], bgMotion: "gentle",
     logo: true, rocket: true, clock: false, particles: true, weather: true, speed: 1,
-    music: false, musicStation: "lofigirl", musicVolume: 0.35, musicOutput: "tvs",
+    music: false, musicStation: "lofigirl", musicVolume: 0.35,
     schedule: true, onTime: "07:00", offTime: "23:00", nightClock: true,
   };
 
@@ -274,11 +265,11 @@
     if (c.bgSet != null && !Array.isArray(c.bgSet)) delete c.bgSet;
     if (Array.isArray(c.bgSet)) c.bgSet = c.bgSet.map(slideToken).filter(Boolean);
     if (c.bg != null) c.bg = slideToken(c.bg);
-    if (c.musicOutput != null && !MUSIC_OUTPUTS.some((o) => o.id === c.musicOutput)) delete c.musicOutput;
+    delete c.musicOutput;
     if (c.bgMotion != null && !MOTIONS.some((m) => m.id === c.bgMotion)) delete c.bgMotion;
     return c;
   }
-  // The house config as it is written to config.json (stable key order).
+  // Stable local preview projection; there is no network write path.
   function pickConfig(state) {
     const out = {};
     CONFIG_KEYS.forEach((k) => {
@@ -292,85 +283,12 @@
     return JSON.stringify(pickConfig(normalizeConfig(a))) === JSON.stringify(pickConfig(normalizeConfig(b)));
   }
 
-  /* ---------- One-click central control (GitHub REST) ----------
-     Commits config.json on `main`; the Pages workflow republishes it and every
-     screen adopts it on its next 30 s poll. Needs a fine-grained token with
-     Contents: read & write on this repo only. */
-  const b64utf8 = (s) => btoa(unescape(encodeURIComponent(s)));
-  function explainGithub(status, phase, ghMessage) {
-    const gh = ghMessage ? " — GitHub said: “" + ghMessage + "”" : "";
-    if (status === 401)
-      return "GitHub says the token itself is invalid (401). Re-copy the full token (it starts with github_pat_) and paste it again.";
-    if (status === 404)
-      return "The token works but cannot see this repo (404). On the token's page: Repository access → Only select repositories → add ESM-Screen, then Save and try again.";
-    if (status === 403)
-      return "The token cannot " + phase + " (403). On the token's page: Permissions → Repository permissions → Contents → Read and write, then Save and try again." + gh;
-    if (status === 409)
-      return "GitHub reported a conflict (409) — someone pushed at the same moment. Try again.";
-    return "GitHub error " + status + " while trying to " + phase + gh + ". Try again.";
-  }
-  async function pushConfig(token, cfg, message) {
-    const api = "https://api.github.com/repos/" + REPO + "/contents/config.json";
-    const headers = { Authorization: "Bearer " + token, Accept: "application/vnd.github+json" };
-    const body = JSON.stringify(cfg, null, 2) + "\n";
-    let res;
-    try {
-      res = await fetch(api + "?ref=main&t=" + Date.now(), { headers, cache: "no-store" });
-    } catch (e) {
-      return { ok: false, network: true, message: "Couldn't reach GitHub — check the connection and try again." };
-    }
-    if (!res.ok) {
-      let gh = ""; try { gh = (await res.json()).message || ""; } catch (e) {}
-      return { ok: false, status: res.status, message: explainGithub(res.status, "read config.json", gh) };
-    }
-    const cur = await res.json();
-    let put;
-    try {
-      put = await fetch(api, {
-        method: "PUT", headers,
-        body: JSON.stringify({ message: message || "Update screen config from remote", branch: "main", sha: cur.sha, content: b64utf8(body) }),
-      });
-    } catch (e) {
-      return { ok: false, network: true, message: "Couldn't reach GitHub — check the connection and try again." };
-    }
-    if (!put.ok) {
-      let gh = ""; try { gh = (await put.json()).message || ""; } catch (e) {}
-      return { ok: false, status: put.status, message: explainGithub(put.status, "write config.json", gh) };
-    }
-    let commitUrl = "";
-    try { commitUrl = (await put.json()).commit.html_url || ""; } catch (e) {}
-    return { ok: true, commitUrl, body };
-  }
-  // Fetch the config the screens are currently reading (from this site).
-  async function fetchLiveConfig(base) {
-    const r = await fetch((base || "") + "config.json?t=" + Date.now(), { cache: "no-store" });
-    if (!r.ok) throw new Error("config.json " + r.status);
-    return r.json();
-  }
-  // Poll the published site until it serves the config we just pushed.
-  // onTick(secondsElapsed) is called every poll; resolves true when live.
-  async function waitForDeploy(expected, opts) {
-    const o = opts || {};
-    const every = o.everyMs || 10000, limit = o.limitMs || 6 * 60000, base = o.base || "";
-    const t0 = Date.now();
-    while (Date.now() - t0 < limit) {
-      await new Promise((res) => setTimeout(res, every));
-      try {
-        const live = await fetchLiveConfig(base);
-        if (sameConfig(live, expected)) return true;
-      } catch (e) {}
-      if (o.onTick) o.onTick(Math.round((Date.now() - t0) / 1000));
-    }
-    return false;
-  }
-
   global.ESM = {
-    STYLES, PALETTES, STATIONS, ROTATIONS, CATEGORIES, MUSIC_OUTPUTS, MOTIONS, CONFIG_KEYS, CONFIG_DEFAULTS, REPO, SITE,
+    STYLES, PALETTES, STATIONS, ROTATIONS, CATEGORIES, MOTIONS, CONFIG_KEYS, CONFIG_DEFAULTS, REPO, SITE,
     stationUrls, findStation,
     slideToken, slideInfo, thumbFor, effectiveSlides, compactPlaylist, findSlide,
     rotationMinutes, localMinutes, seededOrder, rotationPick,
     motionFor, motionScale, motionFrames, motionStill, MOTION_BASE_SCALE,
     normalizeConfig, pickConfig, sameConfig,
-    pushConfig, fetchLiveConfig, waitForDeploy, explainGithub,
   };
 })(typeof window !== "undefined" ? window : globalThis);
