@@ -21,7 +21,9 @@ backed by a 30-second safety/feed poll. `bundled-fallback`,
 invalid/unavailable feed, and image failure use the bundled slides
 deterministically.
 
-Night mode uses `Europe/Amsterdam` 07:00–23:00 through `Intl`, including DST.
+At Boschcour 20, 6221 JR Maastricht, active time is 07:00 inclusive to 23:00
+exclusive Monday–Saturday. Sundays and official Dutch public holidays are
+inactive. Local calendar parts use `Europe/Amsterdam` through `Intl`, including DST.
 HTML audio is disabled/absent. Music intent is `true`, Lofi Girl, volume `0.45`;
 only the Google Cast group may output it.
 
@@ -37,11 +39,13 @@ local token entry.
 ## Google Home blocker
 
 Google Home automation is **not deliverable yet**. The Public Preview wall
-account's Home has no address (`time.schedule` fails), autocomplete exposes
+account's Home is not configured with the known office address (`time.schedule`
+fails), autocomplete exposes
 only two OnOff TVs without `assistant.command.OkGoogle`, and no compatible
 speaker/group appears.
 
-An attended Google Home mobile session must add the Home address, link a
+An attended Google Home mobile session must set the Home address to Boschcour
+20, 6221 JR Maastricht, link a
 compatible Assistant speaker into that Home, then validate—not merely save—the
 07:00 “Play Lofi Girl on Speqckers centrake r” and 23:00 “Stop music on
 Speqckers centrake r” scripts. Do not report these as working before that test.
@@ -54,12 +58,27 @@ never replaces or stops playback it did not start.
 
 ## Hosting and verification
 
+### Physical stick 2 check
+
+At Boschcour 20, 6221 JR Maastricht, on the actual 1920×1080 stick 2, reload
+the page with the clock hidden and confirm the music badge and a deliberately
+long label remain inside the right TV-safe margin. With the selected feed active
+beside another office display, confirm both change to the same image at the same
+180-second UTC boundary; then
+disconnect the feed and confirm both select the same bundled fallback on the next
+boundary. Check active behavior on a normal weekday and Saturday, inactivity on
+Sunday and an official Dutch public holiday, and just before/after 07:00 and 23:00
+Europe/Amsterdam under both CET and CEST. Finally, verify Lofi Girl plays only on
+the existing configured office Cast speaker group, never through browser/TV audio.
+The optional `cast-follower/` is not part of this check: do not install or
+auto-start it.
+
 Pages remains the production host until a replacement is tested. Repository
 privacy does not improve performance. The workflow still uses
 `actions/deploy-pages`, publishes `remote.html`, and excludes `remote.js`,
 `remote.css`, and `config.json`.
 
-Run `node --test tests/wall-background.test.js` and
+Run `node --test tests/*.test.js` and
 `python3 -m unittest cast-follower/test_cast_follower.py`. Tests cover exact validation,
 URL confinement, unknown/URL field rejection, deterministic boundary/revision,
 Amsterdam CET/CEST, fallback, credential omission, ETag, absence of PAT/GitHub
