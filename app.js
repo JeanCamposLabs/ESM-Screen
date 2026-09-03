@@ -149,6 +149,7 @@
       const isDay = on <= off ? (cur >= on && cur < off) : (cur >= on || cur < off);
       screen.classList.toggle("is-night", !isDay);
     }
+    setMotionPaused(screen.classList.contains("is-night"));
     syncMusic();   // go quiet at night, resume in the day
   }
 
@@ -261,6 +262,10 @@
       rotationTick(true); syncBgGrid();
     };
     $("btnNextBg").onclick = () => { if (slidesActive) setBg(slideIdx + 1, true); };
+    const mot = $("inBgMotion");
+    mot.innerHTML = "";
+    ESM.MOTIONS.forEach((m) => { const o = document.createElement("option"); o.value = m.id; o.textContent = m.name; mot.appendChild(o); });
+    mot.onchange = (e) => { state.bgMotion = e.target.value; save(); refreshMotion(); };
 
     // Music
     const stg = $("stationGrid");
@@ -282,7 +287,7 @@
     $("btnNextStation").onclick = nextStation;
 
     $("btnFull").onclick  = toggleFullscreen;
-    $("btnReset").onclick = () => { state = { ...DEFAULTS }; bgPinned = false; commit(); rotationTick(true); flash("Reset to defaults"); };
+    $("btnReset").onclick = () => { state = { ...DEFAULTS }; bgPinned = false; commit(); rotationTick(true); refreshMotion(); flash("Reset to defaults"); };
     $("btnApplyAll").onclick = pushConfigToAllScreens;
     $("btnForgetToken").onclick = () => { try { localStorage.removeItem(TOKEN_KEY); } catch {} $("inGhToken").value = ""; setPushStatus("Token forgotten on this device.", ""); };
     $("btnSync").onclick = () => {
@@ -318,6 +323,7 @@
     $("inMusicVol").value = state.musicVolume;
     $("inMusicOutput").value = state.musicOutput || "tvs";
     $("inBgRotate").value = state.bgRotate;
+    $("inBgMotion").value = state.bgMotion;
     syncMusicPanel();
     syncBgGrid();
   }
@@ -496,15 +502,43 @@
     "assets/slides/10-purple.jpg", "assets/slides/11-red.jpg", "assets/slides/12-soft.jpg",
   ];
   let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
-  let lastSlot = null, bgPinned = false, rotTimer = null;
+  let lastSlot = null, bgPinned = false, rotTimer = null, motionMap = null;
 
   const activeSlides = () => ESM.effectiveSlides(slides, state.bgSet);
 
-  function panLayer(el) {
-    // Background is held STATIC (no Ken-Burns drift) — the large slow zoom was part
-    // of the motion the viewer found nauseating. The image still changes on the rotation.
-    try { if (el.getAnimations) el.getAnimations().forEach((a) => a.cancel()); } catch {}
-    el.style.transform = "scale(1.08)";
+  // Slow, per-image drift. Every slide carries its own motion (assets/motion.json,
+  // derived from the picture: horizons slide sideways, a bright subject is pushed
+  // into, textures drift diagonally) and `bgMotion` scales it — "off" is dead still.
+  // The old one-size Ken-Burns was cut for being nauseating; this is a fraction of
+  // its size, at a constant apparent speed, and eases at both ends instead of
+  // looping back with a jump.
+  function panLayer(el, src) {
+    try { if (el._esmAnim) { el._esmAnim.cancel(); el._esmAnim = null; } } catch {}
+    try { if (el.getAnimations) el.getAnimations().forEach((x) => x.cancel()); } catch {}
+    const frames = el.animate
+      ? ESM.motionFrames(ESM.motionFor(motionMap, src), state.bgMotion, prefersReduced)
+      : null;
+    if (!frames) { el.style.transform = ESM.motionStill(); return; }
+    el.style.transform = frames.from;
+    try {
+      el._esmAnim = el.animate(
+        [{ transform: frames.from }, { transform: frames.to }],
+        { duration: frames.duration, direction: "alternate", iterations: Infinity, easing: "ease-in-out" }
+      );
+      if (screen.classList.contains("is-night")) el._esmAnim.pause();
+    } catch { el.style.transform = ESM.motionStill(); }   // very old browser: hold it still
+  }
+  // WAAPI animations ignore the CSS `animation-play-state: paused` used for the
+  // night screen, so stop them by hand (kind to the panel and to power).
+  function setMotionPaused(paused) {
+    slideLayers.forEach((el) => {
+      try { if (el._esmAnim) paused ? el._esmAnim.pause() : el._esmAnim.play(); } catch {}
+    });
+  }
+  // Re-apply the current setting to the layer on screen (used by the panel/remote).
+  function refreshMotion() {
+    if (!slidesActive || !slides.length) return;
+    panLayer(slideLayers[slideFront], slides[slideIdx]);
   }
   function showSlide(i) {
     if (i === slideIdx && slideLayers[slideFront].classList.contains("is-on")) return;   // already on screen
@@ -513,7 +547,7 @@
     el.classList.add("is-on");                          // reveal first — never blocked by the pan
     slideLayers[slideFront].classList.remove("is-on");
     slideFront ^= 1; slideIdx = i;
-    panLayer(el);
+    panLayer(el, slides[i]);
     syncBgGrid();
   }
   function showSlideSrc(src) {
@@ -597,6 +631,10 @@
     }
     list = (list || []).filter(Boolean);
     if (!list.length) list = FALLBACK_SLIDES;          // never get stuck on the bare gradient
+    try {
+      const r = await fetch(`assets/motion.json?t=${Date.now()}`, { cache: "no-store" });
+      if (r.ok) motionMap = await r.json();            // missing → every slide uses the fallback drift
+    } catch {}
     slides = list; slidesActive = true; slideFront = 0;
     // Starting background. Priority:
     //   ?bg=<index|name> (pins it)  >  timed rotation  >  saved choice  >  first.
@@ -615,7 +653,7 @@
     first.style.backgroundImage = `url("${slides[slideIdx]}")`;
     first.classList.add("is-on");                       // reveal first — never blocked by the pan
     slideLayers[1].classList.remove("is-on");
-    panLayer(first);
+    panLayer(first, slides[slideIdx]);
     buildBgGrid();
     if (PREVIEW) notifyParent();
   }
@@ -730,10 +768,12 @@
   function adoptConfig(raw) {
     const cfg = ESM.normalizeConfig(raw);
     if (!("bgSet" in cfg)) cfg.bgSet = [];   // the house config owns the playlist: absent = everything
+    const wasMotion = state.bgMotion;
     Object.assign(state, cfg);               // the shared config wins
     save();
     apply();
     applyBg(cfg.bg);
+    if (state.bgMotion !== wasMotion) refreshMotion();
   }
   // Current settings as a config others can adopt (the admin "copy" button).
   function configForExport() { return ESM.pickConfig(state); }
@@ -892,6 +932,7 @@
       if (d.type === "esm:config" && d.config) { bgPinned = false; adoptConfig(d.config); notifyParent(); }
       else if (d.type === "esm:bg" && d.bg) { const i = ESM.findSlide(slides, d.bg); if (i >= 0) showSlide(i); notifyParent(); }
       else if (d.type === "esm:wave") playWave();
+      else if (d.type === "esm:motion") { state.bgMotion = d.motion; refreshMotion(); }
       else if (d.type === "esm:night") { forceNight = d.on ? true : null; applySchedule(); }
       else if (d.type === "esm:panel") { d.open ? openPanel() : closePanel(); }
     });

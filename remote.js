@@ -83,6 +83,8 @@
     });
     const mo = $("inMusicOutput"); mo.innerHTML = "";
     ESM.MUSIC_OUTPUTS.forEach((o) => { const opt = document.createElement("option"); opt.value = o.id; opt.textContent = o.name; mo.appendChild(opt); });
+    const mot = $("inBgMotion"); mot.innerHTML = "";
+    ESM.MOTIONS.forEach((m) => { const o = document.createElement("option"); o.value = m.id; o.textContent = m.name; mot.appendChild(o); });
     const rot = $("inBgRotate"); rot.innerHTML = "";
     ROTATIONS.forEach((r) => {
       const o = document.createElement("option");
@@ -215,6 +217,7 @@
   /* ---------- Draft changes ---------- */
   function set(key, value) {
     draft[key] = value;
+    if (key === "bgMotion") post({ type: "esm:motion", motion: value });
     if (key === "bgRotate" && value === "off" && !draft.bg) draft.bg = ESM.slideToken(currentDraftSlide());
     if (key === "bgRotate") previewing = null;                       // show what the rotation would show
     if (key === "bgSet" && previewing && included().indexOf(previewing) < 0) previewing = null;
@@ -300,6 +303,7 @@
     if (!draft || !frameReady) return;
     post({ type: "esm:config", config: ESM.pickConfig(draft) });
     if (previewing) post({ type: "esm:bg", bg: ESM.slideToken(previewing) });
+    post({ type: "esm:motion", motion: draft.bgMotion });
   }
   addEventListener("message", (e) => {
     const d = e.data || {};

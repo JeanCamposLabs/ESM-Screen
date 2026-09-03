@@ -74,7 +74,8 @@ meant for a TV; pass `discSize` (any CSS length) for a box.
 
 `follow: true` makes this screen read the ESM house config
 (`https://jeancamposlabs.github.io/ESM-Screen/config.json`, once a minute) and
-mirror it: the rotation interval, the playlist, a pinned image and the palette.
+mirror it: the rotation interval, the playlist, a pinned image, the palette and
+the movement setting.
 Both screens then compute the same slot from the clock and switch at the same
 second, and the ESM remote (`remote.html`) steers both. Nothing is sent back.
 
@@ -113,6 +114,9 @@ keeps your own palette; `followEveryMs` changes the polling (min 15 s).
 | `manifest` | `assets/backgrounds.json` | image list (string or array of candidates, relative to `base` or absolute) |
 | `slides` | — | explicit array of image URLs; skips the manifest |
 | `intervalMinutes` | `3` | minutes per image (`0.5`, `3`, `60`, `1440`…) |
+| `motion` | `"gentle"` | drift: `off` · `subtle` · `gentle` · `lively` (each image's own motion, scaled) |
+| `motionManifest` | `assets/motion.json` | per-image motion, relative to `base` |
+| `followMotion` | `true` | in follow mode, also take the movement setting |
 | `follow` | — | `true` = mirror the ESM `config.json` (interval, playlist, pin, palette); or a URL/path to another config |
 | `followPalette` | `true` | in follow mode, also take the palette |
 | `followEveryMs` | `60000` | how often the followed config is re-read (min 15 s) |
@@ -131,7 +135,19 @@ keeps your own palette; `followEveryMs` changes the polling (min 15 s).
 | `onChange(info)` | — | called after every change: `{ src, index, total, token, cat, name }` |
 
 `mount()` returns a controller: `next()`, `prev()` (both pin), `pin(token)`,
-`unpin()`, `interval(minutes)`, `current()`, `palette(id)`, `slides`, `destroy()`.
+`unpin()`, `interval(minutes)`, `motion(id)`, `current()`, `palette(id)`, `slides`,
+`destroy()`.
+
+## The drift
+
+Each image moves slowly in the way that suits it, decided from the picture
+itself (`tools/make_motion.py` in the repo writes `motion.json`): a strong
+horizon slides sideways, a bright subject in the middle is pushed into, an
+all-over texture drifts diagonally. Amplitudes are ~1–3% of the frame over
+1.5–2.5 minutes, at the same apparent speed for every image, easing at both ends
+— alive, not a screensaver. `motion: "off"` freezes it, and
+`prefers-reduced-motion` is honoured automatically. Without `motion.json`
+everything falls back to one gentle diagonal drift.
 
 ## How the rotation picks an image
 

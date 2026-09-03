@@ -89,6 +89,16 @@ photographic categories (78 images) and leaves the flat *Illustrated* set out �
 tick it back in on the remote if you miss it. The gallery is grouped by category
 in both the remote and the panel, with real thumbnails.
 
+**Movement.** Each image drifts slowly, in the way that suits *that picture*:
+`tools/make_motion.py` looks at every slide and writes `assets/motion.json` —
+a strong horizon (a landscape, Earth's limb) slides sideways, a bright subject
+in the middle (a galaxy, a nebula) is pushed into, an all-over texture drifts
+diagonally. Amplitudes are 1–3.5% of the frame over 70–100 s, the same apparent
+speed for every image, easing at both ends. `bgMotion` sets how much:
+`off` (dead still) · `subtle` · `gentle` (default) · `lively`;
+`prefers-reduced-motion` disables it, and the night screen pauses it.
+Add a slide and the deploy analyses it automatically.
+
 Picking a specific image in the panel (or pressing `N`) **pins that TV** to it
 until a rotation is chosen again; on the remote, *Pin this* pins every TV.
 Want more variety? Drop more 16:9 art into `assets/slides/` (see
@@ -294,11 +304,10 @@ so it's fully automatic: **just push to `main`.**
 The screen requests a **Wake Lock** so supported panels won't dim or sleep, and
 re-requests it after the device wakes.
 
-> **Burn-in note (OLED):** the background changes on the rotation, the rocket
-> and particles keep moving, the light wave passes every couple of minutes and
-> the idle clock wanders at night. The logo, clock and weather are deliberately
-> still (the drift was found nauseating) — on a true OLED, keep the hourly
-> rotation on.
+> **Burn-in note (OLED):** the background changes on the rotation *and* drifts
+> slowly within each slide, the rocket and particles keep moving, the light wave
+> passes every couple of minutes and the idle clock wanders at night. The logo,
+> clock and weather are deliberately still (that drift was found nauseating).
 
 ---
 
@@ -325,8 +334,9 @@ file for you; the manual route is **Copy config** (remote or panel) → paste in
 `config.json` on GitHub → commit.
 
 Fields: `style`, `palette`, `bg` (pinned slide token, e.g. `06-glow`),
-`bgRotate` (`off`/`daily`/`4h`/`hourly`/`30m`/`15m`), `bgSet` (playlist: tokens
-and/or category ids, `[]` = all), `logo`, `rocket`, `clock`, `particles`,
+`bgRotate` (`off`/`daily`/`4h`/`hourly`/`30m`/`15m`/`5m`/`3m`), `bgSet` (playlist:
+tokens and/or category ids, `[]` = all), `bgMotion` (`off`/`subtle`/`gentle`/`lively`),
+`logo`, `rocket`, `clock`, `particles`,
 `weather`, `speed`, `music`, `musicStation` (e.g. `lofigirl`, `groovesalad`),
 `musicVolume` (0–1), `musicOutput` (`tvs` · `speakers` · `both`), `schedule`,
 `onTime`, `offTime`, `nightClock`. The old
