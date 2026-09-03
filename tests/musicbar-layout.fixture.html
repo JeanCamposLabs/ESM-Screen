@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Music bar TV-safe layout fixture</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <main id="screen">
+    <div class="corner" id="corner">
+      <button class="musicbar" id="musicbar" aria-label="Open settings">
+        <span class="musicbar__state" id="musicState">♪ A deliberately long station label that must remain inside the TV-safe margin</span>
+      </button>
+      <div class="clock" id="clock" hidden></div>
+    </div>
+  </main>
+  <output id="geometry" hidden></output>
+  <script>
+    addEventListener("load", () => {
+      const corner = document.getElementById("corner").getBoundingClientRect();
+      const bar = document.getElementById("musicbar").getBoundingClientRect();
+      document.getElementById("geometry").textContent = JSON.stringify({
+        viewport: { width: innerWidth, height: innerHeight },
+        corner: { left: corner.left, right: corner.right, width: corner.width },
+        bar: { left: bar.left, right: bar.right, width: bar.width }
+      });
+    }, { once: true });
+  </script>
+</body>
+</html>

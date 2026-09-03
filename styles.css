@@ -397,7 +397,11 @@ html[data-style="minimal"] .scene__vignette {
    CLOCK
    ================================================================= */
 .corner {
-  position: absolute; right: 6vmin; bottom: 6vmin; z-index: 5; width: max-content;
+  --corner-safe-right: max(6vmin, 4vw, env(safe-area-inset-right, 0px));
+  position: absolute; right: var(--corner-safe-right); bottom: 6vmin; z-index: 5;
+  display: flex; flex-direction: column; align-items: flex-end;
+  width: max-content;
+  max-width: calc(100vw - var(--corner-safe-right) - var(--corner-safe-right));
 }
 .clock {
   text-align: right;
@@ -432,8 +436,8 @@ html[data-style="minimal"] .scene__vignette {
    AMBIENT MUSIC CONTROL
    ================================================================= */
 .musicbar {
-  position: absolute; left: 50%; bottom: calc(100% + 3vmin); transform: translateX(-50%);
-  z-index: 45; white-space: nowrap;
+  position: relative; flex: none; min-width: 0; max-width: 100%; margin-bottom: 3vmin;
+  z-index: 45; white-space: nowrap; box-sizing: border-box;
   display: flex; align-items: center;
   padding: 1.1vmin 1.9vmin; border-radius: 100px;
   background: rgba(0, 0, 0, .42); backdrop-filter: blur(10px);
@@ -443,6 +447,7 @@ html[data-style="minimal"] .scene__vignette {
 }
 .musicbar:hover, .musicbar:focus-visible, .musicbar.is-peek { opacity: 1; background: rgba(0, 0, 0, .55); }
 .musicbar__state {
+  min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
   font-size: 2vmin; font-weight: 500; letter-spacing: .01em; white-space: nowrap;
 }
 

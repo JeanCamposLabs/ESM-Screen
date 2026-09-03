@@ -54,12 +54,25 @@ never replaces or stops playback it did not start.
 
 ## Hosting and verification
 
+### Physical stick 2 check
+
+On the actual 1920×1080 stick 2, reload the page with the clock hidden and
+confirm the music badge and a deliberately long label remain inside the right
+TV-safe margin. Beside another office display, confirm both change to the same
+image at the same 180-second UTC boundary; then disconnect the feed and confirm
+both select the same bundled fallback on the next boundary. Check just before
+and after 07:00 and 23:00 Europe/Amsterdam that the display enters/leaves night
+mode at the correct local time (including DST). Finally, verify Lofi Girl plays
+only on the configured office Cast speaker group, with no browser/TV audio.
+The optional `cast-follower/` is not part of this check: do not install or
+auto-start it.
+
 Pages remains the production host until a replacement is tested. Repository
 privacy does not improve performance. The workflow still uses
 `actions/deploy-pages`, publishes `remote.html`, and excludes `remote.js`,
 `remote.css`, and `config.json`.
 
-Run `node --test tests/wall-background.test.js` and
+Run `node --test tests/*.test.js` and
 `python3 -m unittest cast-follower/test_cast_follower.py`. Tests cover exact validation,
 URL confinement, unknown/URL field rejection, deterministic boundary/revision,
 Amsterdam CET/CEST, fallback, credential omission, ETag, absence of PAT/GitHub
