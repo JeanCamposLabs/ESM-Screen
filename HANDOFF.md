@@ -24,6 +24,9 @@ deterministically.
 At Boschcour 20, 6221 JR Maastricht, active time is 07:00 inclusive to 23:00
 exclusive Monday–Saturday. Sundays and official Dutch public holidays are
 inactive. Local calendar parts use `Europe/Amsterdam` through `Intl`, including DST.
+The deployed three-field feed schedule remains valid; a new schedule may add a
+bounded, strictly validated `YYYY-MM-DD` holiday list. Those dates supplement the
+local Sunday and Dutch-public-holiday closures and come only from the active feed.
 HTML audio is disabled/absent. Music intent is `true`, Lofi Girl, volume `0.45`;
 only the Google Cast group may output it.
 
@@ -67,7 +70,8 @@ beside another office display, confirm both change to the same image at the same
 180-second UTC boundary; then
 disconnect the feed and confirm both select the same bundled fallback on the next
 boundary. Check active behavior on a normal weekday and Saturday, inactivity on
-Sunday and an official Dutch public holiday, and just before/after 07:00 and 23:00
+Sunday, an official Dutch public holiday, and a holiday supplied by Wall Controls,
+then check just before/after 07:00 and 23:00
 Europe/Amsterdam under both CET and CEST. Finally, verify Lofi Girl plays only on
 the existing configured office Cast speaker group, never through browser/TV audio.
 The optional `cast-follower/` is not part of this check: do not install or

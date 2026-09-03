@@ -129,7 +129,9 @@
     } else if (!state.schedule) {
       screen.classList.remove("is-night");
     } else {
-      screen.classList.toggle("is-night", !ESMWallBackground.isDaytime(Date.now()));
+      const activeFeed = wallClient.current(Date.now());
+      const activeSchedule = activeFeed ? activeFeed.schedule : null;
+      screen.classList.toggle("is-night", !ESMWallBackground.isDaytime(Date.now(), activeSchedule));
     }
     setMotionPaused(screen.classList.contains("is-night"));
     syncMusic();   // go quiet at night, resume in the day

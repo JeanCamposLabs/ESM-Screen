@@ -24,7 +24,8 @@ memory, and normally revalidated with ETag/`If-None-Match`. The exact schema
 accepts only version 1, a positive integer revision, `selected-library` or
 `bundled-fallback`, at most 40 opaque `{id, version}` pairs, `slotMs: 180000`, a
 UTC activation instant, integer `revisionOffset`, the fixed
-Europe/Amsterdam 07:00–23:00 schedule, `browserAudio: false`, and
+Europe/Amsterdam 07:00–23:00 schedule, an optional bounded list of valid
+`YYYY-MM-DD` Wall Controls holidays, `browserAudio: false`, and
 `output: "cast-group"`. Extra and malformed fields are rejected.
 
 Remote image URLs are constructed—not supplied by data—as the fixed-origin
@@ -44,8 +45,10 @@ with the same deterministic clock rotation.
 Software active time is 07:00 inclusive to 23:00 exclusive, Monday–Saturday,
 at Boschcour 20, 6221 JR Maastricht. Sundays and official Dutch public holidays
 are inactive. The calendar is calculated locally and `Intl.DateTimeFormat` in
-`Europe/Amsterdam` applies CET/CEST transitions. TV HTML audio is absent. Music
-intent remains enabled, Lofi Girl, volume 0.45, with the existing configured
+`Europe/Amsterdam` applies CET/CEST transitions. The screen also remains inactive
+on every valid holiday in the active Wall Controls feed;
+the feed supplements rather than replaces the local Sunday/Dutch-holiday rules.
+TV HTML audio is absent. Music intent remains enabled, Lofi Girl, volume 0.45, with the existing configured
 office Google Cast group as the only output.
 
 ## Google Home status (not yet deliverable)
@@ -111,7 +114,8 @@ python3 -m unittest cast-follower/test_cast_follower.py
 For the physical test, compare two displays and confirm the selected feed changes
 both images on the same 180-second boundary, then disconnect the feed and confirm
 the synchronized bundled fallback. Verify active behavior on a normal weekday and
-Saturday, inactivity on Sunday and a Dutch public holiday, and both 07:00/23:00
+Saturday, inactivity on Sunday, a Dutch public holiday, and a Wall Controls holiday
+from the active feed, plus both 07:00/23:00
 boundaries under CET and CEST. Confirm Lofi Girl plays on the existing configured
 office Cast group only, never through browser/TV audio. The optional
 `cast-follower/` remains uninstalled and is not auto-started.

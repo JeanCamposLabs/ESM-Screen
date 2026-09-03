@@ -6,10 +6,12 @@
   const FEED_URL = ORIGIN + "/wall-background/display.json";
   const IMAGE_PATH = "/wall-background/display-image";
   const MAX_BYTES = 32 * 1024;
+  const MAX_HOLIDAYS = 512;
   const SLOT_MS = 180000;
   const FIELDS = ["activatedAt", "browserAudio", "images", "output", "revision", "revisionOffset", "schedule", "slotMs", "source", "v"];
   const IMAGE_FIELDS = ["id", "version"];
   const SCHEDULE_FIELDS = ["off", "on", "timezone"];
+  const SCHEDULE_HOLIDAY_FIELDS = ["holidays", "off", "on", "timezone"];
   const WEEKDAYS = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
 
   function exactKeys(value, expected) {
@@ -25,6 +27,27 @@
     const parsed = Date.parse(value);
     return Number.isFinite(parsed) && parsed % SLOT_MS === 0 ? parsed : null;
   }
+  function calendarDate(value) {
+    if (typeof value !== "string") return false;
+    const match = /^(\d{4})-(\d\d)-(\d\d)$/.exec(value);
+    if (!match) return false;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    if (month < 1 || month > 12 || day < 1) return false;
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    return day <= days[month - 1];
+  }
+  function validateSchedule(schedule) {
+    const hasHolidays = exactKeys(schedule, SCHEDULE_HOLIDAY_FIELDS);
+    if ((!hasHolidays && !exactKeys(schedule, SCHEDULE_FIELDS)) ||
+        schedule.timezone !== "Europe/Amsterdam" ||
+        schedule.on !== "07:00" || schedule.off !== "23:00") return null;
+    if (hasHolidays && (!Array.isArray(schedule.holidays) || schedule.holidays.length > MAX_HOLIDAYS ||
+        !schedule.holidays.every(calendarDate))) return null;
+    return schedule;
+  }
   function validate(value) {
     if (!exactKeys(value, FIELDS) || value.v !== 1 ||
         !Number.isSafeInteger(value.revision) || value.revision < 1 ||
@@ -32,9 +55,7 @@
         value.slotMs !== SLOT_MS || instant(value.activatedAt) == null ||
         !Number.isSafeInteger(value.revisionOffset) || value.revisionOffset < 0 ||
         value.browserAudio !== false || value.output !== "cast-group") return null;
-    if (!exactKeys(value.schedule, SCHEDULE_FIELDS) ||
-        value.schedule.timezone !== "Europe/Amsterdam" ||
-        value.schedule.on !== "07:00" || value.schedule.off !== "23:00") return null;
+    if (!validateSchedule(value.schedule)) return null;
     if (!Array.isArray(value.images) || value.images.length > 40 ||
         (value.source === "selected-library" && value.images.length === 0) ||
         (value.source === "bundled-fallback" && value.images.length !== 0)) return null;
@@ -130,11 +151,14 @@
         !Number.isSafeInteger(parts.day)) return false;
     return dutchPublicHolidays(parts.year).indexOf(dateKey(parts.year, parts.month, parts.day)) !== -1;
   }
-  function isOfficeActive(nowMs) {
+  function isOfficeActive(nowMs, schedule) {
     const parts = amsterdamParts(nowMs);
     const minute = parts.hour * 60 + parts.minute;
+    const validSchedule = validateSchedule(schedule);
+    const wallHoliday = validSchedule && Array.isArray(validSchedule.holidays) &&
+      validSchedule.holidays.indexOf(dateKey(parts.year, parts.month, parts.day)) !== -1;
     return parts.weekday >= 1 && parts.weekday <= 6 && !isDutchPublicHoliday(parts) &&
-      minute >= 7 * 60 && minute < 23 * 60;
+      !wallHoliday && minute >= 7 * 60 && minute < 23 * 60;
   }
   const isDaytime = isOfficeActive;
   function utf8Bytes(text) {
@@ -186,7 +210,8 @@
     }
   }
 
-  const api = { ORIGIN, FEED_URL, IMAGE_PATH, MAX_BYTES, SLOT_MS, validate, imageUrl, pick, bundledPick,
+  const api = { ORIGIN, FEED_URL, IMAGE_PATH, MAX_BYTES, MAX_HOLIDAYS, SLOT_MS, validate, validateSchedule,
+    imageUrl, pick, bundledPick,
     amsterdamParts, easterSunday, dutchPublicHolidays, isDutchPublicHoliday, isOfficeActive, isDaytime, Client };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.ESMWallBackground = api;
