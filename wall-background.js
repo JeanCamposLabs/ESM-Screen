@@ -10,6 +10,7 @@
   const FIELDS = ["activatedAt", "browserAudio", "images", "output", "revision", "revisionOffset", "schedule", "slotMs", "source", "v"];
   const IMAGE_FIELDS = ["id", "version"];
   const SCHEDULE_FIELDS = ["off", "on", "timezone"];
+  const WEEKDAYS = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
 
   function exactKeys(value, expected) {
     return value && typeof value === "object" && !Array.isArray(value) &&
@@ -75,17 +76,67 @@
   }
   function amsterdamParts(nowMs) {
     const parts = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Europe/Amsterdam", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+      timeZone: "Europe/Amsterdam", year: "numeric", month: "2-digit", day: "2-digit",
+      weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
     }).formatToParts(new Date(nowMs == null ? Date.now() : nowMs));
     const out = {};
     parts.forEach(function (part) { out[part.type] = part.value; });
-    return { hour: Number(out.hour), minute: Number(out.minute) };
+    return {
+      year: Number(out.year), month: Number(out.month), day: Number(out.day),
+      weekday: WEEKDAYS[out.weekday], hour: Number(out.hour), minute: Number(out.minute)
+    };
   }
-  function isDaytime(nowMs) {
+  function dateKey(year, month, day) {
+    function two(value) { return value < 10 ? "0" + value : String(value); }
+    return String(year) + "-" + two(month) + "-" + two(day);
+  }
+  function easterSunday(year) {
+    const y = Number(year);
+    if (!Number.isSafeInteger(y) || y < 1583 || y > 9999) return null;
+    const a = y % 19;
+    const b = Math.floor(y / 100);
+    const c = y % 100;
+    const d = Math.floor(b / 4);
+    const e = b % 4;
+    const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4);
+    const k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31);
+    return { year: y, month, day: (h + l - 7 * m + 114) % 31 + 1 };
+  }
+  function shiftedDateKey(date, days) {
+    const shifted = new Date(Date.UTC(date.year, date.month - 1, date.day + days));
+    return dateKey(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate());
+  }
+  function dutchPublicHolidays(year) {
+    const y = Number(year);
+    const easter = easterSunday(y);
+    if (!easter) return [];
+    const april27 = new Date(Date.UTC(y, 3, 27));
+    const kingsDay = april27.getUTCDay() === 0 ? dateKey(y, 4, 26) : dateKey(y, 4, 27);
+    return [
+      dateKey(y, 1, 1), shiftedDateKey(easter, -2), shiftedDateKey(easter, 0),
+      shiftedDateKey(easter, 1), kingsDay, dateKey(y, 5, 5),
+      shiftedDateKey(easter, 39), shiftedDateKey(easter, 49), shiftedDateKey(easter, 50),
+      dateKey(y, 12, 25), dateKey(y, 12, 26)
+    ];
+  }
+  function isDutchPublicHoliday(parts) {
+    if (!parts || !Number.isSafeInteger(parts.year) || !Number.isSafeInteger(parts.month) ||
+        !Number.isSafeInteger(parts.day)) return false;
+    return dutchPublicHolidays(parts.year).indexOf(dateKey(parts.year, parts.month, parts.day)) !== -1;
+  }
+  function isOfficeActive(nowMs) {
     const parts = amsterdamParts(nowMs);
     const minute = parts.hour * 60 + parts.minute;
-    return minute >= 7 * 60 && minute < 23 * 60;
+    return parts.weekday >= 1 && parts.weekday <= 6 && !isDutchPublicHoliday(parts) &&
+      minute >= 7 * 60 && minute < 23 * 60;
   }
+  const isDaytime = isOfficeActive;
   function utf8Bytes(text) {
     try { return unescape(encodeURIComponent(text)).length; } catch (_) { return Infinity; }
   }
@@ -135,7 +186,8 @@
     }
   }
 
-  const api = { ORIGIN, FEED_URL, IMAGE_PATH, MAX_BYTES, SLOT_MS, validate, imageUrl, pick, bundledPick, amsterdamParts, isDaytime, Client };
+  const api = { ORIGIN, FEED_URL, IMAGE_PATH, MAX_BYTES, SLOT_MS, validate, imageUrl, pick, bundledPick,
+    amsterdamParts, easterSunday, dutchPublicHolidays, isDutchPublicHoliday, isOfficeActive, isDaytime, Client };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.ESMWallBackground = api;
 })(typeof window !== "undefined" ? window : globalThis);

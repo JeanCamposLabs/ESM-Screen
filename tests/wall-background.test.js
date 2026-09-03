@@ -108,12 +108,48 @@ test("client rejects oversized bodies and malformed JSON", async () => {
   await assert.rejects(multibyte.refresh(), /too large/);
 });
 
-test("Amsterdam schedule remains 07:00 through 23:00 over DST", () => {
-  assert.equal(wall.isDaytime(Date.parse("2026-01-15T05:59:00Z")), false);
-  assert.equal(wall.isDaytime(Date.parse("2026-01-15T06:00:00Z")), true);
-  assert.equal(wall.isDaytime(Date.parse("2026-07-15T04:59:00Z")), false);
-  assert.equal(wall.isDaytime(Date.parse("2026-07-15T05:00:00Z")), true);
-  assert.equal(wall.isDaytime(Date.parse("2026-07-15T21:00:00Z")), false);
+test("Dutch public holidays are exact for 2026 and 2027", () => {
+  assert.deepEqual(wall.dutchPublicHolidays(2026), [
+    "2026-01-01", "2026-04-03", "2026-04-05", "2026-04-06", "2026-04-27",
+    "2026-05-05", "2026-05-14", "2026-05-24", "2026-05-25", "2026-12-25", "2026-12-26"
+  ]);
+  assert.deepEqual(wall.dutchPublicHolidays(2027), [
+    "2027-01-01", "2027-03-26", "2027-03-28", "2027-03-29", "2027-04-27",
+    "2027-05-05", "2027-05-06", "2027-05-16", "2027-05-17", "2027-12-25", "2027-12-26"
+  ]);
+  assert.deepEqual(wall.easterSunday(2026), { year: 2026, month: 4, day: 5 });
+  assert.deepEqual(wall.easterSunday(2027), { year: 2027, month: 3, day: 28 });
+  assert.equal(wall.dutchPublicHolidays(2025).includes("2025-04-26"), true);
+  assert.equal(wall.dutchPublicHolidays(2025).includes("2025-04-27"), false);
+});
+
+test("Amsterdam calendar parts come from the local timezone across DST", () => {
+  assert.deepEqual(wall.amsterdamParts(Date.parse("2026-03-29T00:30:00Z")),
+    { year: 2026, month: 3, day: 29, weekday: 7, hour: 1, minute: 30 });
+  assert.deepEqual(wall.amsterdamParts(Date.parse("2026-03-29T01:30:00Z")),
+    { year: 2026, month: 3, day: 29, weekday: 7, hour: 3, minute: 30 });
+  assert.deepEqual(wall.amsterdamParts(Date.parse("2026-10-25T01:30:00Z")),
+    { year: 2026, month: 10, day: 25, weekday: 7, hour: 2, minute: 30 });
+});
+
+test("office schedule includes weekdays and Saturday but excludes Sunday and holidays", () => {
+  assert.equal(wall.isOfficeActive(Date.parse("2026-09-07T10:00:00Z")), true); // Monday
+  assert.equal(wall.isOfficeActive(Date.parse("2026-09-11T10:00:00Z")), true); // Friday
+  assert.equal(wall.isOfficeActive(Date.parse("2026-09-12T10:00:00Z")), true); // Saturday
+  assert.equal(wall.isOfficeActive(Date.parse("2026-09-13T10:00:00Z")), false); // Sunday
+  assert.equal(wall.isOfficeActive(Date.parse("2026-04-27T10:00:00Z")), false); // King's Day
+  assert.equal(wall.isOfficeActive(Date.parse("2027-05-06T10:00:00Z")), false); // Ascension Day
+});
+
+test("office hours remain 07:00 inclusive and 23:00 exclusive across CET and CEST", () => {
+  assert.equal(wall.isOfficeActive(Date.parse("2026-01-15T05:59:00Z")), false);
+  assert.equal(wall.isOfficeActive(Date.parse("2026-01-15T06:00:00Z")), true);
+  assert.equal(wall.isOfficeActive(Date.parse("2026-01-15T21:59:00Z")), true);
+  assert.equal(wall.isOfficeActive(Date.parse("2026-01-15T22:00:00Z")), false);
+  assert.equal(wall.isOfficeActive(Date.parse("2026-07-15T04:59:00Z")), false);
+  assert.equal(wall.isOfficeActive(Date.parse("2026-07-15T05:00:00Z")), true);
+  assert.equal(wall.isOfficeActive(Date.parse("2026-07-15T20:59:00Z")), true);
+  assert.equal(wall.isOfficeActive(Date.parse("2026-07-15T21:00:00Z")), false);
 });
 
 test("repository retires PAT writes, browser audio and published admin assets", () => {

@@ -3,7 +3,8 @@
 The credential-free display half of the Easy Scale Media office wall. It is a
 plain static HTML/CSS/JavaScript site and remains live on GitHub Pages at
 `https://jeancamposlabs.github.io/ESM-Screen/` while a replacement host is
-tested. Making this repository private would not improve display performance.
+tested. The site address is Boschcour 20, 6221 JR Maastricht. Making this
+repository private would not improve display performance.
 
 ## Control and security boundary
 
@@ -40,21 +41,23 @@ not override the feed or the deterministic fallback. Invalid/unavailable data, a
 explicit `bundled-fallback`, or a remote image error selects bundled ESM slides
 with the same deterministic clock rotation.
 
-Software night mode is always 07:00 inclusive to 23:00 exclusive in
-`Europe/Amsterdam`; `Intl.DateTimeFormat` applies CET/CEST transitions. TV HTML
-audio is absent. Music intent remains enabled, Lofi Girl, volume 0.45, with the
-Google Cast group as the only output.
+Software active time is 07:00 inclusive to 23:00 exclusive, Monday–Saturday,
+at Boschcour 20, 6221 JR Maastricht. Sundays and official Dutch public holidays
+are inactive. The calendar is calculated locally and `Intl.DateTimeFormat` in
+`Europe/Amsterdam` applies CET/CEST transitions. TV HTML audio is absent. Music
+intent remains enabled, Lofi Girl, volume 0.45, with the existing configured
+office Google Cast group as the only output.
 
 ## Google Home status (not yet deliverable)
 
-The wall account is in Public Preview, but its Home has no address, so
-`time.schedule` fails. Only two TVs appear in script autocomplete; they support
+The wall account is in Public Preview, but its Home is not configured with the
+known office address, so `time.schedule` fails. Only two TVs appear in script autocomplete; they support
 OnOff but not `assistant.command.OkGoogle`. No compatible speaker/group appears.
 Do not claim the automations work.
 
 One attended Google Home mobile setup session is required:
 
-1. Add the Home address.
+1. Set the Home address to Boschcour 20, 6221 JR Maastricht.
 2. Link a compatible Assistant speaker into that Home and ensure the group
    `Speqckers centrake r` is available.
 3. Validate a 07:00 script: **Play Lofi Girl on Speqckers centrake r**.
@@ -101,9 +104,17 @@ Run locally with `python3 -m http.server 8000` and open `/index.html`.
 Dependency-free checks:
 
 ```bash
-node --test tests/wall-background.test.js
+node --test tests/*.test.js
 python3 -m unittest cast-follower/test_cast_follower.py
 ```
+
+For the physical test, compare two displays and confirm the selected feed changes
+both images on the same 180-second boundary, then disconnect the feed and confirm
+the synchronized bundled fallback. Verify active behavior on a normal weekday and
+Saturday, inactivity on Sunday and a Dutch public holiday, and both 07:00/23:00
+boundaries under CET and CEST. Confirm Lofi Girl plays on the existing configured
+office Cast group only, never through browser/TV audio. The optional
+`cast-follower/` remains uninstalled and is not auto-started.
 
 GitHub Pages remains enabled through `.github/workflows/deploy-pages.yml`. The
 workflow still publishes the live static site and bundled assets, but no longer
