@@ -2,110 +2,45 @@
    Easy Scale Media — Ambient Screen controller
    - Theme/palette switching, hidden control panel, live clock,
      auto on/off schedule, ambient particle canvas, persistence.
+   - Catalog + rotation maths + GitHub push live in shared.js (window.ESM)
+     so the remote control page (remote.html) uses the very same code.
    - No dependencies, no build. Settings persist in localStorage.
+   - `?preview` turns the page into a live preview driven by postMessage
+     (used inside remote.html): no polling, no audio, nothing saved.
    ================================================================= */
 (() => {
   "use strict";
 
-  /* ---------- Catalog (drives the control panel) ---------- */
-  const STYLES = [
-    { id: "premium", name: "Premium",   desc: "Flowing liquid light, dark luxe" },
-    { id: "nature",  name: "Cinematic", desc: "Soft skies, horizon, golden glow" },
-    { id: "tech",    name: "Futuristic",desc: "Particles, grid, light beams" },
-    { id: "minimal", name: "Minimal",   desc: "Calm gradient, lots of space" },
-  ];
-  const PALETTES = [
-    { id: "orange",   name: "Brand Orange", color: "#ff7a18" },
-    { id: "navy",     name: "Navy + Gold",  color: "#e9c46a" },
-    { id: "electric", name: "Electric Blue",color: "#23d4fd" },
-    { id: "teal",     name: "Teal",         color: "#2ee6a6" },
-    { id: "purple",   name: "Purple",       color: "#b15cff" },
-  ];
+  const { STYLES, PALETTES, STATIONS, ROTATIONS, CATEGORIES } = ESM;
+  const QS = new URLSearchParams(location.search);
+  const PREVIEW = QS.has("preview");
 
   /* ---------- Defaults / state ---------- */
   const DEFAULTS = {
-    style: "premium",
-    palette: "orange",
-    logo: true,
-    rocket: true,
-    clock: false,
-    particles: true,
+    ...ESM.CONFIG_DEFAULTS,  // style, palette, bg, bgRotate, bgSet, toggles, speed, music, schedule…
     name: "Easy Scale Media",
     tag: "Scaling brands to the moon.",
-    speed: 1,
-    schedule: true,
-    onTime: "07:00",
-    offTime: "23:00",
-    nightClock: true,
-    bg: "10-purple",
-    dailyBg: true,           // auto-rotate the background once a day
-    weather: true,
-    music: false,           // ambient internet radio (audio only)
-    musicStation: "lofigirl",
-    musicVolume: 0.35,
-    musicBar: true,          // show the small on-screen music control
+    musicBar: true,          // show the small on-screen music control (this device only)
   };
   const KEY = "esm-screen.v1";
-
-  // Audio-only stations for the office; "Next" cycles through them. The first is
-  // our self-hosted Lofi Girl relay (YouTube live -> MP3, see radio-relay/); the
-  // rest are SomaFM — commercial-free, listener-supported (https://somafm.com).
-  const STATIONS = [
-    { id: "lofigirl",      name: "Lofi Girl",              genre: "Lo-fi hip-hop · live",
-      urls: ["https://esm-lofi-relay.onrender.com/lofi.mp3"] },
-    { id: "groovesalad",   name: "Groove Salad",           genre: "Chill · downtempo" },
-    { id: "fluid",         name: "Fluid",                  genre: "Lo-fi hip-hop · chillhop" },
-    { id: "gsclassic",     name: "Groove Salad Classic",   genre: "Classic chill · ambient" },
-    { id: "secretagent",   name: "Secret Agent",           genre: "Lounge · downtempo jazz" },
-    { id: "lush",          name: "Lush",                   genre: "Mellow vocal chill" },
-    { id: "beatblender",   name: "Beat Blender",           genre: "Deep house · downtempo" },
-    { id: "thetrip",       name: "The Trip",               genre: "Downtempo · trip-hop" },
-    { id: "spacestation",  name: "Space Station Soma",     genre: "Ambient · space" },
-    { id: "sonicuniverse", name: "Sonic Universe",         genre: "Modern jazz" },
-    { id: "illstreet",     name: "Illinois Street Lounge", genre: "Vintage lounge · exotica" },
-    { id: "dronezone",     name: "Drone Zone",             genre: "Ambient · minimal beats" },
-    { id: "deepspaceone",  name: "Deep Space One",         genre: "Deep ambient · space" },
-    { id: "seventies",     name: "Left Coast 70s",         genre: "Mellow 70s album rock" },
-    { id: "u80s",          name: "Underground 80s",        genre: "80s new wave · synthpop" },
-    { id: "indiepop",      name: "Indie Pop Rocks",        genre: "Indie pop" },
-    { id: "poptron",       name: "PopTron",                genre: "Electro-pop · indie dance" },
-    { id: "bootliquor",    name: "Boot Liquor",            genre: "Americana roots" },
-    { id: "suburbsofgoa",  name: "Suburbs of Goa",         genre: "Desi · world beats" },
-    // Classical — listener-supported public radio (not SomaFM), explicit stream URLs.
-    { id: "yourclassical", name: "YourClassical",          genre: "Classical",
-      urls: ["https://ycradio.stream.publicradio.org/ycradio.mp3",
-             "https://ycradio.stream.publicradio.org/ycradio.aac"] },
-    { id: "wcpe",          name: "The Classical Station",  genre: "Classical (WCPE)",
-      urls: ["https://playerservices.streamtheworld.com/api/livestream-redirect/WCPE_FMAAC.aac"] },
-  ];
-  // Candidate stream URLs for a station, tried in order with fallback. SomaFM
-  // stations build mirror URLs from the id (so a single server outage doesn't
-  // kill the music); others carry explicit `urls`. All HTTPS (works on Pages).
-  function stationUrls(st) {
-    if (st && st.urls) return st.urls.slice();
-    const slug = (st && st.id) || st;
-    return ["ice1", "ice2", "ice4", "ice6"]
-      .map((m) => `https://${m}.somafm.com/${slug}-128-mp3`)
-      .concat(`https://ice.somafm.com/${slug}`);
-  }
 
   let state = load();
 
   // URL overrides — handy for pinning a kiosk to one look: ?style=premium&palette=navy
   (() => {
-    const q = new URLSearchParams(location.search);
-    const s = q.get("style"), p = q.get("palette");
+    const s = QS.get("style"), p = QS.get("palette");
     if (s && STYLES.some((x) => x.id === s)) state.style = s;
     if (p && PALETTES.some((x) => x.id === p)) state.palette = p;
   })();
 
   function load() {
     try {
-      const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
-      return { ...DEFAULTS, ...saved };
+      const saved = PREVIEW ? {} : JSON.parse(localStorage.getItem(KEY) || "{}");
+      return { ...DEFAULTS, ...ESM.normalizeConfig(saved) };
     } catch { return { ...DEFAULTS }; }
   }
   function save() {
+    if (PREVIEW) return;                       // a preview never touches this device's settings
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
   }
 
@@ -197,10 +132,13 @@
   }
 
   /* ---------- Schedule (auto on/off) ---------- */
-  function toMin(hhmm) { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; }
+  function toMin(hhmm) { const [h, m] = String(hhmm || "0:0").split(":").map(Number); return h * 60 + m; }
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  let forceNight = null;              // preview only: the remote can show the night screen
   function applySchedule() {
-    if (!state.schedule) {
+    if (forceNight != null) {
+      screen.classList.toggle("is-night", forceNight);
+    } else if (!state.schedule) {
       screen.classList.remove("is-night");
     } else {
       const now = new Date();
@@ -270,6 +208,16 @@
 
   /* ---------- Control panel ---------- */
   function buildPanel() {
+    // Tabs
+    const tabs = Array.from(document.querySelectorAll("#panelTabs [data-tab]"));
+    const panes = Array.from(document.querySelectorAll("#panel [data-pane]"));
+    const showTab = (id) => {
+      tabs.forEach((t) => t.classList.toggle("is-active", t.dataset.tab === id));
+      panes.forEach((p) => { p.hidden = p.dataset.pane !== id; });
+    };
+    tabs.forEach((t) => { t.onclick = () => showTab(t.dataset.tab); });
+    showTab("look");
+
     const sg = $("styleGrid");
     sg.innerHTML = "";
     STYLES.forEach((s) => {
@@ -294,20 +242,33 @@
     $("tgClock").onchange   = (e) => { state.clock = e.target.checked; commit(); };
     $("tgParticles").onchange = (e) => { state.particles = e.target.checked; commit(); };
     $("tgWeather").onchange = (e) => { state.weather = e.target.checked; if (state.weather) fetchWeather(); commit(); };
-    $("tgDailyBg").onchange = (e) => { state.dailyBg = e.target.checked; save(); if (state.dailyBg) gotoDailyBg(); };
     $("inSpeed").oninput    = (e) => { state.speed = parseFloat(e.target.value); commit(); };
     $("tgSchedule").onchange= (e) => { state.schedule = e.target.checked; commit(); };
     $("inOn").onchange      = (e) => { state.onTime = e.target.value; commit(); };
     $("inOff").onchange     = (e) => { state.offTime = e.target.value; commit(); };
     $("tgNightClock").onchange = (e) => { state.nightClock = e.target.checked; commit(); };
 
+    // Background rotation
+    const rot = $("inBgRotate");
+    rot.innerHTML = "";
+    ROTATIONS.forEach((r) => {
+      const o = document.createElement("option");
+      o.value = r.id; o.textContent = r.name; rot.appendChild(o);
+    });
+    rot.onchange = (e) => {
+      state.bgRotate = e.target.value; bgPinned = false; save();
+      if (state.bgRotate === "off") state.bg = ESM.slideToken(slides[slideIdx] || state.bg);
+      rotationTick(true); syncBgGrid();
+    };
+    $("btnNextBg").onclick = () => { if (slidesActive) setBg(slideIdx + 1, true); };
+
     // Music
     const stg = $("stationGrid");
     stg.innerHTML = "";
     STATIONS.forEach((s) => {
       const b = document.createElement("button");
-      b.className = "opt"; b.dataset.id = s.id;
-      b.innerHTML = `<span class="opt__name">${s.name}</span><span class="opt__desc">${s.genre}</span>`;
+      b.className = "st"; b.dataset.id = s.id;
+      b.innerHTML = `<span class="st__dot"></span><span class="st__name">${s.name}</span><span class="st__genre">${s.genre}</span>`;
       b.onclick = () => setStation(s.id, false);
       stg.appendChild(b);
     });
@@ -317,14 +278,20 @@
     $("btnNextStation").onclick = nextStation;
 
     $("btnFull").onclick  = toggleFullscreen;
-    $("btnReset").onclick = () => { state = { ...DEFAULTS }; commit(); flash("Reset to defaults"); };
+    $("btnReset").onclick = () => { state = { ...DEFAULTS }; bgPinned = false; commit(); rotationTick(true); flash("Reset to defaults"); };
     $("btnApplyAll").onclick = pushConfigToAllScreens;
+    $("btnForgetToken").onclick = () => { try { localStorage.removeItem(TOKEN_KEY); } catch {} $("inGhToken").value = ""; setPushStatus("Token forgotten on this device.", ""); };
     $("btnSync").onclick = () => {
       try { navigator.clipboard.writeText(JSON.stringify(configForExport(), null, 2)); flash("Config copied — paste into config.json on GitHub"); }
       catch { flash("Clipboard unavailable here"); }
     };
     $("panelClose").onclick = closePanel;
     $("panelScrim").onclick = closePanel;
+
+    // Where to control every screen from a computer or phone
+    const remoteUrl = new URL("remote.html", location.href).href;
+    $("remoteLink").href = remoteUrl;
+    $("remoteLink").textContent = remoteUrl.replace(/^https?:\/\//, "");
   }
 
   function syncPanel() {
@@ -345,13 +312,13 @@
     $("tgMusic").checked = state.music;
     $("tgMusicBar").checked = state.musicBar;
     $("inMusicVol").value = state.musicVolume;
-    $("tgDailyBg").checked = state.dailyBg;
+    $("inBgRotate").value = state.bgRotate;
     syncMusicPanel();
     syncBgGrid();
   }
 
   function syncMusicPanel() {
-    document.querySelectorAll("#stationGrid .opt").forEach((b) =>
+    document.querySelectorAll("#stationGrid .st").forEach((b) =>
       b.classList.toggle("is-active", b.dataset.id === state.musicStation));
   }
 
@@ -381,15 +348,15 @@
     if (clicks >= 3) { clicks = 0; togglePanel(); }
   });
   document.addEventListener("keydown", (e) => {
-    if (e.target.matches("input, textarea")) { if (e.key === "Escape") closePanel(); return; }
+    if (e.target.matches("input, textarea, select")) { if (e.key === "Escape") closePanel(); return; }
     const k = e.key.toLowerCase();
     if (k === "c" || k === "s") togglePanel();
     else if (k === "escape") closePanel();
     else if (k === "f") toggleFullscreen();
-    else if (k === "n" && slidesActive) setBg(slideIdx + 1, true);   // manual next background
+    else if (k === "n" && slidesActive) setBg(slideIdx + 1, true);   // manual next background (pins it)
     else if (k === "m" && state.music) nextStation();                // next music station
   });
-  if (location.hash === "#admin" || new URLSearchParams(location.search).has("admin")) {
+  if (!PREVIEW && (location.hash === "#admin" || QS.has("admin"))) {
     // open after first paint
     setTimeout(openPanel, 400);
   }
@@ -402,7 +369,7 @@
 
   /* ---------- First-run hint ---------- */
   function maybeHint() {
-    if (localStorage.getItem(KEY)) return;  // returning device: skip
+    if (PREVIEW || localStorage.getItem(KEY)) return;  // returning device: skip
     const h = $("hint");
     h.classList.add("is-show");
     setTimeout(() => h.classList.remove("is-show"), 9000);
@@ -411,6 +378,7 @@
   /* ---------- Keep the display awake (always-on TV) ---------- */
   let wakeLock = null;
   async function requestWakeLock() {
+    if (PREVIEW) return;
     try {
       if ("wakeLock" in navigator) {
         wakeLock = await navigator.wakeLock.request("screen");
@@ -437,9 +405,10 @@
     } catch { return null; }
   }
   async function checkVersion() {
+    if (PREVIEW) return;
     const v = await fetchVersion();
     if (v == null) return;                  // missing file or network blip — ignore
-    if (bootVersion == null) { bootVersion = v; return; }   // establish baseline
+    if (bootVersion == null) { bootVersion = v; $("panelVersion").textContent = v; return; }   // establish baseline
     if (v !== bootVersion) reloadForUpdate(v);
   }
   function reloadForUpdate(v) {
@@ -464,9 +433,9 @@
   /* ---------- Re-sync when the device wakes or reconnects ---------- */
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) return;
-    // A TV that slept overnight wakes into a new day: re-check the daily
-    // background here so it rotates immediately instead of on the next 5-min tick.
-    tick(); applySchedule(); checkVersion(); requestWakeLock(); fetchWeather(); maybeDailyBg(); syncConfig();
+    // A TV that slept overnight wakes into a new slot: re-check the rotation
+    // here so it changes immediately instead of on the next tick.
+    tick(); applySchedule(); checkVersion(); requestWakeLock(); fetchWeather(); rotationTick(); syncConfig();
   });
   addEventListener("online", checkVersion);
 
@@ -509,10 +478,10 @@
     ).onfinish = () => setTimeout(flyRocket, rand(1500, 7000));
   }
 
-  /* ---------- Background gallery: cross-fading slideshow + slow pan ----------
+  /* ---------- Background gallery: cross-fading slides + timed rotation ----------
      Reads assets/backgrounds.json (a list of image URLs, auto-generated on
-     deploy from assets/slides/). Two layers cross-fade; each slide gets its
-     own slow Ken-Burns drift so the image keeps moving. */
+     deploy from assets/slides/). Two layers cross-fade. Which slide is on is
+     decided by ESM.rotationPick() from the clock, so every screen agrees. */
   const slideLayers = [$("sceneImage"), $("sceneImageB")];
   // last-resort list so the gallery still works if backgrounds.json can't be fetched
   const FALLBACK_SLIDES = [
@@ -520,81 +489,94 @@
     "assets/slides/04-gold.jpg", "assets/slides/05-streaks.jpg", "assets/slides/06-glow.jpg",
     "assets/slides/07-layers.jpg", "assets/slides/08-blue.jpg", "assets/slides/09-teal.jpg",
     "assets/slides/10-purple.jpg", "assets/slides/11-red.jpg", "assets/slides/12-soft.jpg",
-    // 4K landscapes
-    "assets/slides/13-sunset-ridge.jpg", "assets/slides/14-dunes.jpg", "assets/slides/15-ocean-dusk.jpg",
-    "assets/slides/16-aurora-peaks.jpg", "assets/slides/17-mesa-dusk.jpg",
-    // 4K vector patterns
-    "assets/slides/18-facets.jpg", "assets/slides/19-ribbons.jpg", "assets/slides/20-ripples.jpg",
-    "assets/slides/21-aurora-bands.jpg", "assets/slides/22-hex-mesh.jpg",
-    // 4K plasma / cloud patterns
-    "assets/slides/23-ember-plasma.jpg", "assets/slides/24-teal-plasma.jpg",
-    "assets/slides/25-nebula.jpg", "assets/slides/26-dusk-clouds.jpg",
-    // more landscapes
-    "assets/slides/27-alpine-lake.jpg", "assets/slides/28-foggy-peaks.jpg",
-    "assets/slides/29-pine-forest.jpg", "assets/slides/30-coastal-dusk.jpg",
-    "assets/slides/31-alpenglow.jpg", "assets/slides/32-starry-desert.jpg",
-    // glossy liquid ribbons (house style)
-    "assets/slides/33-liquid-twin.jpg", "assets/slides/34-liquid-drape.jpg",
-    "assets/slides/35-liquid-cross.jpg", "assets/slides/36-liquid-silk.jpg",
-    "assets/slides/37-liquid-crest.jpg", "assets/slides/38-liquid-ember.jpg",
   ];
   let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
-  let lastDailyDay = null, bgPinned = false;
-  // Local-day number — same for every screen in a timezone on a given calendar
-  // day — used to pick a deterministic "background of the day".
-  const dayNumber = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
-  const dailyIndex = () => (slides.length ? (((dayNumber() % slides.length) + slides.length) % slides.length) : 0);
-  function gotoDailyBg() {            // crossfade to today's background
-    if (!slidesActive || !slides.length || bgPinned) return;
-    lastDailyDay = dayNumber();
-    setBg(dailyIndex(), false);
-  }
-  function maybeDailyBg() {           // at a day rollover, advance to the new background
-    if (!state.dailyBg || bgPinned || !slidesActive) return;
-    if (dayNumber() !== lastDailyDay) gotoDailyBg();
-  }
+  let lastSlot = null, bgPinned = false;
+
+  const activeSlides = () => ESM.effectiveSlides(slides, state.bgSet);
 
   function panLayer(el) {
     // Background is held STATIC (no Ken-Burns drift) — the large slow zoom was part
-    // of the motion the viewer found nauseating. The image still changes once a day.
+    // of the motion the viewer found nauseating. The image still changes on the rotation.
     try { if (el.getAnimations) el.getAnimations().forEach((a) => a.cancel()); } catch {}
     el.style.transform = "scale(1.08)";
   }
   function showSlide(i) {
+    if (i === slideIdx && slideLayers[slideFront].classList.contains("is-on")) return;   // already on screen
     const el = slideLayers[slideFront ^ 1];            // the hidden layer
     el.style.backgroundImage = `url("${slides[i]}")`;
     el.classList.add("is-on");                          // reveal first — never blocked by the pan
     slideLayers[slideFront].classList.remove("is-on");
     slideFront ^= 1; slideIdx = i;
     panLayer(el);
+    syncBgGrid();
+  }
+  function showSlideSrc(src) {
+    const i = slides.indexOf(src);
+    if (i >= 0) showSlide(i);
+  }
+  // Rotation: called every 30 s, on wake, and whenever the config changes.
+  function rotationTick(force) {
+    if (!slidesActive || bgPinned) return;
+    const list = activeSlides();
+    const pick = ESM.rotationPick(list.length, state.bgRotate);
+    if (!pick) return;                                  // pinned: nothing to do
+    if (!force && pick.slot === lastSlot) return;
+    lastSlot = pick.slot;
+    showSlideSrc(list[pick.index]);
   }
   function setBg(i, persist) {
     if (!slides.length) return;
     showSlide(((i % slides.length) + slides.length) % slides.length);
-    if (persist) {                     // a manual pick pins this image and stops auto-rotation
-      state.bg = slides[slideIdx];
-      state.dailyBg = false;
+    if (persist) {                     // a manual pick pins this image and stops the rotation
+      state.bg = ESM.slideToken(slides[slideIdx]);
+      state.bgRotate = "off";
       save();
-      const t = $("tgDailyBg"); if (t) t.checked = false;
+      const r = $("inBgRotate"); if (r) r.value = "off";
     }
     syncBgGrid();
   }
   function buildBgGrid() {
     const g = $("bgGrid"); if (!g) return;
     g.innerHTML = "";
-    slides.forEach((src, i) => {
-      const b = document.createElement("button");
-      b.className = "bg-opt"; b.dataset.i = i;
-      b.style.backgroundImage = `url("${src}")`;
-      b.title = src.split("/").pop();
-      b.onclick = () => setBg(i, true);
-      g.appendChild(b);
+    CATEGORIES.forEach((cat) => {
+      const items = slides.map((src, i) => ({ src, i, info: ESM.slideInfo(src) })).filter((x) => x.info.cat === cat.id);
+      if (!items.length) return;
+      const h = document.createElement("h3");
+      h.className = "bg-cat"; h.textContent = `${cat.name} · ${items.length}`;
+      g.appendChild(h);
+      const grid = document.createElement("div");
+      grid.className = "bg-grid";
+      items.forEach(({ src, i, info }) => {
+        const b = document.createElement("button");
+        b.className = "bg-opt"; b.dataset.i = i; b.title = info.token;
+        const img = document.createElement("img");
+        img.loading = "lazy"; img.alt = info.name; img.src = ESM.thumbFor(src);
+        img.onerror = () => { img.onerror = null; img.src = src; };
+        const name = document.createElement("span");
+        name.className = "bg-opt__name"; name.textContent = info.name;
+        b.appendChild(img); b.appendChild(name);
+        b.onclick = () => setBg(i, true);
+        grid.appendChild(b);
+      });
+      g.appendChild(grid);
     });
     syncBgGrid();
   }
   function syncBgGrid() {
     document.querySelectorAll("#bgGrid .bg-opt").forEach((b) =>
       b.classList.toggle("is-active", Number(b.dataset.i) === slideIdx));
+    const now = $("bgNow"); if (!now || !slides.length) return;
+    const info = ESM.slideInfo(slides[slideIdx] || "");
+    const list = activeSlides();
+    const pick = ESM.rotationPick(list.length, state.bgRotate);
+    let when = "pinned — choose a rotation above to resume";
+    if (bgPinned) when = "pinned by the ?bg= URL on this TV";
+    else if (pick) {
+      const m = Math.max(1, Math.round(pick.nextChangeMs / 60000));
+      when = `next change in ${m >= 120 ? Math.round(m / 60) + " h" : m + " min"} · ${list.length} in rotation`;
+    }
+    now.textContent = `Now: ${info.name} · ${when}`;
   }
   async function initSlides() {
     let list = [];
@@ -609,13 +591,17 @@
     if (!list.length) list = FALLBACK_SLIDES;          // never get stuck on the bare gradient
     slides = list; slidesActive = true; slideFront = 0;
     // Starting background. Priority:
-    //   ?bg=<index|name> (pins it)  >  daily auto-rotation  >  saved choice  >  first.
-    const bgQ = new URLSearchParams(location.search).get("bg");
+    //   ?bg=<index|name> (pins it)  >  timed rotation  >  saved choice  >  first.
+    const bgQ = QS.get("bg");
     let start = 0;
     if (bgQ != null && /^\d+$/.test(bgQ)) { start = parseInt(bgQ, 10); bgPinned = true; }
-    else if (bgQ != null) { const m = slides.findIndex((s) => s.includes(bgQ)); if (m >= 0) { start = m; bgPinned = true; } }
-    else if (state.dailyBg) { start = dailyIndex(); lastDailyDay = dayNumber(); }
-    else if (state.bg) { const m = slides.findIndex((s) => s === state.bg || s.includes(state.bg)); if (m >= 0) start = m; }
+    else if (bgQ != null) { const m = ESM.findSlide(slides, bgQ); if (m >= 0) { start = m; bgPinned = true; } }
+    else {
+      const list2 = activeSlides();
+      const pick = ESM.rotationPick(list2.length, state.bgRotate);
+      if (pick) { start = slides.indexOf(list2[pick.index]); lastSlot = pick.slot; }
+      else { const m = ESM.findSlide(slides, state.bg); if (m >= 0) start = m; }
+    }
     slideIdx = ((start % slides.length) + slides.length) % slides.length;
     const first = slideLayers[0];
     first.style.backgroundImage = `url("${slides[slideIdx]}")`;
@@ -623,6 +609,7 @@
     slideLayers[1].classList.remove("is-on");
     panLayer(first);
     buildBgGrid();
+    if (PREVIEW) notifyParent();
   }
 
   /* ---------- Weather: Maastricht via Open-Meteo (free, no key) ---------- */
@@ -666,60 +653,45 @@
 
   /* ---------- One-click central control ----------
      "Apply to all screens" commits the current look to config.json on GitHub
-     (via the REST API) — the deploy workflow republishes it and every screen
+     (ESM.pushConfig) — the deploy workflow republishes it and every screen
      adopts it within ~2 minutes. Needs a one-time fine-grained token that is
-     stored only in THIS browser's localStorage (never synced to the TVs). */
-  const REPO = "JeanCamposLabs/ESM-Screen";
+     stored only in THIS browser's localStorage (never synced to the TVs).
+     After the push we watch the published config.json until it matches, so
+     the panel can say "live" instead of leaving the operator guessing. */
   const TOKEN_KEY = "esm-screen.ghtoken";
-  const b64utf8 = (s) => btoa(unescape(encodeURIComponent(s)));
+  let pushing = false;
+  function setPushStatus(text, kind) {
+    const el = $("pushStatus"); if (!el) return;
+    el.textContent = text; el.dataset.kind = kind || "";
+  }
   async function pushConfigToAllScreens() {
+    if (pushing) return;
     const box = $("ghTokenBox"), input = $("inGhToken");
     const token = (input.value || "").trim() || localStorage.getItem(TOKEN_KEY) || "";
     if (!token) {
       box.hidden = false; input.focus();
-      flash("Paste a GitHub token first — see the note below", 6000);
+      setPushStatus("Paste a GitHub token first — see the note below.", "warn");
       return;
-    }
-    const api = `https://api.github.com/repos/${REPO}/contents/config.json`;
-    const headers = { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" };
-    // Tell the operator exactly what is wrong — 401/404/403 each have a
-    // different cause and a different fix on the token page.
-    async function explain(res, phase) {
-      let gh = ""; try { gh = (await res.json()).message || ""; } catch {}
-      box.hidden = false;
-      if (res.status === 401) {
-        try { localStorage.removeItem(TOKEN_KEY); } catch {}
-        input.focus();
-        return "GitHub says the token itself is invalid (401) — re-copy the full token (starts with github_pat_) and paste it again";
-      }
-      if (res.status === 404)
-        return "The token works but cannot see this repo (404). On the token's page: Repository access → Only select repositories → add ESM-Screen, then Save and try again";
-      if (res.status === 403)
-        return `The token cannot ${phase} (403). On the token's page: Permissions → Repository permissions → Contents → Read and write, then Save and try again` + (gh ? ` — GitHub said: “${gh}”` : "");
-      return `GitHub error ${res.status} while trying to ${phase}` + (gh ? ` — “${gh}”` : "") + " — try again";
     }
     // Remember the token now; scope fixes on GitHub keep the same token string,
     // so a later retry just works. Only a real 401 forgets it.
     try { localStorage.setItem(TOKEN_KEY, token); } catch {}
-    flash("Contacting GitHub…", 20000);
-    try {
-      const cur = await fetch(`${api}?ref=main&t=${Date.now()}`, { headers, cache: "no-store" });
-      if (!cur.ok) { flash(await explain(cur, "read config.json"), 15000); return; }
-      const sha = (await cur.json()).sha;
-      const res = await fetch(api, {
-        method: "PUT", headers,
-        body: JSON.stringify({
-          message: "Update screen config from admin panel",
-          branch: "main", sha,
-          content: b64utf8(JSON.stringify(configForExport(), null, 2) + "\n"),
-        }),
-      });
-      if (!res.ok) { flash(await explain(res, "write config.json"), 15000); return; }
-      input.value = ""; box.hidden = true;
-      flash("Pushed ✓ — every screen updates itself within ~2 minutes", 8000);
-    } catch (err) {
-      flash("Couldn't reach GitHub — check the connection and try again", 6000);
+    pushing = true; $("btnApplyAll").disabled = true;
+    setPushStatus("Contacting GitHub…", "busy");
+    const cfg = configForExport();
+    const res = await ESM.pushConfig(token, cfg, "Update screen config from the TV panel");
+    if (!res.ok) {
+      if (res.status === 401) { try { localStorage.removeItem(TOKEN_KEY); } catch {} }
+      if (res.status) { box.hidden = false; input.focus(); }
+      setPushStatus(res.message, "error");
+      pushing = false; $("btnApplyAll").disabled = false;
+      return;
     }
+    input.value = ""; box.hidden = true;
+    setPushStatus("Pushed ✓ — publishing… every screen follows within ~2 minutes.", "busy");
+    const live = await ESM.waitForDeploy(cfg, { onTick: (s) => setPushStatus(`Pushed ✓ — publishing… ${s}s. Screens follow within ~30 s of the publish.`, "busy") });
+    setPushStatus(live ? "Live on every screen ✓" : "Pushed, but the publish is taking unusually long — check the Actions tab on GitHub.", live ? "ok" : "warn");
+    pushing = false; $("btnApplyAll").disabled = false;
   }
 
   /* ---------- Central sync: every screen follows config.json ----------
@@ -730,62 +702,61 @@
   function applyBg(name) {
     if (!slidesActive || !slides.length) return;
     if (bgPinned) return;                          // a ?bg= kiosk pin wins over config
-    if (state.dailyBg) { gotoDailyBg(); return; }  // auto-rotation owns the background
-    if (!name) return;
-    const i = slides.findIndex((s) => s === name || s.includes(name));
-    if (i >= 0) { showSlide(i); syncBgGrid(); }
+    if (ESM.rotationMinutes(state.bgRotate)) { rotationTick(true); return; }   // the rotation owns the background
+    const i = ESM.findSlide(slides, name || state.bg);
+    if (i >= 0) showSlide(i);
   }
   async function syncConfig() {
+    if (PREVIEW) return;
     try {
       const r = await fetch(`${CONFIG_URL}?t=${Date.now()}`, { cache: "no-store" });
       if (!r.ok) return;
-      const cfg = await r.json();
-      const rev = JSON.stringify(cfg);
+      const raw = await r.json();
+      const rev = JSON.stringify(raw);
       if (rev === cfgRev) return;            // unchanged -> leave local tweaks alone
       cfgRev = rev;
-      Object.assign(state, cfg);             // the shared config wins
-      save();
-      apply();
-      applyBg(cfg.bg);
+      adoptConfig(raw);
     } catch {}
   }
-  // Current settings as a config others can adopt (the admin "copy" button).
-  function configForExport() {
-    const bg = String(state.bg || "").split("/").pop().replace(/\.\w+$/, "");
-    return {
-      style: state.style, palette: state.palette, bg,
-      logo: state.logo, rocket: state.rocket, clock: state.clock,
-      particles: state.particles, weather: state.weather,
-      speed: state.speed, dailyBg: state.dailyBg,
-      music: state.music, musicStation: state.musicStation, musicVolume: state.musicVolume,
-    };
+  // Take a house config (from config.json or the remote's live preview).
+  function adoptConfig(raw) {
+    const cfg = ESM.normalizeConfig(raw);
+    if (!("bgSet" in cfg)) cfg.bgSet = [];   // the house config owns the playlist: absent = everything
+    Object.assign(state, cfg);               // the shared config wins
+    save();
+    apply();
+    applyBg(cfg.bg);
   }
+  // Current settings as a config others can adopt (the admin "copy" button).
+  function configForExport() { return ESM.pickConfig(state); }
 
-  /* ---------- Ambient music (SomaFM internet radio, audio-only) ----------
+  /* ---------- Ambient music (internet radio, audio-only) ----------
      Browsers block audio autoplay until the first user interaction, so when
-     music is on we show a "tap to start" pill and unlock on the first gesture
-     (a tap, click or key — e.g. when someone switches the TV on each morning).
-     Streams are commercial-free and listener-supported (somafm.com). */
+     music is on we try once at boot (kiosk browsers, and Chrome on a site that
+     plays daily, allow it) and otherwise show a "tap to start" pill and unlock
+     on the first gesture (a tap, click or key — e.g. when someone switches
+     the TV on each morning). */
   const audio = $("bgAudio");
   let urlIdx = 0;            // which mirror URL we're trying for the current station
-  let userGestured = false; // has the user interacted yet (autoplay unlock)?
-  let manualPaused = false; // user tapped pause -> stay paused until they resume
+  let userGestured = PREVIEW; // has the user interacted yet (autoplay unlock)?
+  let manualPaused = false;  // user tapped pause -> stay paused until they resume
 
-  const currentStation = () =>
-    STATIONS.find((s) => s.id === state.musicStation) || STATIONS[0];
+  const currentStation = () => ESM.findStation(state.musicStation);
   // Do we intend audio to be playing right now? (feature on, not manually
   // paused, and not the dim night screen.)
   const intendPlay = () =>
-    state.music && !manualPaused && !screen.classList.contains("is-night");
+    !PREVIEW && state.music && !manualPaused && !screen.classList.contains("is-night");
 
   function loadStation(resetMirror = true) {
     if (resetMirror) urlIdx = 0;
-    const urls = stationUrls(currentStation());
+    const urls = ESM.stationUrls(currentStation());
     audio.src = urls[Math.min(urlIdx, urls.length - 1)];
     audio.load();
   }
   function startPlayback() {
+    if (PREVIEW) return;
     if (!audio.src) loadStation();
+    else if (audio.error) loadStation(false);   // a failed load (relay cold at boot) is retried, same mirror
     audio.volume = clamp(state.musicVolume, 0, 1);
     const p = audio.play();
     if (p && p.catch) p.catch((err) => {
@@ -800,20 +771,14 @@
     });
   }
   function tryNextMirror() {
-    const urls = stationUrls(currentStation());
+    const urls = ESM.stationUrls(currentStation());
     if (urlIdx < urls.length - 1) { urlIdx++; loadStation(false); if (userGestured && intendPlay()) startPlayback(); }
-    else { flash("Couldn't reach the music stream — try another station"); }
-  }
-  function pauseMusic() { manualPaused = true; audio.pause(); renderMusicbar(); }
-  function playMusic() {
-    manualPaused = false;
-    if (userGestured) startPlayback();   // otherwise the "tap to start" pill is shown
-    renderMusicbar();
+    else { urlIdx = 0; if (panelOpen) flash("Couldn't reach the music stream — retrying; or try another station"); }   // the 20 s tick retries from the first mirror
   }
   function setStation(id, announce) {
     state.musicStation = id; save();
-    manualPaused = false; urlIdx = 0; loadStation();
-    if (userGestured && intendPlay()) startPlayback();
+    manualPaused = false; urlIdx = 0;
+    if (!PREVIEW) { loadStation(); if (userGestured && intendPlay()) startPlayback(); }
     syncMusicPanel(); renderMusicbar();
     if (announce) peekMusicbar();
   }
@@ -824,9 +789,11 @@
 
   // Reconcile playback with the current intent (called on state changes and on
   // the schedule tick, so music stops at night and recovers if a stream drops).
+  let lastStationLoaded = null;
   function syncMusic() {
     if (!audio) return;
     if (intendPlay()) {
+      if (lastStationLoaded !== state.musicStation) { lastStationLoaded = state.musicStation; urlIdx = 0; loadStation(); }
       if (userGestured && audio.paused) startPlayback();   // else: locked -> pill shown
     } else if (!audio.paused) {
       audio.pause();
@@ -844,7 +811,7 @@
     if (state.music && !userGestured) {
       $("musicState").textContent = "🔊 Tap to start music";
     } else {
-      $("musicState").textContent = (audio.paused ? "❚❚ " : "♪ ") + currentStation().name;
+      $("musicState").textContent = ((audio.paused && !PREVIEW) ? "❚❚ " : "♪ ") + currentStation().name;
     }
   }
   let peekTimer = null;
@@ -859,13 +826,15 @@
   function setupMusic() {
     if (!audio) return;
     audio.volume = clamp(state.musicVolume, 0, 1);
-    audio.addEventListener("playing", renderMusicbar);
+    // Once anything has actually played, the origin is unlocked for good.
+    audio.addEventListener("playing", () => { userGestured = true; renderMusicbar(); });
     audio.addEventListener("pause", renderMusicbar);
     audio.addEventListener("error", () => { if (intendPlay()) tryNextMirror(); });
     // The first interaction anywhere on the page satisfies the autoplay policy.
     const unlock = () => {
       if (userGestured) return;
       userGestured = true;
+      if (audio.error) { urlIdx = 0; loadStation(); }   // the boot attempt hit a dead stream: start the mirrors over
       if (intendPlay()) startPlayback();
       renderMusicbar();
     };
@@ -874,6 +843,9 @@
     // The on-screen badge opens the settings menu (where play/pause, station and
     // volume live). The click itself is the gesture that unlocks autoplay.
     $("musicbar").onclick = openPanel;
+    // Optimistic start: kiosk browsers (and Chrome once this site has a media
+    // engagement history) allow it; if not, the tap-to-start pill stays up.
+    if (intendPlay()) { lastStationLoaded = state.musicStation; startPlayback(); }
   }
 
   /* ---------- Full-screen light wave (~every 2 min, or click the logo) ----------
@@ -888,6 +860,31 @@
     screen.classList.add("wave-go");
     clearTimeout(waveTimer);
     waveTimer = setTimeout(() => screen.classList.remove("wave-go"), 5400);
+  }
+
+  /* ---------- Live preview (inside remote.html) ----------
+     The remote posts messages; this page mirrors them without saving or
+     polling, so the operator sees exactly what the TVs will show. */
+  function notifyParent() {
+    if (!PREVIEW || window.parent === window) return;
+    try {
+      window.parent.postMessage({
+        type: "esm:state",
+        slides: slides.slice(),
+        current: slides[slideIdx] || null,
+        config: configForExport(),
+      }, "*");
+    } catch {}
+  }
+  if (PREVIEW) {
+    addEventListener("message", (e) => {
+      const d = e.data || {};
+      if (d.type === "esm:config" && d.config) { bgPinned = false; adoptConfig(d.config); notifyParent(); }
+      else if (d.type === "esm:bg" && d.bg) { const i = ESM.findSlide(slides, d.bg); if (i >= 0) showSlide(i); notifyParent(); }
+      else if (d.type === "esm:wave") playWave();
+      else if (d.type === "esm:night") { forceNight = d.on ? true : null; applySchedule(); }
+      else if (d.type === "esm:panel") { d.open ? openPanel() : closePanel(); }
+    });
   }
 
   /* ---------- Boot ---------- */
@@ -906,15 +903,19 @@
   rafId = requestAnimationFrame(frame);
   maybeHint();
   requestWakeLock();
-  checkVersion();
-  setInterval(checkVersion, VERSION_POLL_MS);
   flyRocket();
   initSlides();
-  setInterval(maybeDailyBg, 5 * 60 * 1000);   // advance the background at the daily rollover
+  setInterval(() => { rotationTick(); if (panelOpen) syncBgGrid(); }, 30000);   // timed background rotation
   fetchWeather();
   setInterval(fetchWeather, 30 * 60 * 1000);
-  syncConfig();
-  setInterval(syncConfig, 30000);
+  if (!PREVIEW) {
+    checkVersion();
+    setInterval(checkVersion, VERSION_POLL_MS);
+    syncConfig();
+    setInterval(syncConfig, 30000);
+  } else {
+    document.body.classList.add("is-preview");
+  }
 
   function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
 })();

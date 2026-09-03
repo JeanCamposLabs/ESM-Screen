@@ -2,10 +2,79 @@
 
 Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static site**
 (vanilla HTML/CSS/JS, no build step). Live: **https://jeancamposlabs.github.io/ESM-Screen/**
+· Remote control: **https://jeancamposlabs.github.io/ESM-Screen/remote.html**
 
 ---
 
-## Recent fixes (latest session)
+## Latest session — remote control, timed rotation, real photography
+The brief was "the UX is inefficient, the backgrounds are boring, and it is hard to
+control from my computer". What changed:
+
+- **`remote.html` (+ `remote.css`, `remote.js`) — the control room.** A normal page for a
+  laptop/phone: live preview of the screen in an iframe (`index.html?preview=1`), the
+  live state of the TVs ("On the TVs now: X · changes in N min · music …"), Look/Music/
+  Schedule cards, the whole gallery with a **playlist** (checkbox per image, All/None per
+  category), *Pin this*, a ▶ listen button per station (plays on the operator's device),
+  and one **Push to all screens** button that commits `config.json` and then **polls the
+  published site until the new config is live** ("Live ✓"). Draft vs live is tracked
+  (*Unpushed changes* badge, *Discard*, and a notice if someone else pushed meanwhile).
+- **`shared.js` — one source of truth for both pages** (`window.ESM`): styles, palettes,
+  stations, `ROTATIONS`, `CATEGORIES`, `CONFIG_KEYS`/`CONFIG_DEFAULTS`, slide naming
+  (`slideInfo`), thumbnails (`thumbFor`), playlist (`effectiveSlides`/`compactPlaylist`),
+  the rotation maths (`rotationPick`), config normalisation, and the GitHub push +
+  `waitForDeploy`. The deploy cache-busts it and includes it in the version hash.
+- **Timed rotation replaces "daily".** `bgRotate` = `off | daily | 4h | hourly | 30m | 15m`.
+  `rotationPick(count, mode, now)` cuts local time into slots; slot → image through a
+  seeded shuffle per cycle, so every image shows exactly once per cycle in a shuffled order
+  and **all TVs agree from the clock alone** (verified: 78 unique picks per cycle; slot
+  boundaries on the hour / at local midnight; `daily` slot == the old `dayNumber()`).
+  `rotationTick()` runs every 30 s + on `visibilitychange`. Legacy `dailyBg` is mapped in
+  `normalizeConfig()`.
+- **Playlist `bgSet`.** Tokens and/or **category ids** (`space`, `earth`, `nature`,
+  `abstract`, `art`); `[]`/absent = everything. Category comes from the **file name**
+  (`NN-space-…`, `NN-earth-…`, `NN-nature-…`; `01–12` = abstract, `13–38` = art). The
+  remote writes the shortest form (`compactPlaylist`). **Gotcha:** on the TV, an absent
+  `bgSet` in `config.json` resets the local playlist to "all" (`adoptConfig`) — the house
+  config owns it.
+- **104 backgrounds (was 38).** Added **32 NASA** public-domain images (Webb/Hubble/Spitzer
+  nebulae + galaxies; auroras and the limb from the ISS) via `images-api.nasa.gov`, and
+  **34 real landscapes** (Unsplash License, fetched through `picsum.photos` by ID — Unsplash
+  itself is bot-walled from here). All centre-cropped to 2560×1440, visually curated
+  (contact sheets), credits in `assets/README.md`. `assets/thumbs/` holds **480×270
+  thumbnails** for every slide (the old panel loaded all full-size JPGs as thumbnails —
+  that was the "inefficient" part); the deploy renders thumbs for any new slide (Pillow).
+- **House config now:** `bgRotate: hourly`, `bgSet: [space, earth, nature, abstract]`
+  (the flat illustrated set is out by default but one click away), schedule keys are part
+  of the config (`schedule`, `onTime`, `offTime`, `nightClock`).
+- **On-screen panel redesigned:** five tabs (Look / Background / Music / Schedule / All
+  screens), sticky tab bar, rotation `<select>` + "Now: X · next change in N min", 2-column
+  thumbnail gallery grouped by category, compact station rows, push status that reports
+  "Live ✓" after verifying the publish, link to the remote, build number.
+- **Preview mode** (`?preview=1`): no localStorage read/write, no polling, no audio, no wake
+  lock; listens for `postMessage` — `esm:config` (adopt a config), `esm:bg` (show a slide),
+  `esm:wave`, `esm:night {on}`, `esm:panel {open}`; replies `esm:state`.
+- **Music:** the screen now **tries to autoplay at boot** (works in kiosk browsers / once
+  Chrome's media-engagement score is high); if refused, the "Tap to start" pill stays.
+  A stream that was dead at boot is reloaded on the first tap and the mirror cycle
+  restarts every 20 s tick (a cold relay is picked up when it comes back).
+- Verified in headless Chromium (no page errors): screen boot + all panel tabs, preview
+  mode adopting a posted config without saving, remote dirty-state/preview/pin/discard, the
+  rotation maths, 104 tiles / 78 included. The real GitHub push was **not** exercised here
+  (no token) — the request code is the same as before, moved into `shared.js`.
+
+### Next-agent notes
+- The rotation is clock-based; a TV with a wrong clock shows a different image. Fine.
+- `compactPlaylist` collapses whole categories to their id, so `config.json` stays short.
+- `waitForDeploy` compares configs with `sameConfig()` (normalised, `CONFIG_KEYS` only).
+- If you add a config key: `CONFIG_KEYS` + `CONFIG_DEFAULTS` in `shared.js`, an input with
+  `data-key` in `remote.html`, and the panel wiring in `app.js`.
+- Pages deploy: `deploy-pages.yml` copies `remote.*` + `shared.js`, cache-busts them, and
+  the version hash now includes `shared.js` (a code push still reloads every TV once).
+
+---
+
+## Earlier sessions
+### Recent fixes (previous session)
 - **`el.hidden` didn't hide (root cause of the "World Cup is still there" report).** After the strip was
   removed and deployed, a TV still showed an empty **⚽ World Cup** pill. Two separate faults:
   1. **`.worldcup` set `display: flex`**, and an author `display` rule beats the UA's `[hidden]
@@ -102,10 +171,10 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
   so TV browsers can't serve a stale copy.
 - **Slideshow hardened:** `initSlides` retries the manifest 3× and falls back to an embedded
   slide list — it never gets stuck on the bare gradient.
-- Defaults: **purple** bg (`10-purple`), clock + weather on, slow looping background pan.
+- Defaults: **purple** bg (`10-purple`), clock + weather on, background held static.
 
 ## How it's built & deployed
-- Files: `index.html`, `styles.css`, `app.js`, `config.json`, `version.json`, `assets/`.
+- Files: `index.html`, `styles.css`, `app.js`, `shared.js`, `remote.html`, `remote.css`, `remote.js`, `config.json`, `version.json`, `assets/`.
 - **Deploy:** `.github/workflows/deploy-pages.yml` runs on every push to `main` → assembles `_site`,
   stamps `version.json` with the commit, **auto‑generates `assets/backgrounds.json` from `assets/slides/*`**,
   publishes to GitHub Pages. (Pages source = **GitHub Actions**, set in repo Settings → Pages.)
@@ -117,9 +186,9 @@ Ambient brand screen for the **Easy Scale Media** office TVs. Plain **static sit
 
 ## Central control (sync all TVs)
 - **`config.json`** (repo root) is the house config every screen obeys: `style`, `palette`,
-  `bg` (slide token, e.g. `"10-purple"`), `dailyBg` (auto‑rotate daily), `logo`, `rocket`, `clock`,
-  `particles`, `weather`, `speed`, `music` (on/off), `musicStation` (SomaFM slug, e.g.
-  `"groovesalad"`/`"fluid"`), `musicVolume` (0–1).
+  `bg` (pinned slide token), `bgRotate` (`off|daily|4h|hourly|30m|15m`), `bgSet` (playlist), `logo`, `rocket`,
+  `clock`, `particles`, `weather`, `speed`, `music`, `musicStation`, `musicVolume` (0–1), `schedule`,
+  `onTime`, `offTime`, `nightClock`. (`dailyBg` is legacy and still understood.)
 - Screens poll it every 30 s and adopt it (config wins; local panel tweaks persist until config changes).
 - **One‑click (new):** admin panel → **“Apply this look to all screens”** commits `config.json` to `main`
   via the GitHub REST API (`pushConfigToAllScreens()` in `app.js`); the deploy republishes and every TV
