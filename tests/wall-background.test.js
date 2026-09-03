@@ -39,12 +39,29 @@ function response(body, options) {
 
 test("strict projection accepts only the narrow fixed contract", () => {
   assert.equal(wall.validate(projection()).revision, 3);
+  assert.deepEqual(wall.validate(projection({ schedule: {
+    timezone: "Europe/Amsterdam", on: "07:00", off: "23:00", holidays: ["2026-09-08"]
+  } })).schedule.holidays, ["2026-09-08"]);
   assert.equal(wall.validate({ ...projection(), url: "https://evil.test/x" }), null);
   assert.equal(wall.validate(projection({ images: [{ id: "https://evil.test", version: VERSION }] })), null);
   assert.equal(wall.validate(projection({ schedule: { timezone: "UTC", on: "07:00", off: "23:00" } })), null);
+  assert.equal(wall.validate(projection({ schedule: {
+    timezone: "Europe/Amsterdam", on: "07:00", off: "23:00", surprise: []
+  } })), null);
   assert.equal(wall.validate(projection({ browserAudio: true })), null);
   assert.equal(wall.validate(projection({ source: "bundled-fallback", images: [] })).source, "bundled-fallback");
   assert.equal(wall.validate(projection({ source: "bundled-fallback" })), null);
+});
+
+test("Wall Controls holidays are valid calendar dates and bounded", () => {
+  const schedule = (holidays) => ({ timezone: "Europe/Amsterdam", on: "07:00", off: "23:00", holidays });
+  assert.ok(wall.validateSchedule(schedule([])));
+  assert.ok(wall.validateSchedule(schedule(Array(wall.MAX_HOLIDAYS).fill("2026-09-08"))));
+  assert.equal(wall.validateSchedule(schedule(Array(wall.MAX_HOLIDAYS + 1).fill("2026-09-08"))), null);
+  for (const invalid of ["2026-9-08", "2026-02-29", "2026-04-31", "not-a-date", 20260908]) {
+    assert.equal(wall.validateSchedule(schedule([invalid])), null);
+  }
+  assert.ok(wall.validateSchedule(schedule(["2028-02-29"])));
 });
 
 test("image URLs are constructed only from fixed origin and opaque descriptors", () => {
@@ -139,6 +156,21 @@ test("office schedule includes weekdays and Saturday but excludes Sunday and hol
   assert.equal(wall.isOfficeActive(Date.parse("2026-09-13T10:00:00Z")), false); // Sunday
   assert.equal(wall.isOfficeActive(Date.parse("2026-04-27T10:00:00Z")), false); // King's Day
   assert.equal(wall.isOfficeActive(Date.parse("2027-05-06T10:00:00Z")), false); // Ascension Day
+});
+
+test("Wall Controls holiday dates supplement deterministic local closures", () => {
+  const schedule = { timezone: "Europe/Amsterdam", on: "07:00", off: "23:00", holidays: ["2026-09-08"] };
+  assert.equal(wall.isOfficeActive(Date.parse("2026-09-08T10:00:00Z")), true);
+  assert.equal(wall.isOfficeActive(Date.parse("2026-09-08T10:00:00Z"), schedule), false);
+  assert.equal(wall.isOfficeActive(Date.parse("2026-04-27T10:00:00Z"), {
+    timezone: "Europe/Amsterdam", on: "07:00", off: "23:00"
+  }), false);
+});
+
+test("app wires only the active feed schedule into the office-active decision", () => {
+  const app = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
+  assert.match(app, /activeFeed\s*=\s*wallClient\.current\(Date\.now\(\)\)/);
+  assert.match(app, /isDaytime\(Date\.now\(\), activeSchedule\)/);
 });
 
 test("office hours remain 07:00 inclusive and 23:00 exclusive across CET and CEST", () => {
