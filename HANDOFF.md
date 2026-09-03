@@ -102,6 +102,20 @@ control from my computer". What changed:
   edge covered by ≥33 px at every point of the cycle at "lively"; `prefers-reduced-motion` → still.
   Re-run `python3 tools/make_motion.py` after adding slides (the deploy does `--only-missing`).
 
+- **`backdrop.html` — the one-line embed (added when the user asked "why do they need the pack?").**
+  Fair question: the images, motion and settings were always served from here; only the *renderer*
+  was a copied file, and only because of my own self-hosting advice. `backdrop.html` mounts the pack
+  full-screen from URL params (`follow`, `interval`, `motion`, `palette`, `disc`, `discsize`,
+  `wordmark`, `categories`, `start`, `vignette`), so another project embeds one sandboxed iframe and
+  never updates anything again. Verified cross-origin with `sandbox="allow-scripts"`: it renders,
+  follows the config (78-slide playlist, the pinned image, per-image motion `d=73` not the 115 s
+  fallback) and every reach into the host — `parent.document`, a parent global, `document.cookie` —
+  comes back BLOCKED with origin `null`. **Gotcha found while testing:** in that sandbox the frame
+  is an *opaque* origin, so `backgrounds.json`/`motion.json`/`config.json` are cross-origin fetches
+  and need CORS. GitHub Pages sends `access-control-allow-origin: *`, so it works live; a plain
+  `python3 -m http.server` does not, and the pack then silently falls back to its built-in slide
+  list (104 entries, 115 s motion) — which is exactly what the first test run showed.
+
 ### Next-agent notes
 - The rotation is clock-based; a TV with a wrong clock shows a different image. Fine.
 - Motion amplitudes are capped in `shared.js` (`MOTION_MARGIN`), not in the JSON — if you raise

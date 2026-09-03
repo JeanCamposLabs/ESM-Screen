@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ESM Backdrop</title>
+  <meta name="robots" content="noindex" />
+  <!--
+    The backdrop as a page, meant to be dropped into another project in ONE line:
+
+      <iframe src="https://jeancamposlabs.github.io/ESM-Screen/backdrop.html?follow=1"
+              style="position:fixed;inset:0;width:100%;height:100%;border:0"
+              sandbox="allow-scripts" loading="eager"></iframe>
+
+    Everything then lives here: the images, the per-image motion, the code, and the
+    settings pushed from remote.html. The other project never copies a file and
+    never updates anything. The browser keeps this page in its own origin, so
+    nothing in here can read or touch the page that embeds it — `sandbox="allow-scripts"`
+    also stops it navigating the parent. (Self-hosting the two files from
+    embed/ is still the option to pick when the screen must work with the ESM
+    site unreachable.)
+
+    Query parameters (all optional):
+      follow=1            mirror the house config: rotation, playlist, pin, palette, movement
+      interval=3          minutes per image, when not following
+      motion=gentle       off | subtle | gentle | lively
+      palette=orange      orange | navy | electric | teal | purple
+      disc=0              hide the ESM disc
+      discsize=60vmin     any CSS length
+      wordmark=Easy Scale|Media
+      categories=space,earth,nature,abstract
+      start=52-space-andromeda      pin one image
+      vignette=0          drop the soft dark edges
+  -->
+  <link rel="stylesheet" href="embed/esm-backdrop.css" />
+  <style>
+    html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <script src="embed/esm-backdrop.js"></script>
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search);
+      var has = function (k) { return q.get(k) != null; };
+      var opts = {
+        base: location.pathname.replace(/[^/]*$/, ""),   // this site, wherever it is served from
+        follow: has("follow") ? q.get("follow") !== "0" : false,
+        intervalMinutes: has("interval") ? Number(q.get("interval")) : 3,
+        motion: q.get("motion") || "gentle",
+        palette: q.get("palette") || "orange",
+        disc: q.get("disc") !== "0",
+        vignette: q.get("vignette") !== "0",
+      };
+      if (has("discsize")) opts.discSize = q.get("discsize");
+      if (has("wordmark")) opts.wordmark = q.get("wordmark");
+      if (has("categories")) opts.categories = q.get("categories").split(",");
+      if (has("start")) opts.start = q.get("start");
+      if (has("fade")) opts.fadeMs = Number(q.get("fade"));
+      window.esmBackdrop = ESMBackdrop.mount(opts);
+    })();
+  </script>
+</body>
+</html>

@@ -191,16 +191,22 @@ is built on every deploy at `/embed/esm-backdrop-pack.zip`. Options, API and the
 self-hosting recipe are in [`embed/README.md`](embed/README.md).
 
 ```html
-<link rel="stylesheet" href="https://jeancamposlabs.github.io/ESM-Screen/embed/esm-backdrop.css">
-<script src="https://jeancamposlabs.github.io/ESM-Screen/embed/esm-backdrop.js"></script>
-<script>ESMBackdrop.mount({ follow: true });</script>   <!-- or { intervalMinutes: 3 } to run on its own -->
+<iframe src="https://jeancamposlabs.github.io/ESM-Screen/backdrop.html?follow=1"
+        style="position:fixed;inset:0;width:100%;height:100%;border:0;z-index:0"
+        sandbox="allow-scripts"></iframe>
 ```
 
-`follow: true` keeps the other screen in step with this one: it reads this
-site's `config.json` (interval, playlist, pin, palette) and, since both compute
-the image from the clock, they switch at the same second — one remote steers
-both. The other project should self-host the two files (only JSON + images then
-cross over, validated); see the security notes in `embed/README.md`.
+That one line is the whole integration: images, motion, code and settings all
+stay here, so the other screen follows `remote.html` and never needs a file
+updated. The browser isolates the iframe, so nothing in it can touch the host
+page. The two-file version (`embed/`) is for a screen that must keep working
+when this site is unreachable.
+
+`follow=1` keeps the other screen in step with this one: it reads this site's
+`config.json` (interval, playlist, pin, palette, movement) and, since both
+compute the image from the clock, they switch at the same second — one remote
+steers both. See `embed/README.md` for the parameters, the self-hosted route and
+the security notes.
 
 ---
 
