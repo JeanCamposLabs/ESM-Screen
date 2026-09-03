@@ -491,7 +491,7 @@
     "assets/slides/10-purple.jpg", "assets/slides/11-red.jpg", "assets/slides/12-soft.jpg",
   ];
   let slides = [], slideIdx = 0, slideFront = 0, slidesActive = false;
-  let lastSlot = null, bgPinned = false;
+  let lastSlot = null, bgPinned = false, rotTimer = null;
 
   const activeSlides = () => ESM.effectiveSlides(slides, state.bgSet);
 
@@ -520,7 +520,10 @@
     if (!slidesActive || bgPinned) return;
     const list = activeSlides();
     const pick = ESM.rotationPick(list.length, state.bgRotate);
+    clearTimeout(rotTimer);
     if (!pick) return;                                  // pinned: nothing to do
+    // wake right on the next boundary, so every screen (and any paired one) switches at the same second
+    rotTimer = setTimeout(() => rotationTick(), Math.max(1000, pick.nextChangeMs + 250));
     if (!force && pick.slot === lastSlot) return;
     lastSlot = pick.slot;
     showSlideSrc(list[pick.index]);
@@ -599,7 +602,7 @@
     else {
       const list2 = activeSlides();
       const pick = ESM.rotationPick(list2.length, state.bgRotate);
-      if (pick) { start = slides.indexOf(list2[pick.index]); lastSlot = pick.slot; }
+      if (pick) { start = slides.indexOf(list2[pick.index]); lastSlot = pick.slot; rotTimer = setTimeout(() => rotationTick(), Math.max(1000, pick.nextChangeMs + 250)); }
       else { const m = ESM.findSlide(slides, state.bg); if (m >= 0) start = m; }
     }
     slideIdx = ((start % slides.length) + slides.length) % slides.length;

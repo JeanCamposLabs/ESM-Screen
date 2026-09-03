@@ -69,7 +69,11 @@ control from my computer". What changed:
   second-granularity slots so sub-minute demo intervals work). The deploy serves `embed/` as-is
   and builds `embed/esm-backdrop-pack.zip` (code + `backgrounds.json` + all `slides/`, ~38 MB) from
   a staging dir — the zip is never committed. `demo.html` works in both layouts (repo: images one
-  level up; unpacked zip: `slides/` next to it).
+  level up; unpacked zip: `slides/` next to it). **Paired mode** (`follow: true`) reads this
+  site's `config.json` (CORS is `*` on Pages) and mirrors rotation/playlist/pin/palette, with every
+  field validated — so the ESM remote steers both screens and they switch at the same second.
+  For that, `ROTATIONS` gained `5m` and `3m`, `rotationPick().nextChangeMs` is now second-precise,
+  and the screen arms a timer for the exact boundary (`rotTimer`) besides the 30 s safety tick.
 
 ### Next-agent notes
 - The rotation is clock-based; a TV with a wrong clock shows a different image. Fine.

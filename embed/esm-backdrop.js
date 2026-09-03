@@ -1,22 +1,31 @@
 /* =================================================================
    ESM Backdrop — drop-in rotating backgrounds + the ESM disc
-   v1.0.0 · no dependencies · plain ES5-ish so old TV browsers run it
+   v1.1.0 · no dependencies · plain ES5-ish so old TV browsers run it
 
    <link rel="stylesheet" href="esm-backdrop.css">
    <script src="esm-backdrop.js"></script>
    <script>
-     ESMBackdrop.mount({ intervalMinutes: 3 });   // full-screen, disc on
+     ESMBackdrop.mount({ intervalMinutes: 3 });          // full-screen, disc on
+     ESMBackdrop.mount({ follow: true });                 // paired: mirror the ESM screen's config
    </script>
 
-   See README.md for every option. The image list and the images themselves
-   come from the ESM-Screen site by default (or from a local copy — set
-   `base` / `manifest` / `slides`).
+   See README.md for every option. The image list and the images come from
+   the ESM-Screen site by default (or from a local copy — set `base` /
+   `manifest` / `slides`). Everything read from the network is DATA only
+   (JSON + images) and is validated before use; this file never evaluates
+   anything it fetched.
    ================================================================= */
 (function (global) {
   "use strict";
 
-  var VERSION = "1.0.0";
+  var VERSION = "1.1.0";
   var DEFAULT_BASE = "https://jeancamposlabs.github.io/ESM-Screen/";
+  // config.json → minutes (same table as the ESM screen's shared.js)
+  var ROTATE_MINUTES = { off: 0, daily: 1440, "4h": 240, hourly: 60, "30m": 30, "15m": 15, "5m": 5, "3m": 3 };
+  var PALETTES = { orange: 1, navy: 1, electric: 1, teal: 1, purple: 1 };
+  var TOKEN_RE = /^[A-Za-z0-9_-]{1,80}$/;                                  // a slide token or a category id
+  var PATH_RE = /^(?!.*\.\.)[A-Za-z0-9_./-]{1,200}\.(jpe?g|png|webp)$/i;   // a manifest entry, relative
+  var URL_RE = /^https:\/\/[A-Za-z0-9.-]+\/[A-Za-z0-9_./%-]{1,300}\.(jpe?g|png|webp)$/i;  // or absolute https
 
   // Every image on the ESM-Screen site (used if the manifest can't be fetched).
   var FALLBACK_SLIDES = [
@@ -115,7 +124,7 @@
     return (base || "") + path;
   }
   function fetchJson(url) {
-    return fetch(url + (url.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now(), { cache: "no-store" })
+    return fetch(url + (url.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now(), { cache: "no-store", credentials: "omit" })
       .then(function (r) { if (!r.ok) throw new Error(url + " " + r.status); return r.json(); });
   }
   function preload(src, cb) {
@@ -124,6 +133,27 @@
     im.onerror = function () { cb && cb(false); };
     im.src = src;
   }
+  // Only well-formed image paths get anywhere near the DOM, and absolute URLs
+  // must live on the same origin as `base` (no third-party image hosts, so a
+  // tampered list can't turn this into a tracking pixel).
+  function originOf(u) { var m = String(u || "").match(/^https?:\/\/[^/]+/); return m ? m[0] : null; }
+  function cleanList(list, base) {
+    if (!Array.isArray(list)) return [];
+    var allowed = originOf(base) || (typeof location !== "undefined" ? location.origin : null);
+    var out = [];
+    for (var i = 0; i < list.length && out.length < 2000; i++) {
+      var p = list[i];
+      if (typeof p !== "string") continue;
+      if (PATH_RE.test(p)) out.push(p);
+      else if (URL_RE.test(p) && allowed && p.indexOf(allowed + "/") === 0) out.push(p);
+    }
+    return out;
+  }
+  function cleanTokens(list) {
+    if (!Array.isArray(list)) return [];
+    return list.filter(function (t) { return typeof t === "string" && TOKEN_RE.test(t); }).slice(0, 500);
+  }
+  function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 
   /* ---------- mount ---------- */
   function mount(opts) {
@@ -133,6 +163,7 @@
     var minutes = opts.intervalMinutes != null ? Number(opts.intervalMinutes) : 3;
     var shuffle = opts.shuffle !== false;
     var fadeMs = opts.fadeMs != null ? Number(opts.fadeMs) : 1600;
+    var playlist = cleanTokens([].concat(opts.playlist || [], opts.categories || []));
 
     // container: a selector, an element, or (default) a fixed full-screen layer
     var host = opts.el;
@@ -141,7 +172,7 @@
     if (!host) { host = el("div"); created = true; document.body.appendChild(host); }
     host.classList.add("esmb");
     if (created || opts.fixed) host.classList.add("esmb--fixed");
-    host.setAttribute("data-palette", opts.palette || "orange");
+    host.setAttribute("data-palette", PALETTES[opts.palette] ? opts.palette : "orange");
     if (opts.zIndex != null) host.style.zIndex = String(opts.zIndex);
     if (opts.discSize) host.style.setProperty("--esmb-disc", String(opts.discSize));
     host.style.setProperty("--esmb-fade", (fadeMs / 1000) + "s");
@@ -155,26 +186,33 @@
       var w2 = opts.wordmark ? (String(opts.wordmark).split("|")[1] || "") : "Media";
       disc = el("div", "esmb__disc",
         '<div class="esmb__tube"><span class="esmb__ring"></span><div class="esmb__face">' + ROCKET +
-        '<div class="esmb__word"><b>' + w1 + '</b>' + (w2 ? '<b>' + w2 + '</b>' : '') + '</div></div></div>');
+        '<div class="esmb__word"></div></div></div>');
+      var word = disc.querySelector(".esmb__word");
+      var b1 = el("b"); b1.textContent = w1; word.appendChild(b1);
+      if (w2) { var b2 = el("b"); b2.textContent = w2; word.appendChild(b2); }
       if (opts.discFloat === false) disc.classList.add("esmb__disc--still");
       host.appendChild(disc);
     }
 
-    var slides = [], front = 0, current = -1, pinned = null, timer = null, poll = null, destroyed = false, lastSlot = null;
+    var all = [], slides = [], front = 0, current = -1, pinned = null, pinnedToken = null;
+    var timer = null, poll = null, follower = null, destroyed = false, lastSlot = null, started = false, pendingCfg = null;
 
     function filterSlides(list) {
-      var cats = opts.categories, pl = opts.playlist, want = {}, i;
-      if (pl && pl.length) { for (i = 0; i < pl.length; i++) want[slideToken(pl[i])] = true; }
-      if (cats && cats.length) { for (i = 0; i < cats.length; i++) want[cats[i]] = true; }
-      if (!pl && !cats) return list;
+      if (!playlist.length) return list;
+      var want = {}, i;
+      for (i = 0; i < playlist.length; i++) want[playlist[i]] = true;
       var out = list.filter(function (s) { var info = slideInfo(s); return want[info.token] || want[info.cat]; });
       return out.length ? out : list;
+    }
+    function indexOfToken(token) {
+      for (var i = 0; i < slides.length; i++) if (slideToken(slides[i]) === slideToken(String(token))) return i;
+      return -1;
     }
     function show(i, instant) {
       if (i === current || !slides.length) return;
       var src = slides[i];
       var swap = function () {
-        if (destroyed) return;
+        if (destroyed || slides[i] !== src) return;
         var back = layers[front ^ 1];
         back.style.backgroundImage = 'url("' + src + '")';
         if (instant) back.style.transition = "none";
@@ -192,59 +230,94 @@
     function tick(force) {
       if (destroyed || pinned != null) return;
       var p = pick(slides.length, minutes, null, shuffle);
+      clearTimeout(timer);
       if (!p) return;
+      timer = setTimeout(function () { tick(); }, Math.max(1000, p.nextChangeMs + 250));   // right on the boundary
       if (!force && p.slot === lastSlot) return;
       lastSlot = p.slot;
       show(p.index);
-      clearTimeout(timer);
-      timer = setTimeout(function () { tick(); }, Math.max(1000, p.nextChangeMs + 250));
+    }
+    function rebuild() {
+      slides = filterSlides(all);
+      if (!slides.length) return;
+      if (current >= 0) current = slides.indexOf(layers[front].style.backgroundImage.replace(/^url\("(.*)"\)$/, "$1"));   // keep the index honest after a playlist change
+      if (pinnedToken != null) {
+        var m = indexOfToken(pinnedToken);
+        if (m >= 0) { pinned = m; show(m); return; }
+      }
+      pinned = null; lastSlot = null;
+      if (minutes) tick(true);
+      else if (current < 0) show(0, true);
     }
     function start(list) {
-      slides = filterSlides(list.map(function (p) { return joinUrl(base, p); }));
-      if (!slides.length) return;
-      var startIdx = 0;
-      if (opts.start != null) {
-        var m = -1;
-        for (var i = 0; i < slides.length; i++) if (slideToken(slides[i]) === slideToken(String(opts.start))) { m = i; break; }
-        if (m >= 0) { startIdx = m; pinned = m; }
-      }
-      if (pinned == null) { var p = pick(slides.length, minutes, null, shuffle); if (p) { startIdx = p.index; lastSlot = p.slot; } }
-      show(startIdx, true);
-      if (pinned == null) { var q = pick(slides.length, minutes, null, shuffle); if (q) timer = setTimeout(function () { tick(); }, Math.max(1000, q.nextChangeMs + 250)); }
+      all = list.map(function (p) { return joinUrl(base, p); });
+      started = true;
+      if (opts.start != null) pinnedToken = String(opts.start);
+      if (pendingCfg) { var c = pendingCfg; pendingCfg = null; applyConfig(c); }
+      else rebuild();
       // belt and braces: a sleeping TV misses timers — re-check on wake and every 30 s
       poll = setInterval(function () { tick(); }, 30000);
       document.addEventListener("visibilitychange", onVis);
     }
     function onVis() { if (!document.hidden) tick(); }
 
-    // image list: explicit → manifest(s) → built-in fallback
-    if (opts.slides && opts.slides.length) start(opts.slides.slice());
+    /* ---------- paired mode: mirror the ESM screen's config.json ----------
+       Reads rotation, playlist, pin and palette from the house config, so the
+       ESM remote steers this screen too. Data only: validated field by field. */
+    function applyConfig(cfg) {
+      if (!cfg || typeof cfg !== "object") return;
+      if (!started) { pendingCfg = cfg; return; }
+      var changed = false;
+      if (typeof cfg.bgRotate === "string" && ROTATE_MINUTES.hasOwnProperty(cfg.bgRotate)) {
+        var m = ROTATE_MINUTES[cfg.bgRotate];
+        if (m !== minutes) { minutes = m; changed = true; }
+      } else if (cfg.dailyBg != null && !cfg.bgRotate) {          // very old configs
+        var m2 = cfg.dailyBg ? 1440 : 0;
+        if (m2 !== minutes) { minutes = m2; changed = true; }
+      }
+      var pl = cleanTokens(cfg.bgSet);
+      if (!same(pl, playlist)) { playlist = pl; changed = true; }
+      var pinTo = (!minutes && typeof cfg.bg === "string" && TOKEN_RE.test(cfg.bg)) ? cfg.bg : null;
+      if (pinTo !== pinnedToken) { pinnedToken = pinTo; changed = true; }
+      if (opts.followPalette !== false && typeof cfg.palette === "string" && PALETTES[cfg.palette]) host.setAttribute("data-palette", cfg.palette);
+      if (changed) rebuild();
+    }
+    var followUrl = null;
+    if (opts.follow === true) followUrl = base + "config.json";
+    else if (typeof opts.follow === "string") followUrl = joinUrl(base, opts.follow);
+    function fetchConfig() {
+      if (!followUrl || destroyed) return;
+      fetchJson(followUrl).then(applyConfig).catch(function () { /* keep the last known config */ });
+    }
+
+    // image list: explicit → manifest(s) → built-in fallback (all validated)
+    var explicit = cleanList(opts.slides, base);
+    if (explicit.length) start(explicit);
     else {
       var manifests = opts.manifest ? [].concat(opts.manifest) : [base + "assets/backgrounds.json"];
       (function tryNext(i) {
         if (i >= manifests.length) { start(FALLBACK_SLIDES); return; }
         fetchJson(joinUrl(base, manifests[i])).then(function (d) {
-          var list = Array.isArray(d) ? d : (d && d.images) || [];
+          var list = cleanList(Array.isArray(d) ? d : (d && d.images) || [], base);
           if (!list.length) throw new Error("empty manifest");
           start(list);
         }).catch(function () { tryNext(i + 1); });
       })(0);
     }
+    if (followUrl) { fetchConfig(); follower = setInterval(fetchConfig, Math.max(15000, Number(opts.followEveryMs) || 60000)); }
 
     var api = {
       version: VERSION,
       get slides() { return slides.slice(); },
       current: function () { return current >= 0 ? Object.assign({ src: slides[current], index: current }, slideInfo(slides[current])) : null; },
-      next: function () { pinned = (current + 1) % slides.length; show(pinned); return api; },
-      prev: function () { pinned = (current - 1 + slides.length) % slides.length; show(pinned); return api; },
-      pin: function (token) {
-        for (var i = 0; i < slides.length; i++) if (slideToken(slides[i]) === slideToken(String(token))) { pinned = i; show(i); break; }
-        return api;
-      },
-      unpin: function () { pinned = null; lastSlot = null; tick(true); return api; },
-      palette: function (p) { host.setAttribute("data-palette", p); return api; },
+      next: function () { pinned = (current + 1) % slides.length; pinnedToken = slideToken(slides[pinned]); show(pinned); return api; },
+      prev: function () { pinned = (current - 1 + slides.length) % slides.length; pinnedToken = slideToken(slides[pinned]); show(pinned); return api; },
+      pin: function (token) { var i = indexOfToken(token); if (i >= 0) { pinned = i; pinnedToken = slideToken(slides[i]); show(i); } return api; },
+      unpin: function () { pinned = null; pinnedToken = null; lastSlot = null; tick(true); return api; },
+      palette: function (p) { if (PALETTES[p]) host.setAttribute("data-palette", p); return api; },
+      interval: function (m) { minutes = Number(m) || 0; lastSlot = null; if (pinned == null) tick(true); return api; },
       destroy: function () {
-        destroyed = true; clearTimeout(timer); clearInterval(poll);
+        destroyed = true; clearTimeout(timer); clearInterval(poll); clearInterval(follower);
         document.removeEventListener("visibilitychange", onVis);
         if (created) host.parentNode && host.parentNode.removeChild(host);
         else host.innerHTML = "";
@@ -253,5 +326,5 @@
     return api;
   }
 
-  global.ESMBackdrop = { mount: mount, pick: pick, slideInfo: slideInfo, slideToken: slideToken, FALLBACK_SLIDES: FALLBACK_SLIDES, VERSION: VERSION };
+  global.ESMBackdrop = { mount: mount, pick: pick, slideInfo: slideInfo, slideToken: slideToken, FALLBACK_SLIDES: FALLBACK_SLIDES, ROTATE_MINUTES: ROTATE_MINUTES, VERSION: VERSION };
 })(window);

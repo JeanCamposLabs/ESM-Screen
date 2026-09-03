@@ -171,8 +171,14 @@ self-hosting recipe are in [`embed/README.md`](embed/README.md).
 ```html
 <link rel="stylesheet" href="https://jeancamposlabs.github.io/ESM-Screen/embed/esm-backdrop.css">
 <script src="https://jeancamposlabs.github.io/ESM-Screen/embed/esm-backdrop.js"></script>
-<script>ESMBackdrop.mount({ intervalMinutes: 3 });</script>
+<script>ESMBackdrop.mount({ follow: true });</script>   <!-- or { intervalMinutes: 3 } to run on its own -->
 ```
+
+`follow: true` keeps the other screen in step with this one: it reads this
+site's `config.json` (interval, playlist, pin, palette) and, since both compute
+the image from the clock, they switch at the same second — one remote steers
+both. The other project should self-host the two files (only JSON + images then
+cross over, validated); see the security notes in `embed/README.md`.
 
 ---
 

@@ -66,6 +66,44 @@ The container needs `position: relative|absolute|fixed`; the backdrop fills it.
 Note the disc is sized in **viewport** units by default (`78vmin`) because it is
 meant for a TV; pass `discSize` (any CSS length) for a box.
 
+## Paired mode: keep it in step with the ESM screen
+
+```html
+<script>ESMBackdrop.mount({ follow: true });</script>
+```
+
+`follow: true` makes this screen read the ESM house config
+(`https://jeancamposlabs.github.io/ESM-Screen/config.json`, once a minute) and
+mirror it: the rotation interval, the playlist, a pinned image and the palette.
+Both screens then compute the same slot from the clock and switch at the same
+second, and the ESM remote (`remote.html`) steers both. Nothing is sent back.
+
+For the two to match exactly they need the same image list (leave `manifest`
+alone in follow mode so both read the site's list — or keep a full local copy
+via `fetch-slides.sh`), the same interval (choose "Every 3 minutes" on the
+remote; both screens follow), and the same time zone (slots are local time).
+`follow: "some/other.json"` reads a different config; `followPalette: false`
+keeps your own palette; `followEveryMs` changes the polling (min 15 s).
+
+## Security notes (for the other project)
+
+- **Self-host the two files.** Copy `esm-backdrop.js` and `esm-backdrop.css`
+  into your project instead of hot-linking them. Hot-linking would let anyone
+  who controls the ESM-Screen repo run code inside your page; a local copy
+  can't change under you.
+- With self-hosted code, the only things that cross from the ESM site are
+  **data**: two JSON files (image list, config) and JPEGs. The module validates
+  every field it uses (whitelisted keys, tokens `[A-Za-z0-9_-]`, image paths
+  that must end in `.jpg/.png/.webp` and stay on the `base` origin, palette from
+  a fixed set) and never
+  evaluates anything it fetched. Requests are sent without credentials.
+- Worst case if the ESM site were ever hijacked: your screen shows the wrong
+  pictures. No script, no cookies, no tokens, no inbound connection, nothing
+  written anywhere. Drop `follow` and `base` (use the local copy) and even
+  that goes away.
+- The CSS pulls the *Fredoka* font from Google Fonts via `@import`; delete
+  that line to have zero third-party requests.
+
 ## Options
 
 | option | default | what it does |
@@ -75,6 +113,9 @@ meant for a TV; pass `discSize` (any CSS length) for a box.
 | `manifest` | `assets/backgrounds.json` | image list (string or array of candidates, relative to `base` or absolute) |
 | `slides` | — | explicit array of image URLs; skips the manifest |
 | `intervalMinutes` | `3` | minutes per image (`0.5`, `3`, `60`, `1440`…) |
+| `follow` | — | `true` = mirror the ESM `config.json` (interval, playlist, pin, palette); or a URL/path to another config |
+| `followPalette` | `true` | in follow mode, also take the palette |
+| `followEveryMs` | `60000` | how often the followed config is re-read (min 15 s) |
 | `categories` | *(all)* | e.g. `["space","earth","nature","abstract"]` — `art` is the flat illustrated set |
 | `playlist` | — | explicit tokens (`"41-space-cosmic-cliffs"`) and/or category ids |
 | `shuffle` | `true` | seeded shuffle per cycle (every image once per cycle); `false` = folder order |
@@ -90,7 +131,7 @@ meant for a TV; pass `discSize` (any CSS length) for a box.
 | `onChange(info)` | — | called after every change: `{ src, index, total, token, cat, name }` |
 
 `mount()` returns a controller: `next()`, `prev()` (both pin), `pin(token)`,
-`unpin()`, `current()`, `palette(id)`, `slides`, `destroy()`.
+`unpin()`, `interval(minutes)`, `current()`, `palette(id)`, `slides`, `destroy()`.
 
 ## How the rotation picks an image
 
