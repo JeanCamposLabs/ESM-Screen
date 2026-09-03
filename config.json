@@ -2,14 +2,24 @@
   "style": "premium",
   "palette": "orange",
   "bg": "07-layers",
+  "bgRotate": "hourly",
+  "bgSet": [
+    "space",
+    "earth",
+    "nature",
+    "abstract"
+  ],
   "logo": true,
   "rocket": true,
   "clock": true,
   "particles": true,
   "weather": true,
   "speed": 1.5,
-  "dailyBg": true,
   "music": true,
   "musicStation": "lofigirl",
-  "musicVolume": 0.45
+  "musicVolume": 0.45,
+  "schedule": true,
+  "onTime": "07:00",
+  "offTime": "23:00",
+  "nightClock": true
 }

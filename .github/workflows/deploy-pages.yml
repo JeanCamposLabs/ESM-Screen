@@ -25,26 +25,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Thumbnail tooling
+        run: python3 -m pip install --quiet pillow || echo "Pillow unavailable — thumbnails for new slides will be skipped"
+
       - name: Assemble site (+ stamp version for auto-refresh)
         run: |
           mkdir -p _site/assets
-          cp index.html styles.css app.js config.json _site/
+          cp index.html styles.css app.js shared.js remote.html remote.css remote.js config.json _site/
           # cache-bust JS/CSS per deploy so TV browsers can't serve a stale copy
-          sed -i "s#app\.js\"#app.js?v=${GITHUB_SHA::7}\"#; s#styles\.css\"#styles.css?v=${GITHUB_SHA::7}\"#" _site/index.html
+          sed -i "s#app\.js\"#app.js?v=${GITHUB_SHA::7}\"#; s#shared\.js\"#shared.js?v=${GITHUB_SHA::7}\"#; s#styles\.css\"#styles.css?v=${GITHUB_SHA::7}\"#" _site/index.html
+          sed -i "s#remote\.js\"#remote.js?v=${GITHUB_SHA::7}\"#; s#shared\.js\"#shared.js?v=${GITHUB_SHA::7}\"#; s#remote\.css\"#remote.css?v=${GITHUB_SHA::7}\"#" _site/remote.html
           cp -r assets/. _site/assets/ 2>/dev/null || true
           python3 - <<'PY'
           import os, json
-          d = '_site/assets/slides'
-          imgs = [f"assets/slides/{f}" for f in sorted(os.listdir(d))] if os.path.isdir(d) else []
-          imgs = [p for p in imgs if p.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]
-          json.dump(imgs, open('_site/assets/backgrounds.json', 'w'))
-          print('backgrounds.json ->', imgs)
+          d = '_site/assets/slides'; t = '_site/assets/thumbs'
+          files = sorted(f for f in os.listdir(d)) if os.path.isdir(d) else []
+          files = [f for f in files if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]
+          json.dump([f"assets/slides/{f}" for f in files], open('_site/assets/backgrounds.json', 'w'))
+          print('backgrounds.json ->', len(files), 'slides')
+          # a 480x270 thumbnail for every slide that lacks one (the gallery in the panel/remote)
+          try:
+              from PIL import Image
+              os.makedirs(t, exist_ok=True)
+              made = 0
+              for f in files:
+                  out = os.path.join(t, os.path.splitext(f)[0] + '.jpg')
+                  if os.path.exists(out): continue
+                  im = Image.open(os.path.join(d, f)).convert('RGB').resize((480, 270), Image.LANCZOS)
+                  im.save(out, 'JPEG', quality=78, optimize=True); made += 1
+              print('thumbnails generated:', made)
+          except Exception as e:
+              print('thumbnail step skipped:', e)
           PY
           cat > _site/version.json <<EOF
           {
-            "version": "code-$(cat app.js styles.css index.html | sha1sum | cut -c1-10)",
+            "version": "code-$(cat app.js shared.js styles.css index.html | sha1sum | cut -c1-10)",
             "builtAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "note": "version = hash of app.js+styles.css+index.html, so screens reload only on CODE changes, not config/panel pushes (those apply live via the 30s config poll)."
+            "note": "version = hash of app.js+shared.js+styles.css+index.html, so screens reload only on CODE changes, not config/panel pushes (those apply live via the 30s config poll)."
           }
           EOF
 
