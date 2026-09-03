@@ -12,21 +12,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff7a18'/%3E%3Cpath d='M32 11c7 7 10 16 10 25 0 6-3 11-10 16-7-5-10-10-10-16 0-9 3-18 10-25z' fill='%23ffffff'/%3E%3Ccircle cx='32' cy='30' r='5' fill='%23ff7a18'/%3E%3C/svg%3E" />
 
-  <!-- Apply the saved theme before first paint → no flash of the default palette. -->
-  <script>
-    (function () {
-      try {
-        if (/[?&]preview/.test(location.search)) return;   // a preview never reads this device's settings
-        var s = JSON.parse(localStorage.getItem("esm-screen.v1") || "{}");
-        var el = document.documentElement;
-        if (s.style)   el.dataset.style = s.style;
-        if (s.palette) el.dataset.palette = s.palette;
-        if (s.nightClock != null) el.dataset.nightclock = s.nightClock ? "1" : "0";
-        if (s.speed)   el.style.setProperty("--speed", String(s.speed));
-      } catch (e) {}
-    })();
-  </script>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -119,8 +104,7 @@
       <div class="weather__fc" id="wxForecast"></div>
     </div>
 
-    <!-- Ambient music (internet radio, audio only) -->
-    <audio id="bgAudio" preload="none"></audio>
+    <!-- HTML audio is intentionally absent: music output is the Google Cast group only. -->
 
     <!-- Full-screen light wave (sweeps across; logo turns it into the rainbow) -->
     <div class="wave" id="wave" aria-hidden="true"></div>
@@ -138,14 +122,14 @@
   <button class="hotspot" id="hotspot" aria-label="Open settings"></button>
 
   <!-- ===================== CONTROL PANEL (this TV) =====================
-       Quick settings for the TV in front of you. To steer every screen with a
-       live preview, open remote.html on a computer or phone (All screens tab). -->
+       Local visual settings for the TV in front of you. Shared background and
+       schedule intent is managed only in authenticated Scale OS. -->
   <div class="panel-scrim" id="panelScrim" hidden></div>
   <aside class="panel" id="panel" hidden aria-label="Display settings">
     <div class="panel__head">
       <div>
         <h1 class="panel__title">Screen settings</h1>
-        <p class="panel__sub">Applies to <b>this TV</b> straight away. Every screen at once: <b>All screens</b> tab.</p>
+        <p class="panel__sub">Local visual settings apply to this TV. Scale OS owns shared background and schedule intent.</p>
       </div>
       <button class="panel__close" id="panelClose" aria-label="Close">&times;</button>
     </div>
@@ -178,62 +162,48 @@
 
     <section class="pane" data-pane="bg" hidden>
       <label class="field"><span>Change the background</span>
-        <select id="inBgRotate" class="select"></select>
+        <select id="inBgRotate" class="select" disabled></select>
       </label>
       <label class="field"><span>Movement</span>
         <select id="inBgMotion" class="select"></select>
       </label>
       <p class="bg-now" id="bgNow"></p>
-      <button class="btn btn--ghost btn--wide" id="btnNextBg">Next background (pins it) ⏭</button>
+      <button class="btn btn--ghost btn--wide" id="btnNextBg" disabled>Managed by Scale OS</button>
       <div class="bg-gallery" id="bgGrid"></div>
-      <p class="panel__hint">Each image drifts slowly in the way that suits it — horizons slide sideways, a nebula is pushed into. <b>Still</b> stops it completely. Every screen shows the same image and switches at the same moment. Picking one here <b>pins this TV</b> to it — choose a rotation above to resume. Which images take part (the playlist) is chosen on the remote.</p>
+      <p class="panel__hint">Scale OS selects the shared background. Each image keeps the slow tailored motion from its profile; if the feed is unavailable, every TV uses the same bundled fallback clock.</p>
     </section>
 
     <section class="pane" data-pane="music" hidden>
       <div class="toggle-row">
-        <label class="toggle"><input type="checkbox" id="tgMusic"><span>Play music</span></label>
-        <label class="toggle"><input type="checkbox" id="tgMusicBar" checked><span>On-screen badge</span></label>
+        <label class="toggle"><input type="checkbox" id="tgMusic" disabled><span>Play music</span></label>
+        <label class="toggle"><input type="checkbox" id="tgMusicBar" checked disabled><span>On-screen badge</span></label>
       </div>
       <label class="field"><span>Volume</span>
-        <input type="range" id="inMusicVol" min="0" max="1" step="0.05" value="0.35" class="range" />
-      </label>
-      <label class="field"><span>Play on</span>
-        <select id="inMusicOutput" class="select"></select>
+        <input type="range" id="inMusicVol" min="0" max="1" step="0.05" value="0.45" class="range" disabled />
       </label>
       <div class="st-list" id="stationGrid"></div>
-      <button class="btn btn--ghost btn--wide btn--gap" id="btnNextStation">Next station ⏭</button>
-      <p class="panel__hint">Endless, commercial-free radio (SomaFM is listener-supported — consider a small donation if the office enjoys it). Browsers only allow sound after one tap, so if the badge says <b>Tap to start</b>, give the screen one tap. <kbd>M</kbd> = next station.</p>
+      <button class="btn btn--ghost btn--wide btn--gap" id="btnNextStation" disabled>Managed by Cast group</button>
+      <p class="panel__hint">Music intent is Lofi Girl at volume 0.45. This TV page never plays audio; the Google Cast group is the only output.</p>
     </section>
 
     <section class="pane" data-pane="time" hidden>
-      <label class="toggle toggle--wide"><input type="checkbox" id="tgSchedule" checked><span>Auto on/off</span></label>
+      <label class="toggle toggle--wide"><input type="checkbox" id="tgSchedule" checked disabled><span>Auto on/off</span></label>
       <div class="time-row">
-        <label class="field field--time"><span>On at</span><input type="time" id="inOn" value="07:00" /></label>
-        <label class="field field--time"><span>Off at</span><input type="time" id="inOff" value="23:00" /></label>
+        <label class="field field--time"><span>On at</span><input type="time" id="inOn" value="07:00" disabled /></label>
+        <label class="field field--time"><span>Off at</span><input type="time" id="inOff" value="23:00" disabled /></label>
       </div>
       <label class="toggle toggle--wide"><input type="checkbox" id="tgNightClock" checked><span>Dim clock while idle</span></label>
-      <p class="panel__hint">Outside the on/off window the screen goes dark (music pauses). Times are the TV's local time.</p>
+      <p class="panel__hint">The screen is active 07:00–23:00 in Europe/Amsterdam, including DST.</p>
     </section>
 
     <section class="pane" data-pane="sync" hidden>
       <h2 class="panel__label">Every screen</h2>
-      <button class="btn btn--primary btn--wide" id="btnApplyAll">Apply this look to all screens</button>
+      <button class="btn btn--primary btn--wide" id="btnApplyAll">Open authenticated Scale OS</button>
       <p class="push-status" id="pushStatus"></p>
-      <div class="field field--token" id="ghTokenBox" hidden>
-        <span>GitHub token (saved only on this device)</span>
-        <input type="password" id="inGhToken" placeholder="github_pat_…" autocomplete="off" />
-      </div>
-      <p class="panel__hint">Pushes the current look to every screen (they follow within ~2 minutes). First time only, it asks for a GitHub
-        <b>fine-grained token</b> (github.com → Settings → Developer settings → Fine-grained tokens):
-        <b>Repository access</b> → Only select repositories → <b>ESM-Screen</b>, and
-        <b>Permissions → Repository permissions → Contents → Read and write</b>.</p>
-      <div class="btn-row">
-        <button class="btn btn--ghost" id="btnSync">Copy config</button>
-        <button class="btn btn--ghost" id="btnForgetToken">Forget token</button>
-      </div>
+      <p class="panel__hint">Shared display choices are managed in authenticated Scale OS. This screen contains no administrator credential or write path.</p>
 
-      <h2 class="panel__label">Remote control</h2>
-      <p class="panel__hint">The comfortable way: open this on your computer or phone. It shows a live preview, the whole gallery with a playlist, and pushes to every screen in one click.</p>
+      <h2 class="panel__label">Former remote</h2>
+      <p class="panel__hint">The old public administrator is retired. This link only explains where managers control the screens now.</p>
       <a class="remote-link" id="remoteLink" href="remote.html" target="_blank" rel="noopener">remote.html</a>
 
       <h2 class="panel__label">This TV</h2>
@@ -241,13 +211,14 @@
         <button class="btn btn--ghost" id="btnFull">Fullscreen</button>
         <button class="btn btn--ghost" id="btnReset">Reset</button>
       </div>
-      <p class="panel__hint">Keys: <kbd>C</kbd> settings · <kbd>F</kbd> fullscreen · <kbd>N</kbd> next background · <kbd>M</kbd> next station · <kbd>Esc</kbd> close. Build <span id="panelVersion">—</span>.</p>
+      <p class="panel__hint">Keys: <kbd>C</kbd> settings · <kbd>F</kbd> fullscreen · <kbd>N</kbd> next bundled background (only while offline) · <kbd>Esc</kbd> close. Build <span id="panelVersion">—</span>.</p>
     </section>
 
     <p class="panel__note" id="panelStatus"></p>
   </aside>
 
   <script src="shared.js"></script>
+  <script src="wall-background.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
