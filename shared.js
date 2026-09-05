@@ -97,11 +97,12 @@
     { id: "lively", name: "Lively",       k: 1.5 },
   ];
   // The image layer is drawn this much bigger than the screen, so it can drift
-  // without ever showing an edge: 1.09 → 4.5% of overhang on each side, and the
-  // pan is capped below that (2.0% x 1.5 = 3.0% at the liveliest setting).
-  const MOTION_BASE_SCALE = 1.09;
-  const MOTION_MARGIN = 4.0;                                   // % — hard cap on the pan
-  const MOTION_FALLBACK = { x: 1.1, y: 1.05, z: 0.012, d: 115 }; // used if motion.json is missing
+  // without ever showing an edge: 1.14 → 7% of overhang on each side, and the
+  // pan is capped below that (4.5% x 1.5 = 6.75% at the liveliest setting).
+  // Tuned up from 1.09 / 4.0 when the drift proved invisible on the office TVs.
+  const MOTION_BASE_SCALE = 1.14;
+  const MOTION_MARGIN = 7.0;                                   // % — hard cap on the pan
+  const MOTION_FALLBACK = { x: 2.6, y: 2.4, z: 0.03, d: 66 };   // used if motion.json is missing
 
   // Gallery categories, read from the file name (see slideInfo).
   const CATEGORIES = [

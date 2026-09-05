@@ -39,8 +39,16 @@ a revision until its UTC activation instant, then derives the same 180-second
 slot and image from that instant plus the revision offset. A previous revision
 stays active until the exact boundary. Local panel and URL background actions do
 not override the feed or the deterministic fallback. Invalid/unavailable data, an
-explicit `bundled-fallback`, or a remote image error selects bundled ESM slides
-with the same deterministic clock rotation.
+explicit `bundled-fallback`, or a remote image error selects the bundled ESM slides.
+The bundled rotation has its own pace and order: one slide every **5 minutes**
+(`BUNDLED_SLOT_MS`, separate from the feed's validated 180-second `slotMs`), walking
+the 235 slides in an order reshuffled once per UTC day (the change lands at
+01:00/02:00 Amsterdam, while the screens are off). Every TV computes the same
+order from the same clock, so they still switch together, and with 235 slides a
+16-hour screen day (192 slots) never shows the same image twice. The catalogue is
+real photography only: Unsplash landscapes, NASA deep space and Earth from orbit,
+each live-tested, licence-checked (no ESO/CC-BY material) and credited in
+`assets/README.md`.
 
 Software active time is 07:00 inclusive to 23:00 exclusive, Monday–Saturday,
 at Boschcour 20, 6221 JR Maastricht. Sundays and official Dutch public holidays
@@ -95,13 +103,15 @@ installation requires explicit authorization.
 
 ## Movement and content
 
-Each image keeps the smooth motion work from PR #37. It drifts slowly in the
-way that suits *that picture*:
+Each image drifts in the way that suits *that picture*:
 `tools/make_motion.py` looks at every slide and writes `assets/motion.json` —
 a strong horizon (a landscape, Earth's limb) slides sideways, a bright subject
 in the middle (a galaxy, a nebula) is pushed into, an all-over texture drifts
-diagonally. Amplitudes are 1–3.5% of the frame over 70–100 s, the same apparent
-speed for every image, easing at both ends. `bgMotion` sets how much:
+diagonally. Amplitudes are 2–9% of the frame peak-to-peak over 55–75 s at a
+constant apparent speed of ~0.13% of the viewport per second (about 5 px/s on a
+4K panel), easing at both ends. That is 2.4× the original tuning, which nobody
+in the office could see; the image layer is drawn at scale 1.14 (7% overhang) so
+the larger pan never shows an edge. `bgMotion` sets how much:
 `off` (dead still) · `subtle` · `gentle` (default) · `lively`;
 `prefers-reduced-motion` disables it, and the night screen pauses it.
 Add a slide and the deploy analyses it automatically.

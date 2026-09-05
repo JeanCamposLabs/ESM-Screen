@@ -39,14 +39,16 @@ Image.MAX_IMAGE_PIXELS = None
 SLIDES = "assets/slides"
 OUT = "assets/motion.json"
 
-# Ceilings at intensity 1, in % of the viewport. The layer sits at scale 1.09,
-# i.e. 4.5% of overhang on each side; at the liveliest setting the pan reaches
-# 2.4 x 1.5 = 3.6%, so an edge can never come into view.
-MAX_PAN = 2.4        # half-amplitude of the drift (peak-to-peak = 2x this)
-MAX_ZOOM = 0.045     # added to the base scale over the animation
-SPEED = 0.055        # % of the viewport per second — the constant that sets the pace
-                     # (~2 px/s on a 4K panel: alive at 85", invisible up close)
-DUR_MIN, DUR_MAX = 55.0, 150.0
+# Ceilings at intensity 1, in % of the viewport. The layer sits at scale 1.14,
+# i.e. 7% of overhang on each side; at the liveliest setting the pan reaches
+# 4.5 x 1.5 = 6.75%, so an edge can never come into view.
+# (Was 2.4 / 0.045 / 0.055: at ~2 px/s on a 4K panel nobody in the office ever
+# noticed the background moving at all. This is ~2.4x: a slow, visible sway.)
+MAX_PAN = 4.5        # half-amplitude of the drift (peak-to-peak = 2x this)
+MAX_ZOOM = 0.08      # added to the base scale over the animation
+SPEED = 0.13         # % of the viewport per second — the constant that sets the pace
+                     # (~5 px/s on a 4K panel, ~2.5 px/s at 1080p: seen, not felt)
+DUR_MIN, DUR_MAX = 40.0, 150.0
 
 
 def analyse(path):

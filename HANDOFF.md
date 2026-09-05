@@ -19,7 +19,10 @@ the prior active revision is retained until that boundary. Selection then uses
 the elapsed 180-second slot plus revision offset. Exact-boundary timers are
 backed by a 30-second safety/feed poll. `bundled-fallback`,
 invalid/unavailable feed, and image failure use the bundled slides
-deterministically.
+deterministically: one every 5 minutes (`BUNDLED_SLOT_MS`, distinct from the
+feed's 180-second `slotMs`), in an order reshuffled once per UTC day, identical
+on every TV. 235 slides cover a 16-hour day without a repeat. Background motion
+is 2.4× the original tuning (`tools/make_motion.py`, layer scale 1.14).
 
 At Boschcour 20, 6221 JR Maastricht, active time is 07:00 inclusive to 23:00
 exclusive Monday–Saturday. Sundays and official Dutch public holidays are
@@ -79,7 +82,8 @@ long label remain inside the right TV-safe margin. With the selected feed active
 beside another office display, confirm both change to the same image at the same
 180-second UTC boundary; then
 disconnect the feed and confirm both select the same bundled fallback on the next
-boundary. Check active behavior on a normal weekday and Saturday, inactivity on
+5-minute boundary, that the order differs from the previous day, and that the
+background visibly drifts. Check active behavior on a normal weekday and Saturday, inactivity on
 Sunday, an official Dutch public holiday, and a holiday supplied by Wall Controls,
 then check just before/after 07:00 and 23:00
 Europe/Amsterdam under both CET and CEST. Finally, verify a non-Philips TV starts Lofi

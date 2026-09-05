@@ -684,7 +684,7 @@
     wallClient.clear();
     wallFeed = null;
     slides = bundledSlides.length ? bundledSlides.slice() : FALLBACK_SLIDES.slice();
-    state.bgRotate = "3m";
+    state.bgRotate = "5m";   // mirrors ESMWallBackground.BUNDLED_SLOT_MS for the panel's "next change" text
     bgPinned = false; lastSlot = null;
     rotationTick(true);
   }
