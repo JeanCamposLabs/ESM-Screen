@@ -731,11 +731,16 @@
       $("wxTemp").textContent = Math.round(d.current.temperature_2m) + "°";
       $("wxDesc").textContent = `${desc} · ${Math.round(day.temperature_2m_max[0])}° / ${Math.round(day.temperature_2m_min[0])}°`;
       // small forecast: tomorrow + day after
-      $("wxForecast").innerHTML = [1, 2].map((i) => {
+      const fc = $("wxForecast"); fc.textContent = "";
+      for (const i of [1, 2]) {                          // tomorrow + day after, as DOM nodes: no HTML from a third party
         const [ic] = wxInfo(day.weather_code[i]);
         const dn = new Date(day.time[i]).toLocaleDateString(undefined, { weekday: "short" });
-        return `<span class="wx-day"><b>${dn}</b> ${ic} ${Math.round(day.temperature_2m_max[i])}°<i>/${Math.round(day.temperature_2m_min[i])}°</i></span>`;
-      }).join("");
+        const span = document.createElement("span"); span.className = "wx-day";
+        const b = document.createElement("b"); b.textContent = dn; span.appendChild(b);
+        span.appendChild(document.createTextNode(` ${ic} ${Math.round(day.temperature_2m_max[i])}°`));
+        const lo = document.createElement("i"); lo.textContent = `/${Math.round(day.temperature_2m_min[i])}°`; span.appendChild(lo);
+        fc.appendChild(span);
+      }
     } catch {}
   }
 
@@ -974,11 +979,12 @@
         slides: slides.slice(),
         current: slides[slideIdx] || null,
         config: configForExport(),
-      }, "*");
+      }, location.origin);   // never to a foreign parent
     } catch {}
   }
   if (PREVIEW) {
     addEventListener("message", (e) => {
+      if (e.origin !== location.origin) return;   // only this site may drive the preview
       const d = e.data || {};
       if (d.type === "esm:bg" && d.bg && !wallFeed) { const i = ESM.findSlide(slides, d.bg); if (i >= 0) showSlide(i); notifyParent(); }
       else if (d.type === "esm:wave") playWave();

@@ -32,6 +32,41 @@ Remote image URLs are constructed—not supplied by data—as the fixed-origin
 `/wall-background/display-image?id=&v=` route. The screen does not call roster,
 account, session, or any other Scale OS API.
 
+### Security audit (September 2026)
+
+What this page can do to Scale OS: read one fixed HTTPS URL
+(`/wall-background/display.json`) and the image route it names, both with
+`credentials: "omit"`, `redirect: "error"` and no referrer. Nothing else. There
+is no token, cookie, form, POST, WebSocket or storage anywhere in the page, so
+there is nothing to steal and no write path to abuse. What Scale OS can do to
+this page: choose which of its own images show and set the on/off schedule,
+inside a strictly validated 32 KiB envelope (exact keys, 32-hex opaque ids,
+bounded lists, fixed timezone) with image URLs constructed by the page, never
+supplied. A compromised feed cannot inject a URL, a script or markup.
+
+Defence in depth added by the audit:
+
+- A Content-Security-Policy `<meta>` (Pages cannot set headers):
+  `default-src 'none'`, `script-src 'self'` (no inline script exists, so nothing
+  injected could run), and allowlists naming every host the page may connect
+  to, load images from or play audio from. A contract test keeps the station
+  list in `shared.js` and the CSP in agreement.
+- `<meta name="referrer" content="no-referrer">`; the feed fetch also refuses
+  redirects.
+- The `?preview` message channel accepts and posts to `location.origin` only.
+- All dynamic HTML is built from static catalogue strings or DOM nodes; the
+  weather forecast no longer goes through `innerHTML`.
+- The audio element no longer requests CORS mode, so a station that omits
+  `Access-Control-Allow-Origin` still plays.
+- The keepalive workflow runs with `permissions: {}`; the two deploy workflows
+  already held the minimum.
+- The relay's `/diag` probe (which ran yt-dlp against a caller-supplied URL from
+  Render's network) is now disabled unless `DIAG_TOKEN` is set and supplied.
+
+Residual, accepted: Google Fonts CSS is a third-party stylesheet (style-only,
+cannot execute script under the CSP); GitHub Actions are pinned to major tags,
+not commit SHAs. The audio streams are third-party hosts named in the CSP.
+
 ## Display behavior
 
 A valid `selected-library` feed owns background selection. Every display stages

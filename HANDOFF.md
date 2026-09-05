@@ -43,6 +43,18 @@ keepalive cron and the relay's self-ping cover Mon-Sat 05:00-21:59 UTC to match
 the 07:00-23:00 Amsterdam screen window. The Google Cast group remains a
 separate output.
 
+## Security audit (September 2026)
+The page's only contact with Scale OS is a credential-free GET of one fixed
+feed URL and its image route (`redirect: "error"`, no referrer), validated into
+a strict 32 KiB envelope; there is no write path and nothing to steal. Added: a
+CSP `<meta>` (`default-src 'none'`, `script-src 'self'`, per-host allowlists for
+connect/img/media, contract-tested against the station list), no-referrer,
+same-origin-only preview messaging, DOM-built weather forecast, audio without
+CORS mode, `permissions: {}` on the keepalive workflow, and the relay's `/diag`
+gated behind `DIAG_TOKEN` (needs a Render redeploy; unset = disabled). The clock
+is on by default again (`CONFIG_DEFAULTS.clock`). Residual: Google Fonts CSS,
+Actions pinned to tags not SHAs.
+
 ## Preserved motion work
 
 PR #37's smooth per-image motion remains intact. `tools/make_motion.py`

@@ -44,6 +44,7 @@ server with **plain yt-dlp** — no cookies, tokens, JS runtime, or secrets. See
 | `MAX_TRACKS`      | `300`                            | Cap how many tracks are listed          |
 | `RELIST_MS`       | `21600000` (6h)                  | How often the track list is refreshed   |
 | `IDLE_TIMEOUT_MS` | `60000`                          | Stop the upstream this long after the last TV disconnects |
+| `DIAG_TOKEN`      | *(unset)*                        | Enables the `/diag` probe (`/diag?token=…&url=…`). Unset = `/diag` answers 404. It runs yt-dlp against the given URL, so never expose it without a token |
 | `MAX_LISTENERS`   | `50`                             | Reject new connections past this        |
 | `MAX_CLIENT_BACKLOG` | `4194304`                     | Drop a client buffering more than this many bytes |
 

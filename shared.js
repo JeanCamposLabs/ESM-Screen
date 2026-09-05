@@ -124,7 +124,7 @@
   const CONFIG_DEFAULTS = {
     style: "premium", palette: "orange",
     bg: "10-purple", bgRotate: "daily", bgSet: [], bgMotion: "gentle",
-    logo: true, rocket: true, clock: false, particles: true, weather: true, speed: 1,
+    logo: true, rocket: true, clock: true, particles: true, weather: true, speed: 1,   // clock back on every TV
     music: false, musicStation: "lofigirl", musicVolume: 0.35,
     schedule: true, onTime: "07:00", offTime: "23:00", nightClock: true,
   };

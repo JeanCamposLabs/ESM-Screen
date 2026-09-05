@@ -28,6 +28,12 @@ const YTDLP = process.env.YTDLP_PATH || 'yt-dlp';
 const PORT = parseInt(process.env.PORT, 10) || 10000;
 // A SoundCloud user/playlist/track URL. The profile resolves to "Lofi Girl (All)".
 const SOURCE_URL = process.env.STREAM_URL || 'https://soundcloud.com/lofi_girl';
+const DIAG_TOKEN = process.env.DIAG_TOKEN || '';      // unset (the default) disables /diag entirely
+const { timingSafeEqual } = require('crypto');
+function safeEqual(a, b) {
+  const x = Buffer.from(String(a)), y = Buffer.from(String(b));
+  return x.length === y.length && timingSafeEqual(x, y);
+}
 const BITRATE = process.env.BITRATE || '128k';
 const SHUFFLE = process.env.SHUFFLE !== '0';                                  // shuffle the catalogue by default
 const MAX_TRACKS = parseInt(process.env.MAX_TRACKS, 10) || 300;              // cap how many tracks we list
@@ -232,8 +238,15 @@ const server = http.createServer(async (req, res) => {
 
   // Debug probe: /diag resolves the first track of the source (verbose),
   // /diag?url=X resolves X, /diag?list lists the source's track permalinks.
+  // Operator-only: it runs yt-dlp against a caller-supplied URL from Render's
+  // network and holds a process for up to two minutes, so it is off unless
+  // DIAG_TOKEN is set in the environment and the request carries ?token=<it>.
   if (route === '/diag') {
     const q = new URL(req.url, 'http://x').searchParams;
+    if (!DIAG_TOKEN || !safeEqual(q.get('token') || '', DIAG_TOKEN)) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      return res.end('not found');
+    }
     const target = q.get('url') || SOURCE_URL;
     const args = q.has('list')
       ? ['--flat-playlist', '--print', '%(url)s', '--playlist-end', '25', target]
