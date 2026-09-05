@@ -27,7 +27,10 @@
   // plus two listener-supported classical stations with explicit stream URLs.
   const STATIONS = [
     { id: "lofigirl",      name: "Lofi Girl",              genre: "Lo-fi hip-hop · live",
-      urls: ["https://esm-lofi-relay.onrender.com/lofi.mp3"] },
+      urls: ["https://esm-lofi-relay.onrender.com/lofi.mp3"],
+      // Pinged by the TV every few minutes while playing: a free Render service
+      // idles on "no inbound requests", and an open stream does not count.
+      keepalive: "https://esm-lofi-relay.onrender.com/healthz" },
     { id: "groovesalad",   name: "Groove Salad",           genre: "Chill · downtempo" },
     { id: "fluid",         name: "Fluid",                  genre: "Lo-fi hip-hop · chillhop" },
     { id: "gsclassic",     name: "Groove Salad Classic",   genre: "Classic chill · ambient" },

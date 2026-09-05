@@ -742,61 +742,145 @@
   function configForExport() { return ESM.pickConfig(state); }
 
   /* ---------- Music ----------
-     Nothing ever autoplays: browsers refuse it, and an office screen that
-     starts talking on its own is worse than one that waits. Sound begins on an
-     explicit click — the logo starts it, the corner badge plays/pauses — and
-     that same click is what unlocks audio in the TV browser. The Google Cast
-     group stays a separate output; this is the panel in front of you.
+     The stream is a live relay on a free Render plan, so it *will* drop: Render
+     spins the service down, a track fails to resolve, the office network blinks.
+     Everything here is built around that:
 
-     `wantMusic` is the intent ("someone asked for sound"); it survives the
-     night pause, so the stream returns by itself in the morning without a
-     second visit to the TV. */
+     - Autoplay is attempted on load. Most TVs allow it and the music simply
+       starts. The Philips refuses any sound before a user gesture, so there the
+       badge shows ▶ and the first click anywhere (the logo included) starts it.
+     - A watchdog checks that `currentTime` is actually advancing. A stream that
+       stalls for STALL_MS, errors, or pauses on its own is reconnected on a
+       fresh connection with exponential backoff (3 s … 60 s), forever.
+     - Every third failure hands over to a backup station of the same flavour so
+       the room is never silent. While on the backup the intended station is
+       probed (the probe itself wakes a sleeping Render); when it answers with
+       audio again it comes back by itself.
+     - While the relay plays, a small ping every five minutes gives Render fresh
+       inbound traffic, because an open stream alone does not stop its idle timer.
+
+     `wantMusic` is the intent ("sound should be on"); it survives the night pause,
+     so the stream returns by itself in the morning. */
   const audio = $("bgAudio");
-  let manualPaused = false, wantMusic = false, streamUrls = [], streamIdx = 0;
+  const STALL_MS = 15000, WATCH_MS = 5000, SETTLE_MS = 10000, KEEPALIVE_MS = 5 * 60000, PROBE_MS = 60000;
+  let manualPaused = false, wantMusic = false, needsGesture = false;
+  let streamUrls = [], streamIdx = 0, onBackup = false, fails = 0, reconnectTimer = null;
+  let lastTime = -1, lastProgressAt = 0, progressSince = 0;
+  let probeBusy = false, probeEvery = PROBE_MS, nextProbeAt = 0, lastKeepalive = 0;
 
-  function stationName() { return ESM.findStation(state.musicStation).name; }
-  function loadStation() { streamUrls = ESM.stationUrls(ESM.findStation(state.musicStation)); streamIdx = 0; }
+  const station = () => ESM.findStation(state.musicStation);
+  // The closest thing to the intended station on different infrastructure:
+  // SomaFM's lo-fi channel, unless that is already the pick.
+  const backupStation = () => ESM.findStation(state.musicStation === "fluid" ? "groovesalad" : "fluid");
+  function loadStation() { streamUrls = ESM.stationUrls(onBackup ? backupStation() : station()); streamIdx = 0; }
+  const silentNow = () => screen.classList.contains("is-night") || manualPaused || !state.music || !wantMusic;
+  function clearReconnect() { if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; } }
 
-  // Point the element at the current candidate URL and ask it to play. A live
-  // stream has no meaningful position, so re-assigning `src` is a clean restart.
+  // Point the element at the current candidate URL and play. A live stream has no
+  // position worth keeping, so every (re)start is a fresh, cache-busted `src`: no
+  // proxy or half-dead socket gets reused.
   function attempt() {
     if (!audio || !streamUrls.length) return;
-    const url = streamUrls[Math.min(streamIdx, streamUrls.length - 1)];
-    if (audio.src !== url) audio.src = url;
+    const base = streamUrls[Math.min(streamIdx, streamUrls.length - 1)];
+    audio.src = base + (base.indexOf("?") < 0 ? "?" : "&") + "r=" + Date.now();
     audio.volume = state.musicVolume;
+    lastTime = -1; lastProgressAt = Date.now(); progressSince = 0;
     const p = audio.play();
-    if (p && p.catch) p.catch(renderMusicbar);   // blocked or offline: the badge shows ▶
+    if (p && p.catch) p.catch((e) => {
+      if (e && e.name === "NotAllowedError") needsGesture = true;   // Philips: wait for a click
+      renderMusicbar();
+    });
   }
 
-  // One dead mirror shouldn't kill the music: walk the station's URL list.
-  function failover() {
-    if (!wantMusic) return;
-    if (streamIdx < streamUrls.length - 1) { streamIdx++; attempt(); }
-    else renderMusicbar();
+  // Reconnect with backoff. Network errors are instant, so a dead relay is on the
+  // backup within ~10 s; a stall costs STALL_MS per attempt.
+  function reconnect() {
+    if (reconnectTimer || silentNow() || needsGesture) return;
+    fails++;
+    if (fails % 3 === 0) { onBackup = !onBackup; loadStation(); }   // flip between intended and backup
+    else streamIdx = (streamIdx + 1) % streamUrls.length;           // or just the next mirror
+    if (onBackup) nextProbeAt = Date.now() + probeEvery;
+    const delay = fails === 1 ? 0 : Math.min(60000, 3000 * Math.pow(2, fails - 2)) * (0.8 + Math.random() * 0.4);
+    reconnectTimer = setTimeout(() => { reconnectTimer = null; attempt(); }, delay);
+    renderMusicbar();
   }
 
-  // Idempotent on purpose: the TV automation can click the logo as often as it
-  // likes and never accidentally silence the room.
+  // Is the music actually moving? Runs every WATCH_MS.
+  function watchdog() {
+    if (!audio) return;
+    if (silentNow()) { lastTime = -1; progressSince = 0; return; }
+    if (needsGesture || reconnectTimer) return;
+    const now = Date.now(), t = audio.currentTime;
+    if (!audio.paused && !audio.error && t !== lastTime) {           // advancing: healthy
+      lastTime = t; lastProgressAt = now;
+      if (!progressSince) progressSince = now;
+      if (now - progressSince >= SETTLE_MS) fails = 0;               // settled: backoff starts over next time
+      if (onBackup) { if (now >= nextProbeAt) probeIntended(); }
+      else if (now - lastKeepalive >= KEEPALIVE_MS) keepalive();
+      return;
+    }
+    if (audio.error || audio.paused || now - lastProgressAt >= STALL_MS) reconnect();
+  }
+
+  // A fresh inbound request every few minutes. Render's idle timer counts
+  // requests, not open streams, so the TV keeps the relay awake by itself.
+  function keepalive() {
+    lastKeepalive = Date.now();
+    const url = station().keepalive; if (!url) return;
+    try { fetch(url + "?t=" + Date.now(), { mode: "no-cors", cache: "no-store", credentials: "omit" }).catch(() => {}); } catch {}
+  }
+
+  // On the backup: does the intended station answer with audio again? Only a
+  // real relay says `200 audio/*`; Render's own "waking up" page does not. The
+  // request wakes a sleeping service, so the timeout covers a cold start. One in
+  // flight at a time; the interval doubles (to five minutes) while it says no.
+  function probeIntended() {
+    if (probeBusy) return;
+    probeBusy = true; nextProbeAt = Date.now() + probeEvery;
+    const url = ESM.stationUrls(station())[0] + "?probe=" + Date.now();
+    const timeout = new Promise((r) => setTimeout(() => r(false), 55000));
+    const req = fetch(url, { cache: "no-store", credentials: "omit" }).then((r) => {
+      const ok = r.ok && /audio/i.test(r.headers.get("content-type") || "");
+      try { r.body.cancel(); } catch {}
+      return ok;
+    }).catch(() => false);
+    Promise.race([req, timeout]).then((ok) => {
+      probeBusy = false;
+      if (!ok || !onBackup || silentNow()) { probeEvery = Math.min(300000, probeEvery * 2); return; }
+      onBackup = false; fails = 0; probeEvery = PROBE_MS; loadStation();
+      attempt(); peekMusicbar(); renderMusicbar();   // badge flips back at once, not on the next event
+    });
+  }
+
+  // Idempotent: the TV automation can click the logo as often as it likes and
+  // never accidentally silence the room. A click also means "try now".
   function startMusic() {
     if (PREVIEW || !audio) return;
-    wantMusic = true; manualPaused = false; state.music = true;
+    wantMusic = true; manualPaused = false; needsGesture = false; state.music = true;
     if (!streamUrls.length) loadStation();
     if (screen.classList.contains("is-night")) { renderMusicbar(); return; }
-    if (audio.paused) { streamIdx = 0; attempt(); } else audio.volume = state.musicVolume;
+    clearReconnect(); fails = 0;
+    if (audio.paused || audio.error) attempt(); else audio.volume = state.musicVolume;
     peekMusicbar();
     renderMusicbar();
   }
   function stopMusic() {
     wantMusic = false; manualPaused = true;
+    clearReconnect();
     if (audio) audio.pause();
     renderMusicbar();
   }
   function toggleMusic() { (audio && !audio.paused) ? stopMusic() : startMusic(); }
 
+  // Autoplay where the browser allows it; where it refuses, the ▶ badge waits
+  // and the first gesture anywhere on the page starts the music.
+  function tryAutoplay() { if (!PREVIEW && audio && state.music) startMusic(); }
+  function unlockOnGesture() { if (needsGesture && wantMusic && !silentNow()) startMusic(); }
+
   function setStation(id, announce) {
     state.musicStation = id; save();
-    manualPaused = false; loadStation();
-    if (wantMusic && audio) { audio.pause(); attempt(); }
+    manualPaused = false; onBackup = false; fails = 0; loadStation(); clearReconnect();
+    if (wantMusic && audio && !silentNow()) attempt();
     syncMusicPanel(); renderMusicbar();
     if (announce) peekMusicbar();
   }
@@ -805,13 +889,11 @@
     setStation(STATIONS[(i + 1 + STATIONS.length) % STATIONS.length].id, true);
   }
 
-  // Runs on every schedule tick: go quiet at night, come back in the day, and
-  // quietly retry a stream that dropped out on its own.
+  // Runs on every schedule tick: go quiet at night, come back in the day.
   function syncMusic() {
     if (!audio) { renderMusicbar(); return; }
-    const silent = screen.classList.contains("is-night") || manualPaused || !state.music || !wantMusic;
-    if (silent) { if (!audio.paused) audio.pause(); }
-    else if (audio.paused) attempt();
+    if (silentNow()) { clearReconnect(); if (!audio.paused) audio.pause(); }
+    else if (audio.paused && !needsGesture && !reconnectTimer) attempt();
     else audio.volume = state.musicVolume;
     renderMusicbar();
   }
@@ -822,10 +904,13 @@
     const show = state.musicBar && !screen.classList.contains("is-night");
     bar.hidden = !show && !bar.classList.contains("is-peek");
     if (bar.hidden) return;
-    const playing = !!audio && !audio.paused;
+    const playing = !!audio && !audio.paused && !audio.error;
+    const retrying = wantMusic && !playing && !needsGesture && !manualPaused && (!!reconnectTimer || fails > 0);
     bar.classList.toggle("is-playing", playing);
     bar.setAttribute("aria-label", playing ? "Pause music" : "Play music");
-    $("musicState").textContent = (playing ? "♪ " : "▶ ") + stationName();
+    const name = (onBackup ? backupStation() : station()).name;
+    $("musicState").textContent = (playing ? "♪ " : retrying ? "↻ " : "▶ ") + name +
+      (onBackup ? " · " + station().name + " unreachable" : "");
   }
   let peekTimer = null;
   function peekMusicbar() {
@@ -841,8 +926,13 @@
     if (audio) {
       audio.volume = state.musicVolume;
       ["play", "playing", "pause", "waiting", "stalled"].forEach((ev) => audio.addEventListener(ev, renderMusicbar));
-      audio.addEventListener("error", failover);
-      audio.addEventListener("ended", failover);   // a live stream that ends has dropped
+      audio.addEventListener("error", reconnect);
+      audio.addEventListener("ended", reconnect);      // a live stream that ends has dropped
+      setInterval(watchdog, WATCH_MS);
+      addEventListener("online", () => {               // network is back: do not sit out the backoff
+        if (wantMusic && !silentNow() && !needsGesture) { clearReconnect(); fails = 0; attempt(); }
+      });
+      ["pointerdown", "mousedown", "touchstart", "keydown"].forEach((ev) => document.addEventListener(ev, unlockOnGesture, true));
     }
     $("musicbar").onclick = toggleMusic;
     renderMusicbar();
@@ -891,6 +981,7 @@
   buildPanel();
   setupMusic();
   apply();
+  setTimeout(tryAutoplay, 600);   // after the schedule has been applied; a beat after first paint
   const discCode = $("discCode");
   // Enough repeats to densely fill the disc as a tiny code grid (overflow clipped to the circle).
   if (discCode) discCode.textContent = "EasyScaleMedia".repeat(700);

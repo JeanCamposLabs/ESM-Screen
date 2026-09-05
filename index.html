@@ -104,9 +104,9 @@
       <div class="weather__fc" id="wxForecast"></div>
     </div>
 
-    <!-- Ambient music. No `autoplay`: the stream only ever starts from an explicit
-         click (the logo, or the corner badge), which is also what unlocks audio in
-         the TV browser. The Google Cast group remains a separate, parallel output. -->
+    <!-- Ambient music. Started from script, not the `autoplay` attribute, so the
+         page can tell "the browser refused" (Philips: wait for a click) from "the
+         stream is down" (reconnect, then fall back). See app.js "Music". -->
     <audio id="bgAudio" preload="none" crossorigin="anonymous"></audio>
 
     <!-- Full-screen light wave (sweeps across; logo turns it into the rainbow) -->
@@ -186,7 +186,7 @@
       </label>
       <div class="st-list" id="stationGrid"></div>
       <button class="btn btn--ghost btn--wide btn--gap" id="btnNextStation">Next station</button>
-      <p class="panel__hint">Click the logo to start the music — that click is what unlocks audio in the TV browser, so an automation only has to hit the middle of the screen. The corner badge plays and pauses. Nothing ever autoplays, and the screen stays silent overnight.</p>
+      <p class="panel__hint">The music starts by itself where the TV allows it. A Philips refuses sound before a click, so there the badge shows ▶ until anything is clicked — the logo works, and an automation only has to hit the middle of the screen. If the stream drops it reconnects on its own; if the relay stays unreachable a backup station plays until it is back. Silent overnight.</p>
     </section>
 
     <section class="pane" data-pane="time" hidden>

@@ -184,7 +184,7 @@ test("office hours remain 07:00 inclusive and 23:00 exclusive across CET and CES
   assert.equal(wall.isOfficeActive(Date.parse("2026-07-15T21:00:00Z")), false);
 });
 
-test("repository retires PAT writes and published admin assets, and never autoplays", () => {
+test("repository retires PAT writes and published admin assets; audio starts from script and self-heals", () => {
   const root = path.join(__dirname, "..");
   const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
   const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
@@ -192,11 +192,17 @@ test("repository retires PAT writes and published admin assets, and never autopl
   const workflow = fs.readFileSync(path.join(root, ".github/workflows/deploy-pages.yml"), "utf8");
   const active = [app, html, remote, workflow, fs.readFileSync(path.join(root, "shared.js"), "utf8")].join("\n");
   assert.doesNotMatch(active, /esm-screen\.ghtoken|api\.github\.com\/repos|Authorization:\s*Bearer|localStorage/);
-  // Audio exists again, but only a click can start it: no `autoplay`, and no
-  // play() outside a handler for an explicit gesture.
+  // Audio is started from script, never the `autoplay` attribute: the page must
+  // be able to tell a browser that refused (wait for a click) from a stream that
+  // died (reconnect, then fall back), and the logo must remain a start button.
   assert.match(html, /<audio\b[^>]*id="bgAudio"/i);
   assert.doesNotMatch(html, /<audio\b[^>]*\bautoplay\b/i);
+  assert.match(app, /function tryAutoplay\(\)/);
+  assert.match(app, /NotAllowedError/);
   assert.match(app, /function logoPress\(\)\s*\{[^}]*startMusic\(\)/);
+  assert.match(app, /function watchdog\(\)/);
+  assert.match(app, /function reconnect\(\)/);
+  assert.match(app, /function probeIntended\(\)/);
   assert.match(remote, /public screen remote has retired/i);
   assert.doesNotMatch(workflow, /cp .*remote\.(?:js|css)|cp .*config\.json/);
   assert.match(workflow, /actions\/deploy-pages/);
