@@ -48,8 +48,12 @@ are inactive. The calendar is calculated locally and `Intl.DateTimeFormat` in
 `Europe/Amsterdam` applies CET/CEST transitions. The screen also remains inactive
 on every valid holiday in the active Wall Controls feed;
 the feed supplements rather than replaces the local Sunday/Dutch-holiday rules.
-TV HTML audio is absent. Music intent remains enabled, Lofi Girl, volume 0.45, with the existing configured
-office Google Cast group as the only output.
+TV HTML audio plays only on an explicit click. Clicking the logo starts Lofi Girl at volume 0.45 in the
+TV browser and fires the light wave without opening the settings sidebar, so a TV automation only has to
+click the middle of the screen; the corner badge plays and pauses. Nothing autoplays, and the stream is
+paused for the whole of the overnight window. The existing configured office Google Cast group remains a
+separate, parallel output — the feed's `browserAudio: false` still means "no automatic browser audio",
+which a click-only start does not violate.
 
 ## Google Home status (not yet deliverable)
 
@@ -116,8 +120,9 @@ both images on the same 180-second boundary, then disconnect the feed and confir
 the synchronized bundled fallback. Verify active behavior on a normal weekday and
 Saturday, inactivity on Sunday, a Dutch public holiday, and a Wall Controls holiday
 from the active feed, plus both 07:00/23:00
-boundaries under CET and CEST. Confirm Lofi Girl plays on the existing configured
-office Cast group only, never through browser/TV audio. The optional
+boundaries under CET and CEST. Confirm the page is silent until the logo is clicked, that clicking it
+starts Lofi Girl without revealing the settings sidebar, and that the existing configured office Cast
+group still plays independently. The optional
 `cast-follower/` remains uninstalled and is not auto-started.
 
 GitHub Pages remains enabled through `.github/workflows/deploy-pages.yml`. The
