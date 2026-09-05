@@ -298,7 +298,8 @@ server.listen(PORT, () => {
 
 // ---- Self-ping keepalive --------------------------------------------------
 // While the process is already running, ping our own public URL every 10 min
-// during office hours so Render's free-plan idle timer never fires.
+// during screen hours (07:00-23:00 Amsterdam, Mon-Sat; UTC 05-22 covers both
+// CET and CEST) so Render's free-plan idle timer never fires.
 // This extends uptime between the external GitHub Actions cron pings; together
 // they ensure a cold start only happens once (first Monday ping of the week).
 // Set SELF_URL to the service's public URL in render.yaml.
@@ -308,7 +309,7 @@ if (SELF_URL) {
   const _pingMod = SELF_URL.startsWith('https') ? require('https') : http;
   setInterval(() => {
     const d = new Date(), day = d.getUTCDay(), h = d.getUTCHours();
-    if (day === 0 || day === 6 || h < 6 || h >= 17) return;  // skip weekends + outside UTC 06-17
+    if (day === 0 || h < 5 || h >= 22) return;  // Sunday off; outside UTC 05-22 let it sleep
     _pingMod.get(SELF_URL + '/healthz', (r) => r.resume())
       .on('error', (e) => log('self-ping error:', e.message));
   }, 10 * 60 * 1000);

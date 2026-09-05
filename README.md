@@ -48,12 +48,20 @@ are inactive. The calendar is calculated locally and `Intl.DateTimeFormat` in
 `Europe/Amsterdam` applies CET/CEST transitions. The screen also remains inactive
 on every valid holiday in the active Wall Controls feed;
 the feed supplements rather than replaces the local Sunday/Dutch-holiday rules.
-TV HTML audio plays only on an explicit click. Clicking the logo starts Lofi Girl at volume 0.45 in the
-TV browser and fires the light wave without opening the settings sidebar, so a TV automation only has to
-click the middle of the screen; the corner badge plays and pauses. Nothing autoplays, and the stream is
-paused for the whole of the overnight window. The existing configured office Google Cast group remains a
-separate, parallel output — the feed's `browserAudio: false` still means "no automatic browser audio",
-which a click-only start does not violate.
+The TV page plays Lofi Girl at volume 0.45 through the TV's own browser. It tries to start by itself on
+load; TVs that allow autoplay simply play. The Philips refuses sound before a user gesture, so there the
+corner badge shows ▶ until anything is clicked — clicking the logo starts the music and fires the light
+wave without opening the settings sidebar, so a TV automation only has to click the middle of the screen.
+The badge plays and pauses.
+
+The stream is a live relay on a free Render plan and is expected to drop. A watchdog checks that playback
+is actually advancing; a stall, error or self-pause is reconnected on a fresh connection with exponential
+backoff, forever. Every third failure hands over to a backup station of the same flavour (SomaFM Fluid)
+so the room is never silent; while on the backup the relay is probed (the probe also wakes a sleeping
+Render) and the intended station returns by itself when the relay answers with audio again. While the
+relay plays, the page pings its `/healthz` every five minutes so Render's idle timer never fires.
+Silent for the whole of the overnight window. The existing configured office Google Cast group remains a
+separate, parallel output; the feed's `browserAudio: false` describes that Cast set-up, not this page.
 
 ## Google Home status (not yet deliverable)
 
@@ -120,9 +128,10 @@ both images on the same 180-second boundary, then disconnect the feed and confir
 the synchronized bundled fallback. Verify active behavior on a normal weekday and
 Saturday, inactivity on Sunday, a Dutch public holiday, and a Wall Controls holiday
 from the active feed, plus both 07:00/23:00
-boundaries under CET and CEST. Confirm the page is silent until the logo is clicked, that clicking it
-starts Lofi Girl without revealing the settings sidebar, and that the existing configured office Cast
-group still plays independently. The optional
+boundaries under CET and CEST. Confirm that a non-Philips TV starts Lofi Girl on load, that on the
+Philips one click on the logo starts it without revealing the settings sidebar, that pulling the relay
+switches the badge to "Fluid · Lofi Girl unreachable" and back when the relay returns, and that the
+existing configured office Cast group still plays independently. The optional
 `cast-follower/` remains uninstalled and is not auto-started.
 
 GitHub Pages remains enabled through `.github/workflows/deploy-pages.yml`. The
