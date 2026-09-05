@@ -41,6 +41,7 @@
   function apply() {
     root.dataset.style = state.style;
     root.dataset.palette = state.palette;
+    accentColor();                                       // re-read the accent for the motes
     root.dataset.nightclock = state.nightClock ? "1" : "0";
     root.style.setProperty("--speed", String(state.speed));
 
@@ -110,9 +111,12 @@
 
   /* ---------- Clock ---------- */
   function pad(n) { return String(n).padStart(2, "0"); }
+  let lastTick = "";
   function tick() {
     const now = new Date();
     const t = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    if (t === lastTick) return;                          // same minute: nothing to redraw
+    lastTick = t;
     $("clockTime").textContent = t;
     $("nightClock").textContent = t;
     $("clockDate").textContent = now.toLocaleDateString(undefined,
@@ -140,11 +144,14 @@
   /* ---------- Ambient particle canvas ----------
      Lightweight floating motes that pick up the palette accent. Capped for
      a smooth all-day run on big panels. */
-  let particles = [], rafId = null, lastT = 0;
+  let particles = [], rafId = null, lastT = 0, accentCache = "#ff7a18";
   const canvas = $("particles");
   const ctx = canvas.getContext("2d");
+  // Read once per palette change (apply()), not once per frame: getComputedStyle
+  // in the animation loop forces style recalculation on every tick.
   function accentColor() {
-    return getComputedStyle(root).getPropertyValue("--accent").trim() || "#ff7a18";
+    accentCache = getComputedStyle(root).getPropertyValue("--accent").trim() || accentCache;
+    return accentCache;
   }
   function sizeCanvas() {
     const scale = 0.5;                      // render motes below native res — big TV perf win
@@ -157,7 +164,7 @@
   }
   function seed() {
     // denser + sized relative to the panel so motes read on big screens
-    const target = Math.min(50, Math.round((innerWidth * innerHeight) / 42000));
+    const target = Math.min(36, Math.round((innerWidth * innerHeight) / 56000));
     const base = Math.max(1.3, Math.min(innerWidth, innerHeight) / 430);
     particles = Array.from({ length: target }, () => ({
       x: Math.random() * innerWidth,
@@ -171,13 +178,13 @@
   }
   function frame(t) {
     rafId = requestAnimationFrame(frame);
-    if (t - lastT < 42) return;            // ~24fps cap (gentler on TV CPUs)
+    if (t - lastT < 66) return;            // ~15fps cap: each frame re-uploads the canvas texture
     const dt = Math.min((t - lastT) / 16.67, 2); lastT = t;
     if (!state.particles || screen.classList.contains("is-night")) {
       ctx.clearRect(0, 0, innerWidth, innerHeight); return;
     }
     ctx.clearRect(0, 0, innerWidth, innerHeight);
-    const col = accentColor();
+    const col = accentCache;
     const spd = state.speed;
     for (const p of particles) {
       p.x += p.sx * dt * spd; p.y += p.sy * dt * spd; p.tw += 0.03 * dt;
@@ -516,15 +523,25 @@
     if (!slidesActive || !slides.length) return;
     panLayer(slideLayers[slideFront], slides[slideIdx]);
   }
+  function retireLayer(el) {
+    clearTimeout(el._esmRetire);
+    el._esmRetire = setTimeout(() => {
+      if (el.classList.contains("is-on")) return;      // reused in the meantime
+      try { if (el._esmAnim) { el._esmAnim.cancel(); el._esmAnim = null; } } catch {}
+      el.style.backgroundImage = "";                   // free the texture; it is re-set on reuse
+    }, 1800);                                          // just after the 1.6 s opacity fade
+  }
   function showSlide(i) {
     if (slides[i] === displayedSrc && slideLayers[slideFront].classList.contains("is-on")) return;
     const el = slideLayers[slideFront ^ 1];            // the hidden layer
+    clearTimeout(el._esmRetire);
     el.style.backgroundImage = `url("${slides[i]}")`;
     const probe = new Image();
     probe.onerror = () => { if (wallFeed) useBundledFallback(); };
     probe.src = slides[i];
     el.classList.add("is-on");                          // reveal first — never blocked by the pan
     slideLayers[slideFront].classList.remove("is-on");
+    retireLayer(slideLayers[slideFront]);
     slideFront ^= 1; slideIdx = i; displayedSrc = slides[i];
     panLayer(el, slides[i]);
     syncBgGrid();
