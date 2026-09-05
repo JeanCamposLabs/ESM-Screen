@@ -1,0 +1,3 @@
+# Python bytecode from running the cast-follower tests locally.
+__pycache__/
+*.py[cod]

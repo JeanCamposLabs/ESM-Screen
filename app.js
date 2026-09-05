@@ -261,9 +261,9 @@
       b.onclick = () => setStation(s.id, false);
       stg.appendChild(b);
     });
-    $("tgMusic").onchange    = (e) => { state.music = e.target.checked; if (state.music) manualPaused = false; commit(); };
+    $("tgMusic").onchange    = (e) => { state.music = e.target.checked; e.target.checked ? startMusic() : stopMusic(); commit(); };
     $("tgMusicBar").onchange = (e) => { state.musicBar = e.target.checked; commit(); };
-    $("inMusicVol").oninput  = (e) => { state.musicVolume = parseFloat(e.target.value); save(); renderMusicbar(); };
+    $("inMusicVol").oninput  = (e) => { state.musicVolume = parseFloat(e.target.value); if (audio) audio.volume = state.musicVolume; save(); renderMusicbar(); };
     $("btnNextStation").onclick = nextStation;
 
     $("btnFull").onclick  = toggleFullscreen;
@@ -724,12 +724,62 @@
 
   function configForExport() { return ESM.pickConfig(state); }
 
-  /* Music intent remains Lofi Girl at 0.45, but TV HTML audio is disabled.
-     Playback is owned exclusively by the configured Google Cast group. */
-  let manualPaused = false;
+  /* ---------- Music ----------
+     Nothing ever autoplays: browsers refuse it, and an office screen that
+     starts talking on its own is worse than one that waits. Sound begins on an
+     explicit click — the logo starts it, the corner badge plays/pauses — and
+     that same click is what unlocks audio in the TV browser. The Google Cast
+     group stays a separate output; this is the panel in front of you.
+
+     `wantMusic` is the intent ("someone asked for sound"); it survives the
+     night pause, so the stream returns by itself in the morning without a
+     second visit to the TV. */
+  const audio = $("bgAudio");
+  let manualPaused = false, wantMusic = false, streamUrls = [], streamIdx = 0;
+
+  function stationName() { return ESM.findStation(state.musicStation).name; }
+  function loadStation() { streamUrls = ESM.stationUrls(ESM.findStation(state.musicStation)); streamIdx = 0; }
+
+  // Point the element at the current candidate URL and ask it to play. A live
+  // stream has no meaningful position, so re-assigning `src` is a clean restart.
+  function attempt() {
+    if (!audio || !streamUrls.length) return;
+    const url = streamUrls[Math.min(streamIdx, streamUrls.length - 1)];
+    if (audio.src !== url) audio.src = url;
+    audio.volume = state.musicVolume;
+    const p = audio.play();
+    if (p && p.catch) p.catch(renderMusicbar);   // blocked or offline: the badge shows ▶
+  }
+
+  // One dead mirror shouldn't kill the music: walk the station's URL list.
+  function failover() {
+    if (!wantMusic) return;
+    if (streamIdx < streamUrls.length - 1) { streamIdx++; attempt(); }
+    else renderMusicbar();
+  }
+
+  // Idempotent on purpose: the TV automation can click the logo as often as it
+  // likes and never accidentally silence the room.
+  function startMusic() {
+    if (PREVIEW || !audio) return;
+    wantMusic = true; manualPaused = false; state.music = true;
+    if (!streamUrls.length) loadStation();
+    if (screen.classList.contains("is-night")) { renderMusicbar(); return; }
+    if (audio.paused) { streamIdx = 0; attempt(); } else audio.volume = state.musicVolume;
+    peekMusicbar();
+    renderMusicbar();
+  }
+  function stopMusic() {
+    wantMusic = false; manualPaused = true;
+    if (audio) audio.pause();
+    renderMusicbar();
+  }
+  function toggleMusic() { (audio && !audio.paused) ? stopMusic() : startMusic(); }
+
   function setStation(id, announce) {
     state.musicStation = id; save();
-    manualPaused = false;
+    manualPaused = false; loadStation();
+    if (wantMusic && audio) { audio.pause(); attempt(); }
     syncMusicPanel(); renderMusicbar();
     if (announce) peekMusicbar();
   }
@@ -738,15 +788,27 @@
     setStation(STATIONS[(i + 1 + STATIONS.length) % STATIONS.length].id, true);
   }
 
-  function syncMusic() { renderMusicbar(); }
+  // Runs on every schedule tick: go quiet at night, come back in the day, and
+  // quietly retry a stream that dropped out on its own.
+  function syncMusic() {
+    if (!audio) { renderMusicbar(); return; }
+    const silent = screen.classList.contains("is-night") || manualPaused || !state.music || !wantMusic;
+    if (silent) { if (!audio.paused) audio.pause(); }
+    else if (audio.paused) attempt();
+    else audio.volume = state.musicVolume;
+    renderMusicbar();
+  }
 
   function renderMusicbar() {
     const bar = $("musicbar");
     if (!bar) return;
-    const show = state.music && state.musicBar && !screen.classList.contains("is-night");
+    const show = state.musicBar && !screen.classList.contains("is-night");
     bar.hidden = !show && !bar.classList.contains("is-peek");
     if (bar.hidden) return;
-    $("musicState").textContent = "♪ Lofi Girl · Cast group";
+    const playing = !!audio && !audio.paused;
+    bar.classList.toggle("is-playing", playing);
+    bar.setAttribute("aria-label", playing ? "Pause music" : "Play music");
+    $("musicState").textContent = (playing ? "♪ " : "▶ ") + stationName();
   }
   let peekTimer = null;
   function peekMusicbar() {
@@ -757,7 +819,17 @@
     peekTimer = setTimeout(() => { bar.classList.remove("is-peek"); renderMusicbar(); }, 2800);
   }
 
-  function setupMusic() { $("musicbar").onclick = openPanel; renderMusicbar(); }
+  function setupMusic() {
+    loadStation();
+    if (audio) {
+      audio.volume = state.musicVolume;
+      ["play", "playing", "pause", "waiting", "stalled"].forEach((ev) => audio.addEventListener(ev, renderMusicbar));
+      audio.addEventListener("error", failover);
+      audio.addEventListener("ended", failover);   // a live stream that ends has dropped
+    }
+    $("musicbar").onclick = toggleMusic;
+    renderMusicbar();
+  }
 
   /* ---------- Full-screen light wave (~every 2 min, or click the logo) ----------
      A light band sweeps the screen and elements ripple as it passes; over the
@@ -806,7 +878,14 @@
   // Enough repeats to densely fill the disc as a tiny code grid (overflow clipped to the circle).
   if (discCode) discCode.textContent = "EasyScaleMedia".repeat(700);
   setInterval(playWave, 120000);   // the wave passes roughly every 2 minutes
-  $("disc").addEventListener("click", playWave);   // click the logo to trigger it
+  // The logo IS the play button: one click gives the wave and starts the music,
+  // with no settings sidebar in the way. Enter/Space do the same, so a keyboard
+  // or a remote's OK button works as a trigger too.
+  function logoPress() { playWave(); startMusic(); }
+  $("disc").addEventListener("click", logoPress);
+  $("disc").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); logoPress(); }
+  });
   tick(); setInterval(tick, 1000);
   setInterval(applySchedule, 20000);
   sizeCanvas();

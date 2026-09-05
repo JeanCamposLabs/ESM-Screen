@@ -184,7 +184,7 @@ test("office hours remain 07:00 inclusive and 23:00 exclusive across CET and CES
   assert.equal(wall.isOfficeActive(Date.parse("2026-07-15T21:00:00Z")), false);
 });
 
-test("repository retires PAT writes, browser audio and published admin assets", () => {
+test("repository retires PAT writes and published admin assets, and never autoplays", () => {
   const root = path.join(__dirname, "..");
   const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
   const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
@@ -192,7 +192,11 @@ test("repository retires PAT writes, browser audio and published admin assets", 
   const workflow = fs.readFileSync(path.join(root, ".github/workflows/deploy-pages.yml"), "utf8");
   const active = [app, html, remote, workflow, fs.readFileSync(path.join(root, "shared.js"), "utf8")].join("\n");
   assert.doesNotMatch(active, /esm-screen\.ghtoken|api\.github\.com\/repos|Authorization:\s*Bearer|localStorage/);
-  assert.doesNotMatch(html, /<audio\b/i);
+  // Audio exists again, but only a click can start it: no `autoplay`, and no
+  // play() outside a handler for an explicit gesture.
+  assert.match(html, /<audio\b[^>]*id="bgAudio"/i);
+  assert.doesNotMatch(html, /<audio\b[^>]*\bautoplay\b/i);
+  assert.match(app, /function logoPress\(\)\s*\{[^}]*startMusic\(\)/);
   assert.match(remote, /public screen remote has retired/i);
   assert.doesNotMatch(workflow, /cp .*remote\.(?:js|css)|cp .*config\.json/);
   assert.match(workflow, /actions\/deploy-pages/);

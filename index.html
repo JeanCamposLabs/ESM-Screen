@@ -65,7 +65,7 @@
     </header>
 
     <!-- Floating brand disc — neon, colour-cycling, lifted off the scene -->
-    <div class="disc" id="disc" aria-hidden="true">
+    <div class="disc" id="disc" role="button" tabindex="0" aria-label="Play music">
       <div class="disc__tube">
         <span class="disc__ring"></span>
         <div class="disc__code" id="discCode" aria-hidden="true"></div>
@@ -84,7 +84,7 @@
     <!-- Clock + music badge share a right-aligned stack inside the TV-safe
          margin, with long station names truncated to stay within it. -->
     <div class="corner" id="corner">
-      <button class="musicbar" id="musicbar" hidden aria-label="Open settings">
+      <button class="musicbar" id="musicbar" hidden aria-label="Play music">
         <span class="musicbar__state" id="musicState">♪</span>
       </button>
       <div class="clock" id="clock" hidden>
@@ -104,7 +104,10 @@
       <div class="weather__fc" id="wxForecast"></div>
     </div>
 
-    <!-- HTML audio is intentionally absent: music output is the Google Cast group only. -->
+    <!-- Ambient music. No `autoplay`: the stream only ever starts from an explicit
+         click (the logo, or the corner badge), which is also what unlocks audio in
+         the TV browser. The Google Cast group remains a separate, parallel output. -->
+    <audio id="bgAudio" preload="none" crossorigin="anonymous"></audio>
 
     <!-- Full-screen light wave (sweeps across; logo turns it into the rainbow) -->
     <div class="wave" id="wave" aria-hidden="true"></div>
@@ -115,7 +118,7 @@
     </div>
 
     <!-- First-run hint (auto fades) -->
-    <div class="hint" id="hint">Triple-click the top-right corner (or press <kbd>C</kbd>) to open settings</div>
+    <div class="hint" id="hint">Click the logo to start the music · triple-click the top-right corner (or press <kbd>C</kbd>) for settings</div>
   </main>
 
   <!-- Hidden reveal hotspot, top-right corner -->
@@ -175,15 +178,15 @@
 
     <section class="pane" data-pane="music" hidden>
       <div class="toggle-row">
-        <label class="toggle"><input type="checkbox" id="tgMusic" disabled><span>Play music</span></label>
-        <label class="toggle"><input type="checkbox" id="tgMusicBar" checked disabled><span>On-screen badge</span></label>
+        <label class="toggle"><input type="checkbox" id="tgMusic" checked><span>Play music</span></label>
+        <label class="toggle"><input type="checkbox" id="tgMusicBar" checked><span>On-screen badge</span></label>
       </div>
       <label class="field"><span>Volume</span>
-        <input type="range" id="inMusicVol" min="0" max="1" step="0.05" value="0.45" class="range" disabled />
+        <input type="range" id="inMusicVol" min="0" max="1" step="0.05" value="0.45" class="range" />
       </label>
       <div class="st-list" id="stationGrid"></div>
-      <button class="btn btn--ghost btn--wide btn--gap" id="btnNextStation" disabled>Managed by Cast group</button>
-      <p class="panel__hint">Music intent is Lofi Girl at volume 0.45. This TV page never plays audio; the Google Cast group is the only output.</p>
+      <button class="btn btn--ghost btn--wide btn--gap" id="btnNextStation">Next station</button>
+      <p class="panel__hint">Click the logo to start the music — that click is what unlocks audio in the TV browser, so an automation only has to hit the middle of the screen. The corner badge plays and pauses. Nothing ever autoplays, and the screen stays silent overnight.</p>
     </section>
 
     <section class="pane" data-pane="time" hidden>
