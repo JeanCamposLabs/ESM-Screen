@@ -15,15 +15,15 @@
   <!-- Content-Security-Policy. GitHub Pages cannot set headers, so it lives here.
        default-src 'none' and script-src 'self': only this site's own scripts run,
        no inline script ever, so an injected tag could not execute. connect/img/
-       media-src name every host this page is allowed to talk to (Scale OS feed
-       and images, Open-Meteo, the radio stations); anything else is refused by
+       media-src name every host this page is allowed to talk to (the wall
+       controller's feed and images, Open-Meteo, the radio stations); anything else is refused by
        the browser. CSP is enforced on every redirect hop, and some stations
        redirect to a CDN on another domain (FluxFM → streamabc.net, NTS →
        radiomast.io, REYFM/0nlineradio → radiohost.de, WCPE → streamtheworld.com),
        so those are listed as well. Add a station in shared.js? Add its domain
        and its redirect target here too — the contract test checks they agree. -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://responseslatracker-eu.onrender.com; connect-src 'self' https://responseslatracker-eu.onrender.com https://api.open-meteo.com https://esm-lofi-relay.onrender.com https://*.fluxfm.de https://*.radiohost.de https://*.reyfm.de https://*.ntslive.net https://*.0nlineradio.com https://*.radioho.st https://*.epic-lounge.com https://*.somafm.com https://*.publicradio.org https://*.streamtheworld.com https://*.streamabc.net https://*.radiomast.io; media-src https://esm-lofi-relay.onrender.com https://*.fluxfm.de https://*.radiohost.de https://*.reyfm.de https://*.ntslive.net https://*.0nlineradio.com https://*.radioho.st https://*.epic-lounge.com https://*.somafm.com https://*.publicradio.org https://*.streamtheworld.com https://*.streamabc.net https://*.radiomast.io; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'" />
-  <!-- Never send this page's URL along to the stations, the weather API or Scale OS. -->
+  <!-- Never send this page's URL along to the stations, the weather API or the controller. -->
   <meta name="referrer" content="no-referrer" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -139,13 +139,13 @@
 
   <!-- ===================== CONTROL PANEL (this TV) =====================
        Local visual settings for the TV in front of you. Shared background and
-       schedule intent is managed only in authenticated Scale OS. -->
+       schedule intent are managed only in the authenticated wall controller. -->
   <div class="panel-scrim" id="panelScrim" hidden></div>
   <aside class="panel" id="panel" hidden aria-label="Display settings">
     <div class="panel__head">
       <div>
         <h1 class="panel__title">Screen settings</h1>
-        <p class="panel__sub">Local visual settings apply to this TV. Scale OS owns shared background and schedule intent.</p>
+        <p class="panel__sub">Local visual settings apply to this TV. The wall controller owns shared background and schedule intent.</p>
       </div>
       <button class="panel__close" id="panelClose" aria-label="Close">&times;</button>
     </div>
@@ -184,9 +184,9 @@
         <select id="inBgMotion" class="select"></select>
       </label>
       <p class="bg-now" id="bgNow"></p>
-      <button class="btn btn--ghost btn--wide" id="btnNextBg" disabled>Managed by Scale OS</button>
+      <button class="btn btn--ghost btn--wide" id="btnNextBg" disabled>Managed centrally</button>
       <div class="bg-gallery" id="bgGrid"></div>
-      <p class="panel__hint">Scale OS selects the shared background. Each image keeps the slow tailored motion from its profile; if the feed is unavailable, every TV uses the same bundled fallback clock.</p>
+      <p class="panel__hint">The wall controller selects the shared background. Each image keeps the slow tailored motion from its profile; if the feed is unavailable, every TV uses the same bundled fallback clock.</p>
     </section>
 
     <section class="pane" data-pane="music" hidden>
@@ -209,18 +209,12 @@
         <label class="field field--time"><span>Off at</span><input type="time" id="inOff" value="23:00" disabled /></label>
       </div>
       <label class="toggle toggle--wide"><input type="checkbox" id="tgNightClock" checked><span>Dim clock while idle</span></label>
-      <p class="panel__hint">Boschcour 20, 6221 JR Maastricht · Active 07:00–23:00 Monday–Saturday, excluding Dutch public holidays (Europe/Amsterdam, including DST).</p>
+      <p class="panel__hint">Active 07:00–23:00 Monday–Saturday, excluding public holidays (Europe/Amsterdam, including DST).</p>
     </section>
 
     <section class="pane" data-pane="sync" hidden>
       <h2 class="panel__label">Every screen</h2>
-      <button class="btn btn--primary btn--wide" id="btnApplyAll">Open authenticated Scale OS</button>
-      <p class="push-status" id="pushStatus"></p>
-      <p class="panel__hint">Shared display choices are managed in authenticated Scale OS. This screen contains no administrator credential or write path.</p>
-
-      <h2 class="panel__label">Former remote</h2>
-      <p class="panel__hint">The old public administrator is retired. This link only explains where managers control the screens now.</p>
-      <a class="remote-link" id="remoteLink" href="remote.html" target="_blank" rel="noopener">remote.html</a>
+      <p class="panel__hint">The shared background and the on/off schedule are chosen in the authenticated wall controller. This screen holds no credential and no write path: it only reads. It deliberately offers no link there.</p>
 
       <h2 class="panel__label">This TV</h2>
       <div class="btn-row">

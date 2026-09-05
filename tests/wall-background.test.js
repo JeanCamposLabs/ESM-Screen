@@ -287,3 +287,31 @@ test("clock is on by default, and the ping-only workflow holds no token permissi
   const wf = fs.readFileSync(path.join(__dirname, "..", ".github/workflows/relay-keepalive.yml"), "utf8");
   assert.match(wf, /^permissions: \{\}/m);
 });
+
+test("the published page names no office address and signposts nothing to the controller", () => {
+  const root = path.join(__dirname, "..");
+  const host = new URL(wall.ORIGIN).host;
+  // Everything the deploy workflow copies to the live site.
+  const published = ["index.html", "remote.html", "backdrop.html", "app.js", "shared.js",
+                     "wall-background.js", "styles.css", "assets/README.md", "embed/README.md",
+                     "embed/esm-backdrop.js", "embed/demo.html"];
+  for (const f of published) {
+    const body = fs.readFileSync(path.join(root, f), "utf8");
+    assert.doesNotMatch(body, /Boschcour|6221\s*JR/i, f + " names the office address");
+    // The origin is allowed in exactly two places, because the browser needs it:
+    // the feed constant it fetches, and the CSP allowlist that permits that fetch.
+    if (f === "wall-background.js" || f === "index.html") continue;
+    assert.ok(!body.includes(host), f + " points at the controller");
+  }
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const esc = host.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  assert.doesNotMatch(html, new RegExp('href="https?://' + esc), "index.html links to the controller");
+  assert.doesNotMatch(html, new RegExp('<a\\b[^>]*' + esc), "index.html anchors the controller");
+  const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
+  assert.doesNotMatch(app, /location\.(?:href|assign|replace)\s*=\s*["']https?:\/\//,
+    "app.js navigates the TV to an external site");
+  // The repository docs are not published, but it is a public repo.
+  for (const f of ["README.md", "HANDOFF.md"]) {
+    assert.doesNotMatch(fs.readFileSync(path.join(root, f), "utf8"), /Boschcour|6221\s*JR/i, f + " names the office address");
+  }
+});
