@@ -3,9 +3,10 @@
 ## Current architecture
 
 This repository is the screen/display half only. Public PAT administration is
-retired. `remote.html` is a no-secret signpost to authenticated Scale OS at
-<https://responseslatracker-eu.onrender.com/>; `remote.js` and `remote.css` were
-removed and the Pages workflow does not publish them.
+retired. `remote.html` is a no-secret retirement notice that links nowhere;
+`remote.js` and `remote.css` were removed and the Pages workflow does not
+publish them. The controller origin lives only in `wall-background.js`, where
+the browser needs it; the page never links or navigates to it.
 
 `wall-background.js` is the isolated, dependency-free boundary for the sole
 Scale OS read. It fixes the origin/path, omits credentials, bounds JSON, uses an
@@ -24,7 +25,7 @@ feed's 180-second `slotMs`), in an order reshuffled once per UTC day, identical
 on every TV. 235 slides cover a 16-hour day without a repeat. Background motion
 is 2.4× the original tuning (`tools/make_motion.py`, layer scale 1.14).
 
-At Boschcour 20, 6221 JR Maastricht, active time is 07:00 inclusive to 23:00
+Active time is 07:00 inclusive to 23:00
 exclusive Monday–Saturday. Sundays and official Dutch public holidays are
 inactive. Local calendar parts use `Europe/Amsterdam` through `Intl`, including DST.
 The deployed three-field feed schedule remains valid; a new schedule may add a
@@ -72,8 +73,8 @@ fails), autocomplete exposes
 only two OnOff TVs without `assistant.command.OkGoogle`, and no compatible
 speaker/group appears.
 
-An attended Google Home mobile session must set the Home address to Boschcour
-20, 6221 JR Maastricht, link a
+An attended Google Home mobile session must set the Home address to the office
+address (not recorded in this repository), link a
 compatible Assistant speaker into that Home, then validate—not merely save—the
 07:00 “Play Lofi Girl on Speqckers centrake r” and 23:00 “Stop music on
 Speqckers centrake r” scripts. Do not report these as working before that test.
@@ -88,7 +89,7 @@ never replaces or stops playback it did not start.
 
 ### Physical stick 2 check
 
-At Boschcour 20, 6221 JR Maastricht, on the actual 1920×1080 stick 2, reload
+On the actual 1920×1080 stick 2 in the office, reload
 the page with the clock hidden and confirm the music badge and a deliberately
 long label remain inside the right TV-safe margin. With the selected feed active
 beside another office display, confirm both change to the same image at the same

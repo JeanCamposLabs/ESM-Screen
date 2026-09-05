@@ -276,14 +276,8 @@
     $("btnFull").onclick  = toggleFullscreen;
     $("btnReset").onclick = () => { state = { ...DEFAULTS, music: true, musicStation: "lofigirl", musicVolume: 0.45,
       schedule: true, onTime: "07:00", offTime: "23:00" }; bgPinned = false; commit(); rotationTick(true); refreshMotion(); flash("Reset to defaults"); };
-    $("btnApplyAll").onclick = () => { location.href = "https://responseslatracker-eu.onrender.com/"; };
     $("panelClose").onclick = closePanel;
     $("panelScrim").onclick = closePanel;
-
-    // Where to control every screen from a computer or phone
-    const remoteUrl = new URL("remote.html", location.href).href;
-    $("remoteLink").href = remoteUrl;
-    $("remoteLink").textContent = remoteUrl.replace(/^https?:\/\//, "");
   }
 
   function syncPanel() {

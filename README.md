@@ -3,21 +3,22 @@
 The credential-free display half of the Easy Scale Media office wall. It is a
 plain static HTML/CSS/JavaScript site and remains live on GitHub Pages at
 `https://jeancamposlabs.github.io/ESM-Screen/` while a replacement host is
-tested. The site address is Boschcour 20, 6221 JR Maastricht. Making this
-repository private would not improve display performance.
+tested. Making this repository private would not improve display performance.
+The office address is deliberately not recorded here or on the page.
 
 ## Control and security boundary
 
-Managers use authenticated Scale OS at
-<https://responseslatracker-eu.onrender.com/>. The former public
-`remote.html` administrator is now only a retirement page linking there.
+Managers use an authenticated internal wall controller; its origin is the
+`ORIGIN` constant in `wall-background.js`, because the browser must fetch the
+feed from it. Nothing on the page links, navigates or points to it. The former
+public `remote.html` administrator is now only a retirement page.
 `remote.js` and `remote.css` are deleted and are not published. The display has
 no PAT, account, cookie/session flow, browser persistence, GitHub Contents API
 write, or `config.json` control path.
 
 The one allowed control read is fixed in `wall-background.js`:
 
-`https://responseslatracker-eu.onrender.com/wall-background/display.json`
+`<controller origin>/wall-background/display.json`
 
 It is fetched with `credentials: "omit"`, bounded to 32 KiB, held only in
 memory, and normally revalidated with ETag/`If-None-Match`. The exact schema
@@ -85,8 +86,8 @@ real photography only: Unsplash landscapes, NASA deep space and Earth from orbit
 each live-tested, licence-checked (no ESO/CC-BY material) and credited in
 `assets/README.md`.
 
-Software active time is 07:00 inclusive to 23:00 exclusive, Monday–Saturday,
-at Boschcour 20, 6221 JR Maastricht. Sundays and official Dutch public holidays
+Software active time is 07:00 inclusive to 23:00 exclusive, Monday–Saturday.
+Sundays and official Dutch public holidays
 are inactive. The calendar is calculated locally and `Intl.DateTimeFormat` in
 `Europe/Amsterdam` applies CET/CEST transitions. The screen also remains inactive
 on every valid holiday in the active Wall Controls feed;
@@ -118,7 +119,7 @@ Do not claim the automations work.
 
 One attended Google Home mobile setup session is required:
 
-1. Set the Home address to Boschcour 20, 6221 JR Maastricht.
+1. Set the Home address to the office address (not recorded in this repository).
 2. Link a compatible Assistant speaker into that Home and ensure the group
    `Speqckers centrake r` is available.
 3. Validate a 07:00 script: **Play Lofi Girl on Speqckers centrake r**.
