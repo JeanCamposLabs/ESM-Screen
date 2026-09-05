@@ -368,20 +368,29 @@ html[data-style="minimal"] .scene__vignette {
 #screen.wave-go .weather  { animation: ripple    2.2s ease-in-out .3s; }
 #screen.wave-go .corner   { animation: ripple    2.2s ease-in-out 1.95s; }
 
-/* the logo: a rainbow band sweeps across the disc, synced with the wave */
+/* The logo: the SAME band, seen through the disc. Not a second animation that
+   merely shares the timing — the box below is the .wave box re-created inside
+   the tube in screen units (same 42vw width, same full-screen height, same 72°
+   slant, same -120% → +300% path), so the rainbow sits exactly under the white
+   stripe at every frame and the tube's overflow clips it to the circle.
+
+   Geometry: the tube's padding box starts at (50vw - 39vmin + .5vmin border,
+   47vh - 39vmin + .5vmin); .wave rests at translateX(-120%) of 42vw = -50.4vw
+   and travels 420% × 42vw = 176.4vw. */
 .disc__tube::after {
-  content: ""; position: absolute; top: -30%; height: 160%; left: 0; width: 55%;
-  pointer-events: none; opacity: 0; z-index: 3;
-  background: linear-gradient(68deg, transparent 6%,
-    rgba(255,80,95,.6) 22%, rgba(255,190,70,.6) 36%, rgba(120,255,150,.6) 50%,
-    rgba(90,205,255,.6) 64%, rgba(200,130,255,.6) 78%, transparent 94%);
+  content: ""; position: absolute; z-index: 3; pointer-events: none; opacity: 0;
+  top: calc(-47vh + 39vmin - .5vmin); height: 100vh;
+  left: calc(-100.4vw + 39vmin - .5vmin); width: 42vw;
+  background: linear-gradient(72deg, transparent 30%,
+    rgba(255,80,95,.55) 37%, rgba(255,190,70,.6) 43%, rgba(120,255,150,.62) 50%,
+    rgba(90,205,255,.6) 57%, rgba(200,130,255,.55) 63%, transparent 70%);
 }
 #screen.wave-go .disc__tube::after { animation: discShine 5s ease-in-out; }
 @keyframes discShine {
-  0%   { transform: translateX(-150%); opacity: 0; }
-  18%  { opacity: 1; }
-  82%  { opacity: 1; }
-  100% { transform: translateX(330%); opacity: 0; }
+  0%   { transform: translateX(0); opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translateX(176.4vw); opacity: 0; }
 }
 
 .disc__code {
@@ -396,7 +405,7 @@ html[data-style="minimal"] .scene__vignette {
   -webkit-text-fill-color: transparent; color: transparent;
 }
 #screen.wave-go .disc__code { animation: codeReveal 5s ease-in-out; }   /* opacity only: compositable */
-@keyframes codeReveal { 0%,28% { opacity: 0; } 50% { opacity: .95; } 74%,100% { opacity: 0; } }
+@keyframes codeReveal { 0%,32% { opacity: 0; } 47% { opacity: .95; } 62%,100% { opacity: 0; } }
 
 /* =================================================================
    CLOCK
