@@ -32,8 +32,9 @@ attribute). The Philips refuses sound before a gesture, so there the badge shows
 ▶ and the first click anywhere starts it — the logo is the start button and also
 fires the light wave, with no settings sidebar, so a TV automation can trigger
 it by clicking screen centre. A watchdog reconnects a stalled or dead stream
-with backoff, hands over to SomaFM Fluid after three failures, probes the relay
-while on the backup and returns when it answers; the page pings the relay's
+with backoff, walks a fallback chain (FluxFM Chillhop → I Love Chillhop → REYFM
+#lofi, three strikes each) when the relay is down, probes the relay while off it
+and returns when it answers; the page pings the relay's
 `/healthz` every five minutes while playing so Render never idles it. The
 keepalive cron and the relay's self-ping cover Mon-Sat 05:00-21:59 UTC to match
 the 07:00-23:00 Amsterdam screen window. The Google Cast group remains a
@@ -83,8 +84,8 @@ Sunday, an official Dutch public holiday, and a holiday supplied by Wall Control
 then check just before/after 07:00 and 23:00
 Europe/Amsterdam under both CET and CEST. Finally, verify a non-Philips TV starts Lofi
 Girl on load, that on the Philips one click on the logo starts it without opening the
-settings sidebar, that pulling the relay switches the badge to "Fluid · Lofi Girl
-unreachable" and back once it returns, and that the existing configured office Cast
+settings sidebar, that pulling the relay switches the badge to "FluxFM Chillhop ·
+Lofi Girl unreachable" and back once it returns, and that the existing configured office Cast
 speaker group still plays independently.
 The optional `cast-follower/` is not part of this check: do not install or
 auto-start it.
