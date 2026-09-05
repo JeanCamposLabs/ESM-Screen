@@ -83,12 +83,32 @@ test("selection activates and advances on exact common UTC boundaries", () => {
 });
 
 test("bundled fallback is deterministic on the same UTC clock", () => {
-  const boundary = Date.parse("2026-09-03T10:03:00.000Z");
+  const boundary = Date.parse("2026-09-03T10:05:00.000Z");
   const one = wall.bundledPick(12, boundary);
   const two = wall.bundledPick(12, boundary);
   assert.deepEqual(one, two);
-  assert.equal(wall.bundledPick(12, boundary + wall.SLOT_MS).slot, one.slot + 1);
+  assert.equal(wall.bundledPick(12, boundary + wall.BUNDLED_SLOT_MS).slot, one.slot + 1);
   assert.equal(wall.bundledPick(0, boundary), null);
+  assert.equal(wall.BUNDLED_SLOT_MS, 300000);
+  assert.equal(wall.SLOT_MS, 180000);            // the feed contract is a separate constant
+});
+
+test("bundled fallback shows every slide once before any repeat, in a fresh order each day", () => {
+  const n = 190, day = 86400000;
+  const start = Math.floor(Date.parse("2026-09-07T00:00:00.000Z") / day) * day;   // a UTC midnight
+  // Within one day: the 190 consecutive slots from midnight are a permutation.
+  const seen = new Set();
+  for (let s = 0; s < n; s++) seen.add(wall.bundledPick(n, start + s * wall.BUNDLED_SLOT_MS).index);
+  assert.equal(seen.size, n);
+  // Any 16-hour screen day (192 slots) with 190 slides repeats at most the two that wrap.
+  const dayIdx = [];
+  for (let s = 0; s < 192; s++) dayIdx.push(wall.bundledPick(n, start + 7 * 3600000 + s * wall.BUNDLED_SLOT_MS).index);
+  assert.ok(new Set(dayIdx).size >= 190);
+  // Different days, different order; same day, same order on every TV.
+  const a = Array.from({ length: 10 }, (_, s) => wall.bundledPick(n, start + s * wall.BUNDLED_SLOT_MS).index);
+  const b = Array.from({ length: 10 }, (_, s) => wall.bundledPick(n, start + day + s * wall.BUNDLED_SLOT_MS).index);
+  assert.notDeepEqual(a, b);
+  assert.deepEqual(a, Array.from({ length: 10 }, (_, s) => wall.bundledPick(n, start + s * wall.BUNDLED_SLOT_MS + 1234).index));
 });
 
 test("client omits credentials, revalidates by ETag and promotes pending revisions", async () => {

@@ -7,7 +7,8 @@
   const IMAGE_PATH = "/wall-background/display-image";
   const MAX_BYTES = 32 * 1024;
   const MAX_HOLIDAYS = 512;
-  const SLOT_MS = 180000;
+  const SLOT_MS = 180000;           // the Scale OS feed's slot: part of its validated contract
+  const BUNDLED_SLOT_MS = 300000;   // the bundled fallback's own pace: 5 min, so ~190 slides fill a 16 h day
   const FIELDS = ["activatedAt", "browserAudio", "images", "output", "revision", "revisionOffset", "schedule", "slotMs", "source", "v"];
   const IMAGE_FIELDS = ["id", "version"];
   const SCHEDULE_FIELDS = ["off", "on", "timezone"];
@@ -84,15 +85,38 @@
       url: imageUrl(valid.images[index])
     };
   }
+  // Deterministic shuffle (mulberry32 + Fisher-Yates): every TV computes the same
+  // order from the same seed, so they still switch together.
+  function shuffledOrder(n, seed) {
+    let a = (seed >>> 0) || 1;
+    const rnd = () => {
+      a = (a + 0x6D2B79F5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const order = Array.from({ length: n }, (_, i) => i);
+    for (let i = n - 1; i > 0; i--) {
+      const j = Math.floor(rnd() * (i + 1));
+      const tmp = order[i]; order[i] = order[j]; order[j] = tmp;
+    }
+    return order;
+  }
+  // Bundled fallback: walk the slides in an order reshuffled once per UTC day
+  // (the change lands at 01:00/02:00 Amsterdam, while the screens are off), one
+  // slide per BUNDLED_SLOT_MS. Within a day no slide repeats until all have shown.
   function bundledPick(count, nowMs) {
     const total = Number(count);
     const now = nowMs == null ? Date.now() : Number(nowMs);
     if (!Number.isSafeInteger(total) || total < 1 || !Number.isFinite(now)) return null;
-    const slot = Math.floor(now / SLOT_MS);
+    const slot = Math.floor(now / BUNDLED_SLOT_MS);
+    const day = Math.floor(now / 86400000);
+    const order = shuffledOrder(total, day * 2654435761);
     return {
-      index: ((slot % total) + total) % total,
+      index: order[((slot % total) + total) % total],
       slot,
-      nextBoundaryMs: (slot + 1) * SLOT_MS
+      nextBoundaryMs: (slot + 1) * BUNDLED_SLOT_MS
     };
   }
   function amsterdamParts(nowMs) {
@@ -210,7 +234,7 @@
     }
   }
 
-  const api = { ORIGIN, FEED_URL, IMAGE_PATH, MAX_BYTES, MAX_HOLIDAYS, SLOT_MS, validate, validateSchedule,
+  const api = { ORIGIN, FEED_URL, IMAGE_PATH, MAX_BYTES, MAX_HOLIDAYS, SLOT_MS, BUNDLED_SLOT_MS, validate, validateSchedule,
     imageUrl, pick, bundledPick,
     amsterdamParts, easterSunday, dutchPublicHolidays, isDutchPublicHoliday, isOfficeActive, isDaytime, Client };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
