@@ -31,6 +31,26 @@
       // Pinged by the TV every few minutes while playing: a free Render service
       // idles on "no inbound requests", and an open stream does not count.
       keepalive: "https://esm-lofi-relay.onrender.com/healthz" },
+    // Lo-fi hip-hop stations that are actually reachable from a TV browser:
+    // HTTPS Icecast MP3, no tokens, real operators, EU-hosted where possible.
+    // Each was live-tested for a sustained audio/mpeg stream (Sept 2026). The
+    // first three are also the fallback chain in app.js when the relay is down.
+    { id: "fluxchillhop",  name: "FluxFM Chillhop",        genre: "Chillhop · lo-fi hip-hop (Berlin)",
+      urls: ["https://streams.fluxfm.de/Chillhop/mp3-128/streams.fluxfm.de/",
+             "https://streams.fluxfm.de/Chillhop/mp3-320/streams.fluxfm.de/"] },
+    { id: "ilovechillhop", name: "I Love Chillhop",        genre: "Lo-fi · jazzhop · triphop",
+      urls: ["https://ilm.stream12.radiohost.de/ilm_ilovechillhop_mp3-192"] },
+    { id: "reyfmlofi",     name: "REYFM #lofi",            genre: "Lo-fi hip-hop",
+      urls: ["https://listen.reyfm.de/lofi_128kbps.mp3",
+             "https://listen.reyfm.de/lofi_320kbps.mp3",
+             "https://listen.reyfm.de/lofi_64kbps.mp3"] },
+    { id: "ntslowkey",     name: "NTS Low Key",            genre: "Lo-fi hip-hop · smooth R'n'B (London)",
+      urls: ["https://stream-mixtape-geo.ntslive.net/mixtape2"] },
+    { id: "onlineradiolofi", name: "0nlineradio LO-FI",    genre: "Lo-fi · chill · study beats",
+      urls: ["https://stream.0nlineradio.com/lo-fi",
+             "https://0nlineradio.radioho.st/0r-lo-fi"] },
+    { id: "jazzhop",       name: "Epic Lounge Jazzhop",    genre: "Jazzy lo-fi hip-hop",
+      urls: ["https://stream.epic-lounge.com/jazzhop-lounge"] },
     { id: "groovesalad",   name: "Groove Salad",           genre: "Chill · downtempo" },
     { id: "fluid",         name: "Fluid",                  genre: "Lo-fi hip-hop · chillhop" },
     { id: "gsclassic",     name: "Groove Salad Classic",   genre: "Classic chill · ambient" },

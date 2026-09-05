@@ -752,10 +752,11 @@
      - A watchdog checks that `currentTime` is actually advancing. A stream that
        stalls for STALL_MS, errors, or pauses on its own is reconnected on a
        fresh connection with exponential backoff (3 s … 60 s), forever.
-     - Every third failure hands over to a backup station of the same flavour so
-       the room is never silent. While on the backup the intended station is
-       probed (the probe itself wakes a sleeping Render); when it answers with
-       audio again it comes back by itself.
+     - Every third failure moves one step along a fallback chain of lo-fi
+       stations on unrelated infrastructure, so the room is never silent and a
+       second dead host costs seconds, not minutes. While off the intended
+       station it is probed (the probe itself wakes a sleeping Render); when it
+       answers with audio again it comes back by itself.
      - While the relay plays, a small ping every five minutes gives Render fresh
        inbound traffic, because an open stream alone does not stop its idle timer.
 
@@ -764,15 +765,21 @@
   const audio = $("bgAudio");
   const STALL_MS = 15000, WATCH_MS = 5000, SETTLE_MS = 10000, KEEPALIVE_MS = 5 * 60000, PROBE_MS = 60000;
   let manualPaused = false, wantMusic = false, needsGesture = false;
-  let streamUrls = [], streamIdx = 0, onBackup = false, fails = 0, reconnectTimer = null;
+  // The fallback chain: same flavour as Lofi Girl, each on different
+  // infrastructure, all EU-hosted Icecast MP3 (see shared.js). Walked in order;
+  // the intended station is skipped if it is itself in the chain.
+  const BACKUP_CHAIN = ["fluxchillhop", "ilovechillhop", "reyfmlofi"];
+  let streamUrls = [], streamIdx = 0, altIdx = 0, fails = 0, reconnectTimer = null;
   let lastTime = -1, lastProgressAt = 0, progressSince = 0;
   let probeBusy = false, probeEvery = PROBE_MS, nextProbeAt = 0, lastKeepalive = 0;
 
   const station = () => ESM.findStation(state.musicStation);
-  // The closest thing to the intended station on different infrastructure:
-  // SomaFM's lo-fi channel, unless that is already the pick.
-  const backupStation = () => ESM.findStation(state.musicStation === "fluid" ? "groovesalad" : "fluid");
-  function loadStation() { streamUrls = ESM.stationUrls(onBackup ? backupStation() : station()); streamIdx = 0; }
+  // Intended station first, then the chain: altIdx walks this list.
+  const alternatives = () => [station()].concat(
+    BACKUP_CHAIN.filter((id) => id !== state.musicStation).map((id) => ESM.findStation(id)));
+  const playingStation = () => alternatives()[altIdx] || station();
+  const onBackup = () => altIdx !== 0;
+  function loadStation() { streamUrls = ESM.stationUrls(playingStation()); streamIdx = 0; }
   const silentNow = () => screen.classList.contains("is-night") || manualPaused || !state.music || !wantMusic;
   function clearReconnect() { if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; } }
 
@@ -792,15 +799,20 @@
     });
   }
 
-  // Reconnect with backoff. Network errors are instant, so a dead relay is on the
-  // backup within ~10 s; a stall costs STALL_MS per attempt.
+  // Reconnect with backoff. Each station gets three strikes (0 s, 3 s, 6 s
+  // apart) before the chain moves on, so a dead relay is on FluxFM in ~10 s and
+  // a dead FluxFM on I Love Chillhop ~10 s later. The waits double on every
+  // full lap of the chain, so a dead network is not hammered forever.
   function reconnect() {
     if (reconnectTimer || silentNow() || needsGesture) return;
     fails++;
-    if (fails % 3 === 0) { onBackup = !onBackup; loadStation(); }   // flip between intended and backup
-    else streamIdx = (streamIdx + 1) % streamUrls.length;           // or just the next mirror
-    if (onBackup) nextProbeAt = Date.now() + probeEvery;
-    const delay = fails === 1 ? 0 : Math.min(60000, 3000 * Math.pow(2, fails - 2)) * (0.8 + Math.random() * 0.4);
+    const n = alternatives().length, step = fails % 3;              // 1, 2: next mirror; 0: next station
+    if (step === 0) { altIdx = (altIdx + 1) % n; loadStation(); }
+    else streamIdx = (streamIdx + 1) % streamUrls.length;
+    if (onBackup()) nextProbeAt = Date.now() + probeEvery;
+    const lap = Math.floor((fails - 1) / (3 * n));
+    const base = step === 1 ? 0 : step === 2 ? 3000 : 6000;
+    const delay = Math.min(60000, base * Math.pow(2, lap)) * (0.8 + Math.random() * 0.4);
     reconnectTimer = setTimeout(() => { reconnectTimer = null; attempt(); }, delay);
     renderMusicbar();
   }
@@ -815,7 +827,7 @@
       lastTime = t; lastProgressAt = now;
       if (!progressSince) progressSince = now;
       if (now - progressSince >= SETTLE_MS) fails = 0;               // settled: backoff starts over next time
-      if (onBackup) { if (now >= nextProbeAt) probeIntended(); }
+      if (onBackup()) { if (now >= nextProbeAt) probeIntended(); }
       else if (now - lastKeepalive >= KEEPALIVE_MS) keepalive();
       return;
     }
@@ -830,7 +842,7 @@
     try { fetch(url + "?t=" + Date.now(), { mode: "no-cors", cache: "no-store", credentials: "omit" }).catch(() => {}); } catch {}
   }
 
-  // On the backup: does the intended station answer with audio again? Only a
+  // Off the intended station: does it answer with audio again? Only a
   // real relay says `200 audio/*`; Render's own "waking up" page does not. The
   // request wakes a sleeping service, so the timeout covers a cold start. One in
   // flight at a time; the interval doubles (to five minutes) while it says no.
@@ -846,8 +858,8 @@
     }).catch(() => false);
     Promise.race([req, timeout]).then((ok) => {
       probeBusy = false;
-      if (!ok || !onBackup || silentNow()) { probeEvery = Math.min(300000, probeEvery * 2); return; }
-      onBackup = false; fails = 0; probeEvery = PROBE_MS; loadStation();
+      if (!ok || !onBackup() || silentNow()) { probeEvery = Math.min(300000, probeEvery * 2); return; }
+      altIdx = 0; fails = 0; probeEvery = PROBE_MS; loadStation();
       attempt(); peekMusicbar(); renderMusicbar();   // badge flips back at once, not on the next event
     });
   }
@@ -879,7 +891,7 @@
 
   function setStation(id, announce) {
     state.musicStation = id; save();
-    manualPaused = false; onBackup = false; fails = 0; loadStation(); clearReconnect();
+    manualPaused = false; altIdx = 0; fails = 0; loadStation(); clearReconnect();
     if (wantMusic && audio && !silentNow()) attempt();
     syncMusicPanel(); renderMusicbar();
     if (announce) peekMusicbar();
@@ -908,9 +920,8 @@
     const retrying = wantMusic && !playing && !needsGesture && !manualPaused && (!!reconnectTimer || fails > 0);
     bar.classList.toggle("is-playing", playing);
     bar.setAttribute("aria-label", playing ? "Pause music" : "Play music");
-    const name = (onBackup ? backupStation() : station()).name;
-    $("musicState").textContent = (playing ? "♪ " : retrying ? "↻ " : "▶ ") + name +
-      (onBackup ? " · " + station().name + " unreachable" : "");
+    $("musicState").textContent = (playing ? "♪ " : retrying ? "↻ " : "▶ ") + playingStation().name +
+      (onBackup() ? " · " + station().name + " unreachable" : "");
   }
   let peekTimer = null;
   function peekMusicbar() {

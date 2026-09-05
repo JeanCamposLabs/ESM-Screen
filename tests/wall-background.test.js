@@ -203,6 +203,15 @@ test("repository retires PAT writes and published admin assets; audio starts fro
   assert.match(app, /function watchdog\(\)/);
   assert.match(app, /function reconnect\(\)/);
   assert.match(app, /function probeIntended\(\)/);
+  // The fallback chain names real stations, and every station URL is HTTPS —
+  // an http:// stream is silently blocked on the https:// page.
+  require("../shared.js");
+  const stations = globalThis.ESM.STATIONS;
+  const chain = JSON.parse(app.match(/const BACKUP_CHAIN = (\[[^\]]*\]);/)[1]);
+  assert.ok(chain.length >= 3);
+  for (const id of chain) assert.ok(stations.some((s) => s.id === id), "unknown station in BACKUP_CHAIN: " + id);
+  for (const s of stations) for (const u of globalThis.ESM.stationUrls(s)) assert.match(u, /^https:\/\//, s.id);
+  assert.equal(new Set(stations.map((s) => s.id)).size, stations.length, "duplicate station id");
   assert.match(remote, /public screen remote has retired/i);
   assert.doesNotMatch(workflow, /cp .*remote\.(?:js|css)|cp .*config\.json/);
   assert.match(workflow, /actions\/deploy-pages/);

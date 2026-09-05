@@ -56,9 +56,12 @@ The badge plays and pauses.
 
 The stream is a live relay on a free Render plan and is expected to drop. A watchdog checks that playback
 is actually advancing; a stall, error or self-pause is reconnected on a fresh connection with exponential
-backoff, forever. Every third failure hands over to a backup station of the same flavour (SomaFM Fluid)
-so the room is never silent; while on the backup the relay is probed (the probe also wakes a sleeping
-Render) and the intended station returns by itself when the relay answers with audio again. While the
+backoff, forever. Every third failure moves one step along a fallback chain of lo-fi stations on
+unrelated infrastructure — FluxFM Chillhop (Berlin), I Love Chillhop, REYFM #lofi — so the room is never
+silent and a second dead host costs seconds; while off the intended station the relay is probed (the probe
+also wakes a sleeping Render) and Lofi Girl returns by itself when the relay answers with audio again. The
+station picker also carries NTS Low Key, 0nlineradio LO-FI and Epic Lounge Jazzhop; every entry is a
+live-tested HTTPS Icecast MP3 stream. While the
 relay plays, the page pings its `/healthz` every five minutes so Render's idle timer never fires.
 Silent for the whole of the overnight window. The existing configured office Google Cast group remains a
 separate, parallel output; the feed's `browserAudio: false` describes that Cast set-up, not this page.
@@ -130,7 +133,7 @@ Saturday, inactivity on Sunday, a Dutch public holiday, and a Wall Controls holi
 from the active feed, plus both 07:00/23:00
 boundaries under CET and CEST. Confirm that a non-Philips TV starts Lofi Girl on load, that on the
 Philips one click on the logo starts it without revealing the settings sidebar, that pulling the relay
-switches the badge to "Fluid · Lofi Girl unreachable" and back when the relay returns, and that the
+switches the badge to "FluxFM Chillhop · Lofi Girl unreachable" and back when the relay returns, and that the
 existing configured office Cast group still plays independently. The optional
 `cast-follower/` remains uninstalled and is not auto-started.
 
