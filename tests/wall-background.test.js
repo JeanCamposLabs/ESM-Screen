@@ -131,6 +131,8 @@ test("client omits credentials, revalidates by ETag and promotes pending revisio
   assert.equal(calls[0].url, wall.FEED_URL);
   assert.equal(calls[0].options.credentials, "omit");
   assert.equal(calls[0].options.cache, "no-cache");
+  assert.equal(calls[0].options.redirect, "error");
+  assert.equal(calls[0].options.referrerPolicy, "no-referrer");
   assert.equal(calls[2].options.headers["If-None-Match"], '"two"');
   client.clear();
   assert.equal(client.current(), null);
@@ -235,4 +237,53 @@ test("repository retires PAT writes and published admin assets; audio starts fro
   assert.match(remote, /public screen remote has retired/i);
   assert.doesNotMatch(workflow, /cp .*remote\.(?:js|css)|cp .*config\.json/);
   assert.match(workflow, /actions\/deploy-pages/);
+});
+
+test("content security policy names every host the page talks to, and nothing inline", () => {
+  const root = path.join(__dirname, "..");
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const meta = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)"/);
+  assert.ok(meta, "CSP meta missing");
+  const csp = Object.fromEntries(meta[1].split(";").map((d) => d.trim()).filter(Boolean).map((d) => {
+    const [name, ...src] = d.split(/\s+/); return [name, src];
+  }));
+  assert.deepEqual(csp["default-src"], ["'none'"]);
+  assert.deepEqual(csp["script-src"], ["'self'"]);
+  assert.doesNotMatch(meta[1], /unsafe-inline|unsafe-eval|\bhttp:/);
+  for (const d of ["object-src", "base-uri", "form-action", "frame-src", "worker-src"]) assert.deepEqual(csp[d], ["'none'"], d);
+  assert.match(html, /<meta name="referrer" content="no-referrer"/);
+  assert.doesNotMatch(html, /<script(?![^>]*\bsrc=)/, "inline <script> would be blocked by script-src 'self'");
+  assert.doesNotMatch(html, /\sstyle="/, "inline style attributes would be blocked by style-src");
+  // every audio host is allowed as media and as a connect target (the relay probe fetches it)
+  require("../shared.js");
+  const allowed = (list, host) => list.some((src) => src === "https://" + host ||
+    (src.startsWith("https://*.") && host.endsWith(src.slice("https://*".length))));
+  for (const st of globalThis.ESM.STATIONS) {
+    const urls = globalThis.ESM.stationUrls(st).concat(st.keepalive ? [st.keepalive] : []);
+    for (const u of urls) {
+      const host = new URL(u).host;
+      assert.ok(allowed(csp["media-src"], host), "media-src lacks " + host);
+      assert.ok(allowed(csp["connect-src"], host), "connect-src lacks " + host);
+    }
+  }
+  // CSP is enforced on redirect hops too: the hosts the stations were observed
+  // redirecting to (Sept 2026) must be allowed as well.
+  for (const host of ["fluxfm.streamabc.net", "streams.radiomast.io", "reyfm.stream37.radiohost.de",
+                      "0nlineradio.stream42.radiohost.de", "13683.live.streamtheworld.com"]) {
+    assert.ok(allowed(csp["media-src"], host), "media-src lacks redirect target " + host);
+    assert.ok(allowed(csp["connect-src"], host), "connect-src lacks redirect target " + host);
+  }
+  assert.ok(allowed(csp["connect-src"], new URL(wall.FEED_URL).host), "connect-src lacks the Scale OS feed");
+  assert.ok(allowed(csp["img-src"], new URL(wall.FEED_URL).host), "img-src lacks the Scale OS images");
+  assert.ok(allowed(csp["connect-src"], "api.open-meteo.com"));
+  assert.ok(csp["img-src"].includes("data:"), "the grain texture and favicon are data: URIs");
+  // the audio element must not opt into CORS mode: stations without ACAO would then fail to play
+  assert.doesNotMatch(html, /<audio\b[^>]*crossorigin/);
+});
+
+test("clock is on by default, and the ping-only workflow holds no token permissions", () => {
+  require("../shared.js");
+  assert.equal(globalThis.ESM.CONFIG_DEFAULTS.clock, true);
+  const wf = fs.readFileSync(path.join(__dirname, "..", ".github/workflows/relay-keepalive.yml"), "utf8");
+  assert.match(wf, /^permissions: \{\}/m);
 });

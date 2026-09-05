@@ -214,6 +214,8 @@
       const response = await this.fetchImpl(FEED_URL, {
         credentials: "omit",
         cache: "no-cache",
+        redirect: "error",              // the feed is this exact URL; a redirect elsewhere is a fault, not a source
+        referrerPolicy: "no-referrer",
         headers
       });
       if (response.status === 304) return this.current(nowMs);
