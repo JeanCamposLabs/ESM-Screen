@@ -143,11 +143,20 @@ Each image drifts in the way that suits *that picture*:
 `tools/make_motion.py` looks at every slide and writes `assets/motion.json` —
 a strong horizon (a landscape, Earth's limb) slides sideways, a bright subject
 in the middle (a galaxy, a nebula) is pushed into, an all-over texture drifts
-diagonally. Amplitudes are 2–9% of the frame peak-to-peak over 55–75 s at a
-constant apparent speed of ~0.13% of the viewport per second (about 5 px/s on a
-4K panel), easing at both ends. That is 2.4× the original tuning, which nobody
-in the office could see; the image layer is drawn at scale 1.14 (7% overhang) so
-the larger pan never shows an edge. `bgMotion` sets how much:
+diagonally. Amplitudes are 4–12% of the frame peak-to-peak over 22–55 s at a
+constant apparent speed of 0.40% of the viewport per second. Measured on screen
+by cross-correlating two frames ten seconds apart, that is **13.5 px/s on a 4K
+panel** (6.8 px/s at 1080p).
+
+Two earlier tunings were invisible in the office. The first was too small; the
+second raised amplitude but kept a long period, which measured only 2.95 px/s —
+the eye detects *speed*, not distance. The easing was the other half: the old
+`ease-in-out` sat below half speed for a quarter of every traverse and was
+effectively stopped at each turnaround, so the drift read as a still image. The
+curve is now `cubic-bezier(.5,.25,.5,.75)`, which never drops below 0.53× mean
+speed yet still reverses softly. The image layer is drawn at scale 1.20 (10%
+overhang) so the larger pan never shows an edge — verified across every slide at
+every setting. `bgMotion` sets how much:
 `off` (dead still) · `subtle` · `gentle` (default) · `lively`;
 `prefers-reduced-motion` disables it, and the night screen pauses it.
 Add a slide and the deploy analyses it automatically.
