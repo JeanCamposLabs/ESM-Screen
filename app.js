@@ -500,7 +500,12 @@
     try {
       el._esmAnim = el.animate(
         [{ transform: frames.from }, { transform: frames.to }],
-        { duration: frames.duration, direction: "alternate", iterations: Infinity, easing: "ease-in-out" }
+        // Not ease-in-out: it spends a quarter of every traverse below half
+        // speed and is effectively stopped at each turnaround, which is what
+        // made the drift read as a still image. This curve never drops below
+        // 0.53x mean speed, yet still reverses softly.
+        { duration: frames.duration, direction: "alternate", iterations: Infinity,
+          easing: "cubic-bezier(.5,.25,.5,.75)" }
       );
       if (screen.classList.contains("is-night")) el._esmAnim.pause();
     } catch { el.style.transform = ESM.motionStill(); }   // very old browser: hold it still

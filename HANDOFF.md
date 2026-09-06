@@ -23,7 +23,10 @@ invalid/unavailable feed, and image failure use the bundled slides
 deterministically: one every 5 minutes (`BUNDLED_SLOT_MS`, distinct from the
 feed's 180-second `slotMs`), in an order reshuffled once per UTC day, identical
 on every TV. 235 slides cover a 16-hour day without a repeat. Background motion
-is 2.4× the original tuning (`tools/make_motion.py`, layer scale 1.14).
+runs at 0.40%/s of the viewport over 22-55 s (`tools/make_motion.py`, layer
+scale 1.20, easing `cubic-bezier(.5,.25,.5,.75)`), measured on screen at 13.5
+px/s on a 4K panel against 2.95 px/s before. Speed and easing, not amplitude,
+are what make it visible.
 
 Active time is 07:00 inclusive to 23:00
 exclusive Monday–Saturday. Sundays and official Dutch public holidays are

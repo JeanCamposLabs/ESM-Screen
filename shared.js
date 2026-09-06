@@ -97,12 +97,11 @@
     { id: "lively", name: "Lively",       k: 1.5 },
   ];
   // The image layer is drawn this much bigger than the screen, so it can drift
-  // without ever showing an edge: 1.14 → 7% of overhang on each side, and the
-  // pan is capped below that (4.5% x 1.5 = 6.75% at the liveliest setting).
-  // Tuned up from 1.09 / 4.0 when the drift proved invisible on the office TVs.
-  const MOTION_BASE_SCALE = 1.14;
-  const MOTION_MARGIN = 7.0;                                   // % — hard cap on the pan
-  const MOTION_FALLBACK = { x: 2.6, y: 2.4, z: 0.03, d: 66 };   // used if motion.json is missing
+  // without ever showing an edge: 1.20 → 10% of overhang on each side, and the
+  // pan is capped below that (6.0% x 1.5 = 9.0% at the liveliest setting).
+  const MOTION_BASE_SCALE = 1.20;
+  const MOTION_MARGIN = 9.5;                                   // % — hard cap on the pan
+  const MOTION_FALLBACK = { x: 3.4, y: 3.0, z: 0.04, d: 26 };   // used if motion.json is missing
 
   // Gallery categories, read from the file name (see slideInfo).
   const CATEGORIES = [
@@ -274,7 +273,7 @@
     return {
       from: "translate(" + (-x).toFixed(2) + "%, " + (-y).toFixed(2) + "%) scale(" + s0.toFixed(3) + ")",
       to: "translate(" + x.toFixed(2) + "%, " + y.toFixed(2) + "%) scale(" + (s0 + z).toFixed(3) + ")",
-      duration: Math.max(30, motion.d) * 1000,
+      duration: Math.max(15, motion.d) * 1000,   // floor only guards a corrupt entry; the tool writes 22-55 s
     };
   }
   const motionStill = () => "scale(" + MOTION_BASE_SCALE.toFixed(3) + ")";

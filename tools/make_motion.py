@@ -14,10 +14,10 @@ Ken-Burns for everything, each image is analysed and gets its own drift:
   * a picture with detail spread everywhere (plasma, ribbons, waves) gets a lazy
     diagonal drift and a little zoom.
 
-Amplitudes are tiny and the duration is chosen so the *apparent speed* is the
-same for every image (a big move takes proportionally longer). That is what
-keeps it calm: the eye reads a constant, barely-there drift, never a zoom that
-suddenly accelerates.
+The duration is chosen so the *apparent speed* is the same for every image (a
+big move takes proportionally longer). That is what keeps it calm: the eye
+reads one constant drift across the whole rotation, never a zoom that suddenly
+accelerates. Speed, not amplitude, is what makes it visible at all.
 
     python3 tools/make_motion.py                 # writes assets/motion.json
     python3 tools/make_motion.py --check         # print the table, write nothing
@@ -39,16 +39,22 @@ Image.MAX_IMAGE_PIXELS = None
 SLIDES = "assets/slides"
 OUT = "assets/motion.json"
 
-# Ceilings at intensity 1, in % of the viewport. The layer sits at scale 1.14,
-# i.e. 7% of overhang on each side; at the liveliest setting the pan reaches
-# 4.5 x 1.5 = 6.75%, so an edge can never come into view.
-# (Was 2.4 / 0.045 / 0.055: at ~2 px/s on a 4K panel nobody in the office ever
-# noticed the background moving at all. This is ~2.4x: a slow, visible sway.)
-MAX_PAN = 4.5        # half-amplitude of the drift (peak-to-peak = 2x this)
-MAX_ZOOM = 0.08      # added to the base scale over the animation
-SPEED = 0.13         # % of the viewport per second — the constant that sets the pace
-                     # (~5 px/s on a 4K panel, ~2.5 px/s at 1080p: seen, not felt)
-DUR_MIN, DUR_MAX = 40.0, 150.0
+# Ceilings at intensity 1, in % of the viewport. The layer sits at scale 1.20,
+# i.e. 10% of overhang on each side; at the liveliest setting the pan reaches
+# 6.0 x 1.5 = 9.0%, so an edge can never come into view.
+#
+# History, because this was got wrong twice: the first pass used 2.4 / 0.055,
+# about 1.4 px/s on a 4K panel. The second raised the amplitude to 4.5 but left
+# the period long, which measured 3.45 px/s — still invisible across a room,
+# because what the eye detects is speed, not distance. This pass raises SPEED
+# itself and shortens the period; amplitude moves only enough to give the drift
+# somewhere to go. The easing was the other half of the problem: see app.js.
+MAX_PAN = 6.0        # half-amplitude of the drift (peak-to-peak = 2x this)
+MAX_ZOOM = 0.10      # added to the base scale over the animation
+SPEED = 0.40         # % of the viewport per second — the constant that sets the pace
+                     # (~11 px/s on a 4K panel, ~5.5 px/s at 1080p: a drift you
+                     #  can see without staring, still far short of a screensaver)
+DUR_MIN, DUR_MAX = 22.0, 55.0
 
 
 def analyse(path):
