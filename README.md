@@ -78,9 +78,9 @@ not override the feed or the deterministic fallback. Invalid/unavailable data, a
 explicit `bundled-fallback`, or a remote image error selects the bundled ESM slides.
 The bundled rotation has its own pace and order: one slide every **5 minutes**
 (`BUNDLED_SLOT_MS`, separate from the feed's validated 180-second `slotMs`), walking
-the 235 slides in an order reshuffled once per UTC day (the change lands at
+the 209 slides in an order reshuffled once per UTC day (the change lands at
 01:00/02:00 Amsterdam, while the screens are off). Every TV computes the same
-order from the same clock, so they still switch together, and with 235 slides a
+order from the same clock, so they still switch together, and with 209 slides a
 16-hour screen day (192 slots) never shows the same image twice. The catalogue is
 real photography only: Unsplash landscapes, NASA deep space and Earth from orbit,
 each live-tested, licence-checked (no ESO/CC-BY material) and credited in
